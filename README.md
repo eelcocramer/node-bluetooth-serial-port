@@ -16,7 +16,7 @@ This node module lets you communicate over Bluetooth serial port with devices us
 
 # Install
 
-`npm install rfcomm`
+`npm install bluetooth-serial-port`
 
 # Documentation
 
