@@ -1,0 +1,31 @@
+{ "name" : "rfcomm"
+, "version" : "0.0.1"
+, "description" : "RFCOMM (serial i/o over bluetooth) using node"
+, "author": "Eelco Cramer <eelco@hailendal.org>"
+, "keywords" :
+  [ "bluetooth"
+  , "serial"
+  , "rfcomm"
+  , "linux"
+  ]
+, "homepage" : "https://github.com/eelcocramer/node-bluetooth-serial"
+, "bugs" : "https://github.com/eelcocramer/node-bluetooth-serial/issues"
+, "repository" :
+  { "type" : "git"
+  , "url" : "https://github.com/eelcocramer/node-bluetooth-serial"
+  }
+, "directories" : 
+  { "lib" : "./lib"
+  }
+, "main" : "./lib/rfcomm.js"
+, "dependencies" :
+  { 
+  }
+, "engines" :
+  { "node" : ">= 0.8.x"
+  , "npm" : ">= 1.1.x"
+  }
+, "scripts":
+  { "install": "node-gyp configure build"
+  }
+}
