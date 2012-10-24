@@ -36,3 +36,35 @@ rfcomm.connect(bluetoothAddress, function() {
 // close the connection when you're ready
 rfcomm.close();
 ```
+
+## API
+
+### rfcomm.RFCOMM
+
+#### Event: 'data'
+
+Emitted when data is read from the RFCOMM connection.
+
+#### Event: 'error'
+
+Emitted when reading form the RFCOMM connection results in an error. The connection is closed.
+
+#### RFCOMM.connect(bluetoothAddress[, successCallback, errorCallback])
+
+Connects to a remote bluetooth device.
+
+* bluetoothAddress - the address of the remote Bluetooth device.
+* [successCallback] - called when a connection has been established.
+* [errorCallback(msg)] - called when the connection attempt results in an error.
+
+#### RFCOMM.close()
+
+Closes the connection.
+
+#### RFCOMM.write(data)
+
+Writes a string to the RFCOMM connection.
+
+* data - the data string to be written.
+
+* Throws an exception when is called before a connection has been established.
