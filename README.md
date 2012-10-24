@@ -9,6 +9,11 @@ This node module lets you communicate with Bluetooth devices in Node.js. The goa
 * Not available for Windows and Mac OS X
 * Currently all data is passed as strings
 
+# Pre-requests
+
+* Needs bluetooth development packages to build.
+* The bluetooth device should already be paired.
+
 # Install
 
 `npm install rfcomm`
