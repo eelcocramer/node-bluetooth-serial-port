@@ -1,0 +1,6 @@
+/node_modules/
+/.gitignore
+/.npmignore
+/npm-debug.log
+/build/
+/._*
