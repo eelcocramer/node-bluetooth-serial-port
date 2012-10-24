@@ -7,6 +7,7 @@ This node module lets you communicate with Bluetooth devices in Node.js. The goa
 * Only tested on Linux
 * Only available on Linux and BSD like systems
 * Not available for Windows and Mac OS X
+* Currently all data is passed as strings
 
 # Install
 
@@ -31,4 +32,7 @@ rfcomm.connect(bluetoothAddress, function() {
 }, function () {
 	console.log('cannot connect');
 });
+
+// close the connection when you're ready
+rfcomm.close();
 ```
