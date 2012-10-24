@@ -114,11 +114,10 @@ private:
         
         printf("Errorno = %d - Size = %d", baton->errorno, baton->size);
         
-        Local<Value> argv[3];
+        Local<Value> argv[2];
         argv[0] = String::New(baton->result);
-        argv[1] = Integer::New(baton->errorno);
-        argv[2] = Integer::New(baton->size);
-        baton->cb->Call(Context::GetCurrent()->Global(), 3, argv);
+        argv[1] = Integer::New(baton->size);
+        baton->cb->Call(Context::GetCurrent()->Global(), 2, argv);
         
         if (try_catch.HasCaught()) {
             FatalException(try_catch);
