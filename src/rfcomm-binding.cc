@@ -92,8 +92,6 @@ private:
     };
  
     static void EIO_Read(uv_work_t *req) {
-        printf("test123");
-
         char buf[1024]= { 0 };
 
         read_baton_t *baton = static_cast<read_baton_t *>(req->data);
@@ -111,8 +109,6 @@ private:
         baton->rfcomm->Unref();
         
         TryCatch try_catch;
-        
-        printf("Errorno = %d - Size = %d", baton->errorno, baton->size);
         
         Local<Value> argv[2];
         argv[0] = String::New(baton->result);
