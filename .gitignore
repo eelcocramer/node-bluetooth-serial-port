@@ -1,2 +1,4 @@
 build
 ._*
+node_modules
+
