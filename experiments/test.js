@@ -37,6 +37,6 @@ console.log(bdi('start'));
 
 console.log('start');
 
-$.CFRunLoopRun();
+//$.CFRunLoopRun();
 
 pool('drain');
