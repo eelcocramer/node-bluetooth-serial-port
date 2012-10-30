@@ -19,13 +19,15 @@
  	"use strict";
 
     var util = require('util');
-    var inquiryBinding = require("../build/Release/device-inquiry-binding");
+    var inquiry = require("../lib/device-inquiry.js");
 
-    var inquiry = new inquiryBinding.DeviceINQ();
-    
     console.log('have object');
     
-    inquiry.inquire(function (address, name) {
+    inquiry.on('found', function (address, name) {
         console.log('Found: ' + address + ' with name ' + name);
     });
+
+    inquiry.inquire();
+    
+    process.stdin.resume();
 })();
