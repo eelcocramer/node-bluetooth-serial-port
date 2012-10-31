@@ -30,16 +30,17 @@ using namespace std;
 using namespace node;
 using namespace v8;
 
-class RFCOMMBinding: ObjectWrap {
+class BTSerialPortBinding: ObjectWrap {
 private:
     int s;
     
     struct connect_baton_t {
-        RFCOMMBinding *rfcomm;
+        BTSerialPortBinding *rfcomm;
         Persistent<Function> cb;
         Persistent<Function> ecb;
         char address[19];
         int status;
+        int channel;
     };
     
     static void EIO_Connect(uv_work_t *req) {
@@ -52,7 +53,7 @@ private:
 
         // set the connection parameters (who to connect to)
         addr.rc_family = AF_BLUETOOTH;
-        addr.rc_channel = (uint8_t) 1;
+        addr.rc_channel = (uint8_t) baton->channel;
         str2ba( baton->address, &addr.rc_bdaddr );
 
         // connect to server
@@ -84,7 +85,7 @@ private:
     }
     
     struct read_baton_t {
-        RFCOMMBinding *rfcomm;
+        BTSerialPortBinding *rfcomm;
         Persistent<Function> cb;
         char result[1024];
         int errorno;
@@ -135,42 +136,49 @@ public:
         
         s_ct = Persistent<FunctionTemplate>::New(t);
         s_ct->InstanceTemplate()->SetInternalFieldCount(1);
-        s_ct->SetClassName(String::NewSymbol("RFCOMMBinding"));
+        s_ct->SetClassName(String::NewSymbol("BTSerialPortBinding"));
         
         NODE_SET_PROTOTYPE_METHOD(s_ct, "write", Write);
         NODE_SET_PROTOTYPE_METHOD(s_ct, "read", Read);
         NODE_SET_PROTOTYPE_METHOD(s_ct, "close", Close);
-        target->Set(String::NewSymbol("RFCOMMBinding"), s_ct->GetFunction());
-        target->Set(String::NewSymbol("RFCOMMBinding"), s_ct->GetFunction());
-        target->Set(String::NewSymbol("RFCOMMBinding"), s_ct->GetFunction());
+        target->Set(String::NewSymbol("BTSerialPortBinding"), s_ct->GetFunction());
+        target->Set(String::NewSymbol("BTSerialPortBinding"), s_ct->GetFunction());
+        target->Set(String::NewSymbol("BTSerialPortBinding"), s_ct->GetFunction());
     }
     
-    RFCOMMBinding() : 
+    BTSerialPortBinding() : 
         s(0) {
         
     }
     
-    ~RFCOMMBinding() {
+    ~BTSerialPortBinding() {
         
     }
     
     static Handle<Value> New(const Arguments& args) {
         HandleScope scope;
 
-        const char *usage = "usage: RFCOMMBinding(address, callback, error)";
-        if (args.Length() != 3) {
+        const char *usage = "usage: BTSerialPortBinding(address, channel, callback, error)";
+        if (args.Length() != 4) {
             return ThrowException(Exception::Error(String::New(usage)));
         }
         
         String::Utf8Value address(args[0]);
-        Local<Function> cb = Local<Function>::Cast(args[1]);
-        Local<Function> ecb = Local<Function>::Cast(args[2]);
         
-        RFCOMMBinding* rfcomm = new RFCOMMBinding();
+        int channel = args[1]->Int32Value(); 
+        if (channel <= 0) { 
+          return ThrowException(Exception::Error(String::New("Channel should be an int value.")));
+        }
+        
+        Local<Function> cb = Local<Function>::Cast(args[2]);
+        Local<Function> ecb = Local<Function>::Cast(args[3]);
+        
+        BTSerialPortBinding* rfcomm = new BTSerialPortBinding();
         rfcomm->Wrap(args.This());
 
         connect_baton_t *baton = new connect_baton_t();
         baton->rfcomm = rfcomm;
+        baton->channel = channel;
         strcpy(baton->address, *address);
         baton->cb = Persistent<Function>::New(cb);
         baton->ecb = Persistent<Function>::New(ecb);
@@ -200,7 +208,7 @@ public:
         
         String::Utf8Value str(args[0]);
         
-        RFCOMMBinding* rfcomm = ObjectWrap::Unwrap<RFCOMMBinding>(args.This());
+        BTSerialPortBinding* rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
         
         write(rfcomm->s, *str, str.length() + 1);
         
@@ -215,7 +223,7 @@ public:
             return ThrowException(Exception::Error(String::New(usage)));
         }
         
-        RFCOMMBinding* rfcomm = ObjectWrap::Unwrap<RFCOMMBinding>(args.This());
+        BTSerialPortBinding* rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
         
         close(rfcomm->s);
         
@@ -232,7 +240,7 @@ public:
         
         Local<Function> cb = Local<Function>::Cast(args[0]);
                 
-        RFCOMMBinding* rfcomm = ObjectWrap::Unwrap<RFCOMMBinding>(args.This());
+        BTSerialPortBinding* rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
         
         read_baton_t *baton = new read_baton_t();
         baton->rfcomm = rfcomm;
@@ -249,13 +257,13 @@ public:
     
 };
 
-Persistent<FunctionTemplate> RFCOMMBinding::s_ct;
+Persistent<FunctionTemplate> BTSerialPortBinding::s_ct;
 
 extern "C" {
     void init (Handle<Object> target) {
         HandleScope scope;
-        RFCOMMBinding::Init(target);
+        BTSerialPortBinding::Init(target);
     }
 
-    NODE_MODULE(RFCOMMBinding, init);
+    NODE_MODULE(BTSerialPortBinding, init);
 }

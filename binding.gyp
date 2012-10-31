@@ -3,10 +3,10 @@
   [
     {
      # Needed declarations for the target
-     'target_name': 'rfcomm-binding',
+     'target_name': 'bt-serial-port-binding',
      'conditions': [
         [ 'OS=="freebsd" or OS=="openbsd" or OS=="solaris" or (OS=="linux")', {
-          'sources': [ "src/rfcomm-binding.cc" ],
+          'sources': [ "src/bt-serial-port-binding.cc" ],
           'libraries': ['-lbluetooth'],
           'cflags':['-std=gnu++0x'] 
         }]

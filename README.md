@@ -1,6 +1,6 @@
-# RFCOMM (Serial Bluetooth) communication for Node.js
+# Bluetooth serial port communication for Node.js
 
-This node module lets you communicate with Bluetooth devices in Node.js. The goal is have an easy to use API. This module is great for communicating with Bluetooth enabled Arduino devices.
+This node module lets you communicate over Bluetooth serial port with devices using Node.js. The goal is have an easy to use API. This module is great for communicating with Bluetooth enabled Arduino devices.
 
 # Limitations
 
@@ -24,14 +24,14 @@ This node module lets you communicate with Bluetooth devices in Node.js. The goa
 
 ```javascript
 
-var rfcomm = new require('rfcomm').RFCOMM();
+var btSerial = new require('bluetooth-serial-port').BluetoothSerialPort();
 
-rfcomm.connect(bluetoothAddress, function() {
+btSerial.connect(bluetoothAddress, function() {
 	console.log('connected');
 	
-	rfcomm.write('my data');
+	btSerial.write('my data');
 	
-	rfcomm.on('data', function(data) {
+	btSerial.on('data', function(data) {
 		console.log(data);
 	});
 }, function () {
@@ -39,22 +39,22 @@ rfcomm.connect(bluetoothAddress, function() {
 });
 
 // close the connection when you're ready
-rfcomm.close();
+btSerial.close();
 ```
 
 ## API
 
-### rfcomm.RFCOMM
+### BluetoothSerialPort
 
 #### Event: 'data'
 
-Emitted when data is read from the RFCOMM connection.
+Emitted when data is read from the serial port connection.
 
 #### Event: 'error'
 
-Emitted when reading form the RFCOMM connection results in an error. The connection is closed.
+Emitted when reading form the serial port connection results in an error. The connection is closed.
 
-#### RFCOMM.connect(bluetoothAddress[, successCallback, errorCallback])
+#### BluetoothSerialPort.connect(bluetoothAddress[, successCallback, errorCallback])
 
 Connects to a remote bluetooth device.
 
@@ -62,13 +62,13 @@ Connects to a remote bluetooth device.
 * [successCallback] - called when a connection has been established.
 * [errorCallback(msg)] - called when the connection attempt results in an error.
 
-#### RFCOMM.close()
+#### BluetoothSerialPort.close()
 
 Closes the connection.
 
-#### RFCOMM.write(data)
+#### BluetoothSerialPort.write(data)
 
-Writes a string to the RFCOMM connection.
+Writes a string to the serial port connection.
 
 * data - the data string to be written.
 

@@ -20,13 +20,21 @@
 
     var util = require('util');
     var DeviceINQ = require("../lib/device-inquiry.js").DeviceINQ;
+    var BluetoothSerialPort = require("../lib/bluetooth-serial-port.js").BluetoothSerialPort;
     var inquiry = new DeviceINQ();
+    var btSerial = new BluetoothSerialPort();
 
     inquiry.on('found', function (address, name) {
         console.log('Found: ' + address + ' with name ' + name);
         
         inquiry.findSerialPortChannel(address, function(channel) {
-            console.log('Found RFCOMM channel for serial port: ' + channel);
+            console.log('Found RFCOMM channel for serial port on ' + name + ': ' + channel);
+            
+            if (channel != -1) {
+                btSerial.connect(address, channel, function() {
+                    btSerial.write('1');
+                });
+            }
         });
     });
 
