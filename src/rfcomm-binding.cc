@@ -233,7 +233,6 @@ public:
         Local<Function> cb = Local<Function>::Cast(args[0]);
                 
         RFCOMMBinding* rfcomm = ObjectWrap::Unwrap<RFCOMMBinding>(args.This());
-  
         
         read_baton_t *baton = new read_baton_t();
         baton->rfcomm = rfcomm;

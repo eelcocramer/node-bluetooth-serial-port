@@ -19,12 +19,19 @@
  	"use strict";
 
     var util = require('util');
-    var inquiry = require("../lib/device-inquiry.js");
+    var DeviceINQ = require("../lib/device-inquiry.js").DeviceINQ;
+    var inquiry = new DeviceINQ();
 
-    console.log('have object');
-    
     inquiry.on('found', function (address, name) {
         console.log('Found: ' + address + ' with name ' + name);
+        
+        inquiry.findSerialPortChannel(address, function(channel) {
+            console.log('Found RFCOMM channel for serial port: ' + channel);
+        });
+    });
+
+    inquiry.on('finnished', function() {
+        console.log('scan did finnish');
     });
 
     inquiry.inquire();

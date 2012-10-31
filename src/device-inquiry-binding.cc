@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <node_object_wrap.h>
 
 extern "C"{
     #include <stdio.h>
@@ -32,12 +33,6 @@ using namespace v8;
 
 class DeviceINQ: ObjectWrap {
 private:
-    
-    struct inquire_baton_t {
-        DeviceINQ *inquire;
-        Persistent<Function> cb;
-    };
-    
     struct sdp_baton_t {
         DeviceINQ *inquire;
         Persistent<Function> cb;
@@ -45,89 +40,38 @@ private:
         char address[19];
     };
     
-    static void EIO_Inquire(uv_work_t *req) {
-        inquire_baton_t *baton = static_cast<inquire_baton_t *>(req->data);
-
-        // do stuff
-        inquiry_info *ii = NULL;
-        int max_rsp, num_rsp;
-        int dev_id, sock, len, flags;
-        int i;
-        char addr[19] = { 0 };
-        char name[248] = { 0 };
-
-        dev_id = hci_get_route(NULL);
-        sock = hci_open_dev( dev_id );
-        if (dev_id < 0 || sock < 0) {
-            //perror("opening socket");
-            return;
-        }
-
-        len  = 8;
-        max_rsp = 255;
-        flags = IREQ_CACHE_FLUSH;
-        ii = (inquiry_info*)malloc(max_rsp * sizeof(inquiry_info));
-
-        num_rsp = hci_inquiry(dev_id, len, max_rsp, NULL, &ii, flags);
-        // if( num_rsp < 0 ) perror("hci_inquiry");
-
-        for (i = 0; i < num_rsp; i++) {
-          ba2str(&(ii+i)->bdaddr, addr);
-          memset(name, 0, sizeof(name));
-          if (hci_read_remote_name(sock, &(ii+i)->bdaddr, sizeof(name), 
-              name, 0) < 0)
-          strcpy(name, "[unknown]");
-
-          TryCatch try_catch;
-
-          Local<Value> argv[2];
-          argv[0] = String::New(addr);
-          argv[1] = String::New(name);
-          baton->cb->Call(Context::GetCurrent()->Global, 2, argv);
-
-          if (try_catch.HasCaught()) {
-              FatalException(try_catch);
-          }
-        }
-
-        free( ii );
-        close( sock );
-    }
-    
-    static void EIO_Inquire(uv_work_t *req) {
-        inquire_baton_t *baton = static_cast<inquire_baton_t *>(req->data);
-        uv_unref((uv_handle_t*) &req);
-        baton->inquire->Unref();
-        baton->cb.Dispose();
-        delete baton;
-        delete req;
-    }
-    
     static void EIO_SdpSearch(uv_work_t *req) {
         sdp_baton_t *baton = static_cast<sdp_baton_t *>(req->data);
 
-        uint8_t svc_uuid_int[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-            0, 0, 0xab, 0xcd };
+        // default, no channel is found
+        baton->channel = -1;
+
         uuid_t svc_uuid;
         int err;
         bdaddr_t target;
+        bdaddr_t source = { 0, 0, 0, 0, 0, 0 };
         sdp_list_t *response_list = NULL, *search_list, *attrid_list;
         sdp_session_t *session = 0;
 
         str2ba(baton->address, &target);
-
+        
         // connect to the SDP server running on the remote machine
-        session = sdp_connect(BDADDR_ANY, &target, SDP_RETRY_IF_BUSY);
-
+        // session = sdp_connect(BDADDR_ANY, &target, SDP_RETRY_IF_BUSY);
+        session = sdp_connect(&source, &target, SDP_RETRY_IF_BUSY);
+        
+        if (!session) {
+            return;
+        }
+        
         // specify the UUID of the application we're searching for
-        sdp_uuid128_create(&svc_uuid, &svc_uuid_int);
+        sdp_uuid16_create(&svc_uuid, SERIAL_PORT_PROFILE_ID);
         search_list = sdp_list_append(NULL, &svc_uuid);
 
         // specify that we want a list of all the matching applications' attributes
         uint32_t range = 0x0000ffff;
         attrid_list = sdp_list_append(NULL, &range);
 
-        // get a list of service records that have UUID 0xabcd
+        // get a list of service records that have the serial port UUID
         err = sdp_service_search_attr_req( session, search_list, SDP_ATTR_REQ_RANGE, attrid_list, &response_list);
 
         sdp_list_t *r = response_list;
@@ -172,14 +116,13 @@ private:
                 sdp_list_free(proto_list, 0 );
             }
 
-            //printf("found service record 0x%x\n", rec->handle);
             sdp_record_free( rec );
         }
 
         sdp_close(session);
     }
     
-    static void EIO_SdpSearch(uv_work_t *req) {
+    static void EIO_AfterSdpSearch(uv_work_t *req) {
         sdp_baton_t *baton = static_cast<sdp_baton_t *>(req->data);
         uv_unref((uv_handle_t*) &req);
         baton->inquire->Unref();
@@ -187,7 +130,7 @@ private:
         TryCatch try_catch;
         
         Local<Value> argv[1];
-        argv[0] = String::New(baton->channel);
+        argv[0] = Integer::New(baton->channel);
         baton->cb->Call(Context::GetCurrent()->Global(), 1, argv);
         
         if (try_catch.HasCaught()) {
@@ -207,21 +150,22 @@ public:
         HandleScope scope;
         
         Local<FunctionTemplate> t = FunctionTemplate::New(New);
+
         s_ct = Persistent<FunctionTemplate>::New(t);
-        s_ct->InstanceTemplate()->SetInternalFieldCount(0);
+        s_ct->InstanceTemplate()->SetInternalFieldCount(1);
         s_ct->SetClassName(String::NewSymbol("DeviceINQ"));
         
         NODE_SET_PROTOTYPE_METHOD(s_ct, "inquire", Inquire);
-        NODE_SET_PROTOTYPE_METHOD(s_ct, "sdpSearchForRFCOMM", SdpSearch);
+        NODE_SET_PROTOTYPE_METHOD(s_ct, "findSerialPortChannel", SdpSearch);
         target->Set(String::NewSymbol("DeviceINQ"), s_ct->GetFunction());
         target->Set(String::NewSymbol("DeviceINQ"), s_ct->GetFunction());
     }
     
-    RFCOMMBinding() {
+    DeviceINQ() {
         
     }
     
-    ~RFCOMMBinding() {
+    ~DeviceINQ() {
         
     }
     
@@ -233,30 +177,70 @@ public:
             return ThrowException(Exception::Error(String::New(usage)));
         }
 
+        DeviceINQ* inquire = new DeviceINQ();
+        inquire->Wrap(args.This());
+
         return args.This();
     }
  
     static Handle<Value> Inquire(const Arguments& args) {
         HandleScope scope;
-        
-        const char *usage = "usage: inquire(callback)";
-        if (args.Length() != 1) {
+
+        const char *usage = "usage: inquire()";
+        if (args.Length() != 0) {
             return ThrowException(Exception::Error(String::New(usage)));
         }
         
-        Local<Function> cb = Local<Function>::Cast(args[0]);
-                
-        DeviceINQ* inquire = ObjectWrap::Unwrap<DeviceINQ>(args.This());
-        
-        inquire_baton_t *baton = new inquire_baton_t();
-        baton->inquire = inquire;
-        baton->cb = Persistent<Function>::New(cb);
-        inquire->Ref();
+        // do the bluetooth magic
+        inquiry_info *ii = NULL;
+        int max_rsp, num_rsp;
+        int dev_id, sock, len, flags;
+        int i;
+        char addr[19] = { 0 };
+        char name[248] = { 0 };
 
-        uv_work_t *req = new uv_work_t;
-        req->data = baton;
-        uv_queue_work(uv_default_loop(), req, EIO_Inquire, EIO_AfterInquire);
-        uv_ref((uv_handle_t *) &req);
+        dev_id = hci_get_route(NULL);
+        sock = hci_open_dev( dev_id );
+        if (dev_id < 0 || sock < 0) {
+            return ThrowException(Exception::Error(String::New("opening socket")));
+        }
+
+        len  = 8;
+        max_rsp = 255;
+        flags = IREQ_CACHE_FLUSH;
+        ii = (inquiry_info*)malloc(max_rsp * sizeof(inquiry_info));
+
+        num_rsp = hci_inquiry(dev_id, len, max_rsp, NULL, &ii, flags);
+        // if( num_rsp < 0 ) {
+        //     return ThrowException(Exception::Error(String::New("hci inquiry")));
+        // }
+
+        for (i = 0; i < num_rsp; i++) {
+          ba2str(&(ii+i)->bdaddr, addr);
+          memset(name, 0, sizeof(name));
+          if (hci_read_remote_name(sock, &(ii+i)->bdaddr, sizeof(name), 
+              name, 0) < 0)
+          strcpy(name, "[unknown]");
+
+          // fprintf(stderr, "%s [%s]\n", addr, name);
+
+          Local<Value> argv[3] = {
+              String::New("found"),
+              String::New(addr),
+              String::New(name)
+          };
+
+          MakeCallback(args.This(), "emit", 3, argv);
+        }
+
+        free( ii );
+        close( sock );
+
+        Local<Value> argv[1] = {
+            String::New("finnished")
+        };
+
+        MakeCallback(args.This(), "emit", 1, argv);
 
         return Undefined();
     }
