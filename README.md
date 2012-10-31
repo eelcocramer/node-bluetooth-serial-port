@@ -26,33 +26,65 @@ This node module lets you communicate over Bluetooth serial port with devices us
 
 var btSerial = new require('bluetooth-serial-port').BluetoothSerialPort();
 
-btSerial.connect(bluetoothAddress, function() {
-	console.log('connected');
-	
-	btSerial.write('my data');
-	
-	btSerial.on('data', function(data) {
-		console.log(data);
+btSerial.inquire();
+
+btSerial.on('found', function(address, name) {
+	btSerial.findSerialPortChannel(address, function(channel) {
+		btSerial.connect(bluetoothAddress, channel, function() {
+			console.log('connected');
+
+			btSerial.write('my data');
+
+			btSerial.on('data', function(data) {
+				console.log(data);
+			});
+		}, function () {
+			console.log('cannot connect');
+		});
+
+		// close the connection when you're ready
+		btSerial.close();		
 	});
-}, function () {
-	console.log('cannot connect');
 });
 
-// close the connection when you're ready
-btSerial.close();
 ```
 
 ## API
 
 ### BluetoothSerialPort
 
-#### Event: 'data'
+#### Event: ('data', data)
 
 Emitted when data is read from the serial port connection.
 
-#### Event: 'error'
+* data - the data that was read
+
+#### Event: ('failure', message)
 
 Emitted when reading form the serial port connection results in an error. The connection is closed.
+
+* message - an message describing the failure.
+
+#### Event: ('found', address, name)
+
+Emitted when a bluetooth device was found.
+
+* address - the address of the device
+* name - the name of the device
+
+#### Event: ('finnished')
+
+Emitted when the device inquiry execution did finnish.
+
+#### BluetoothSerialPort.inquire()
+
+Starts searching for bluetooth devices. When a device is found a 'found' event will be emitted.
+
+#### BluetoothSerialPort.findSerialPortChannel(address, callback)
+
+Checks if a device has a serial port service running and if it is found it passes the channel id to use for the RFCOMM connection.
+
+* callback(channel) - called when finished looking for a serial port on the device. channel === -1 if no channel was found.
 
 #### BluetoothSerialPort.connect(bluetoothAddress[, successCallback, errorCallback])
 
