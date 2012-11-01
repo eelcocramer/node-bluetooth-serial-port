@@ -26,8 +26,6 @@ This node module lets you communicate over Bluetooth serial port with devices us
 
 var btSerial = new require('bluetooth-serial-port').BluetoothSerialPort();
 
-btSerial.inquire();
-
 btSerial.on('found', function(address, name) {
 	btSerial.findSerialPortChannel(address, function(channel) {
 		btSerial.connect(bluetoothAddress, channel, function() {
@@ -47,6 +45,7 @@ btSerial.on('found', function(address, name) {
 	});
 });
 
+btSerial.inquire();
 ```
 
 ## API
