@@ -27,4 +27,5 @@
 , "scripts":
   { "install": "node-gyp configure build"
   }
+, "license": "Apache License 2.0"
 }
