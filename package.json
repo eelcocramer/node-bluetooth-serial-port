@@ -1,5 +1,5 @@
 { "name" : "bluetooth-serial-port"
-, "version" : "0.1.5"
+, "version" : "0.1.6"
 , "description" : "Bluetooth serial port communication for Node.js"
 , "author": "Eelco Cramer <eelco@hailendal.org>"
 , "keywords" :
@@ -27,5 +27,5 @@
 , "scripts":
   { "install": "node-gyp configure build"
   }
-, "license": "Apache License 2.0"
+, "license": "BSD New"
 }
