@@ -27,5 +27,5 @@
 , "scripts":
   { "install": "node-gyp configure build"
   }
-, "license": "BSD New"
+, "license": "FreeBSD"
 }
