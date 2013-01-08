@@ -104,3 +104,7 @@ Writes a string to the serial port connection.
 * data - the data string to be written.
 
 * Throws an exception when is called before a connection has been established.
+
+## LICENSE
+
+This module is available under a http://opensource.org/licenses/BSD-2-Clause[FreeBSD license], see also the https://raw.github.com/eelcocramer/node-bluetooth-serial-port/master/LICENSE[LICENSE file] for details.
