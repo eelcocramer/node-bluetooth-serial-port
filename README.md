@@ -71,9 +71,9 @@ Emitted when a bluetooth device was found.
 * address - the address of the device
 * name - the name of the device
 
-#### Event: ('finnished')
+#### Event: ('finished')
 
-Emitted when the device inquiry execution did finnish.
+Emitted when the device inquiry execution did finish.
 
 #### BluetoothSerialPort.inquire()
 
