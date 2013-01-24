@@ -32,8 +32,8 @@
         });
     });
 
-    inquiry.on('finnished', function() {
-        console.log('scan did finnish');
+    inquiry.on('finished', function() {
+        console.log('scan did finish');
     });
 
     inquiry.inquire();

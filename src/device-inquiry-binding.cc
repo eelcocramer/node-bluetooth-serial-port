@@ -248,7 +248,7 @@ public:
         close( sock );
 
         Local<Value> argv[1] = {
-            String::New("finnished")
+            String::New("finished")
         };
 
         MakeCallback(args.This(), "emit", 1, argv);
