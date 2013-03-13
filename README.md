@@ -24,11 +24,11 @@ This node module lets you communicate over Bluetooth serial port with devices us
 
 ```javascript
 
-var btSerial = new require('bluetooth-serial-port').BluetoothSerialPort();
+var btSerial = new (require('bluetooth-serial-port')).BluetoothSerialPort();
 
 btSerial.on('found', function(address, name) {
 	btSerial.findSerialPortChannel(address, function(channel) {
-		btSerial.connect(bluetoothAddress, channel, function() {
+		btSerial.connect(address, channel, function() {
 			console.log('connected');
 
 			btSerial.write('my data');
