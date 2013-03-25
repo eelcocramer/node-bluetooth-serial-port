@@ -283,7 +283,7 @@ public:
 
         uv_work_t *req = new uv_work_t;
         req->data = baton;
-        uv_queue_work(uv_default_loop(), req, EIO_SdpSearch, EIO_AfterSdpSearch);
+        uv_queue_work(uv_default_loop(), req, EIO_SdpSearch, (uv_after_work_cb)EIO_AfterSdpSearch);
         uv_ref((uv_handle_t *) &req);
 
         return Undefined();
