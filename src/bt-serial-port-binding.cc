@@ -221,7 +221,7 @@ public:
         
         BTSerialPortBinding* rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
         
-        write(rfcomm->s, *str, str.length() + 1);
+        write(rfcomm->s, *str, str.length());
         
         return Undefined();
     }
