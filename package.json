@@ -18,7 +18,7 @@
   }
 , "main" : "./lib/bluetooth-serial-port.js"
 , "dependencies" :
-  { 
+  { "bindings" : "1.1.x"
   }
 , "engines" :
   { "node" : ">= 0.8.x"

@@ -178,7 +178,7 @@ public:
         
         int channel = args[1]->Int32Value(); 
         if (channel <= 0) { 
-          return ThrowException(Exception::Error(String::New("Channel should be an int value.")));
+          return ThrowException(Exception::Error(String::New("Channel should be a positive int value.")));
         }
         
         Local<Function> cb = Local<Function>::Cast(args[2]);
