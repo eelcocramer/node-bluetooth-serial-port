@@ -26,11 +26,11 @@ This node module lets you communicate over Bluetooth serial port with devices us
 
 ```javascript
 
-var btSerial = new require('bluetooth-serial-port').BluetoothSerialPort();
+var btSerial = new (require('bluetooth-serial-port')).BluetoothSerialPort();
 
 btSerial.on('found', function(address, name) {
 	btSerial.findSerialPortChannel(address, function(channel) {
-		btSerial.connect(bluetoothAddress, channel, function() {
+		btSerial.connect(address, channel, function() {
 			console.log('connected');
 
 			btSerial.write('my data');
@@ -109,4 +109,4 @@ Writes a string to the serial port connection.
 
 ## LICENSE
 
-This module is available under a http://opensource.org/licenses/BSD-2-Clause[FreeBSD license], see also the https://raw.github.com/eelcocramer/node-bluetooth-serial-port/master/LICENSE[LICENSE file] for details.
+This module is available under a [FreeBSD license](http://opensource.org/licenses/BSD-2-Clause), see also the [LICENSE file](https://raw.github.com/eelcocramer/node-bluetooth-serial-port/master/LICENSE) for details.
