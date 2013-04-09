@@ -197,6 +197,11 @@ Handle<Value> BTSerialPortBinding::Write(const Arguments& args) {
     
     BTSerialPortBinding* rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
     
+    const char *has_been_closed = "connection has been closed";
+    if (rfcomm->s == NULL) {
+        return ThrowException(Exception::Error(String::New(has_been_closed)));
+    }
+
     write(rfcomm->s, *str, str.length());
     
     return Undefined();
@@ -211,8 +216,11 @@ Handle<Value> BTSerialPortBinding::Close(const Arguments& args) {
     }
     
     BTSerialPortBinding* rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
-    
-    close(rfcomm->s);
+
+    if (rfcomm->s != NULL) {
+        close(rfcomm->s);
+        rfcomm->s = NULL;
+    }    
     
     return Undefined();
 }
@@ -224,10 +232,15 @@ Handle<Value> BTSerialPortBinding::Read(const Arguments& args) {
     if (args.Length() != 1) {
         return ThrowException(Exception::Error(String::New(usage)));
     }
-    
+
     Local<Function> cb = Local<Function>::Cast(args[0]);
             
     BTSerialPortBinding* rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
+
+    const char *has_been_closed = "connection has been closed";
+    if (rfcomm->s == NULL) {
+        return ThrowException(Exception::Error(String::New(has_been_closed)));
+    }
     
     read_baton_t *baton = new read_baton_t();
     baton->rfcomm = rfcomm;
