@@ -45,7 +45,11 @@ using namespace v8;
 void BTSerialPortBinding::EIO_Connect(uv_work_t *req) {
     connect_baton_t *baton = static_cast<connect_baton_t *>(req->data);
     
-    struct sockaddr_rc addr = { 0 };
+    struct sockaddr_rc addr = {
+        0x00,
+        { { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } },
+        0x00
+    };
 
     // allocate a socket
     baton->rfcomm->s = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
@@ -198,11 +202,16 @@ Handle<Value> BTSerialPortBinding::Write(const Arguments& args) {
     BTSerialPortBinding* rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
     
     const char *has_been_closed = "connection has been closed";
-    if (rfcomm->s == NULL) {
+    if (rfcomm->s == 0) {
         return ThrowException(Exception::Error(String::New(has_been_closed)));
     }
 
-    write(rfcomm->s, *str, str.length());
+    int result = write(rfcomm->s, *str, str.length());
+
+    const char *write_error = "write was unsuccessful";
+    if (result != str.length()) {
+        return ThrowException(Exception::Error(String::New(write_error)));
+    }
     
     return Undefined();
 }
@@ -217,9 +226,9 @@ Handle<Value> BTSerialPortBinding::Close(const Arguments& args) {
     
     BTSerialPortBinding* rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
 
-    if (rfcomm->s != NULL) {
+    if (rfcomm->s != 0) {
         close(rfcomm->s);
-        rfcomm->s = NULL;
+        rfcomm->s = 0;
     }    
     
     return Undefined();
@@ -238,7 +247,7 @@ Handle<Value> BTSerialPortBinding::Read(const Arguments& args) {
     BTSerialPortBinding* rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
 
     const char *has_been_closed = "connection has been closed";
-    if (rfcomm->s == NULL) {
+    if (rfcomm->s == 0) {
         return ThrowException(Exception::Error(String::New(has_been_closed)));
     }
     

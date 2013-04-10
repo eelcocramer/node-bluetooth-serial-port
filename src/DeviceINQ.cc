@@ -50,9 +50,8 @@ void DeviceINQ::EIO_SdpSearch(uv_work_t *req) {
     baton->channel = -1;
 
     uuid_t svc_uuid;
-    int err;
     bdaddr_t target;
-    bdaddr_t source = { 0, 0, 0, 0, 0, 0 };
+    bdaddr_t source = { { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } };
     sdp_list_t *response_list = NULL, *search_list, *attrid_list;
     sdp_session_t *session = 0;
 
@@ -75,7 +74,7 @@ void DeviceINQ::EIO_SdpSearch(uv_work_t *req) {
     attrid_list = sdp_list_append(NULL, &range);
 
     // get a list of service records that have the serial port UUID
-    err = sdp_service_search_attr_req( session, search_list, SDP_ATTR_REQ_RANGE, attrid_list, &response_list);
+    sdp_service_search_attr_req( session, search_list, SDP_ATTR_REQ_RANGE, attrid_list, &response_list);
 
     sdp_list_t *r = response_list;
 
