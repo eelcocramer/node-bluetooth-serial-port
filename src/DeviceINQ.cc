@@ -126,8 +126,6 @@ void DeviceINQ::EIO_SdpSearch(uv_work_t *req) {
 
 void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
     sdp_baton_t *baton = static_cast<sdp_baton_t *>(req->data);
-    uv_unref((uv_handle_t*) &req);
-    baton->inquire->Unref();
 
     TryCatch try_catch;
     
@@ -139,9 +137,10 @@ void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
         FatalException(try_catch);
     }
 
+    baton->inquire->Unref();
     baton->cb.Dispose();
     delete baton;
-    delete req;
+    baton = NULL;
 }
 
 void DeviceINQ::Init(Handle<Object> target) {
@@ -265,12 +264,10 @@ Handle<Value> DeviceINQ::SdpSearch(const Arguments& args) {
     baton->cb = Persistent<Function>::New(cb);
     strcpy(baton->address, *address);
     baton->channel = -1;
-    inquire->Ref();
+    baton->request.data = baton;
+    baton->inquire->Ref();
 
-    uv_work_t *req = new uv_work_t;
-    req->data = baton;
-    uv_queue_work(uv_default_loop(), req, EIO_SdpSearch, (uv_after_work_cb)EIO_AfterSdpSearch);
-    uv_ref((uv_handle_t *) &req);
+    uv_queue_work(uv_default_loop(), &baton->request, EIO_SdpSearch, (uv_after_work_cb)EIO_AfterSdpSearch);
 
     return Undefined();
 }
