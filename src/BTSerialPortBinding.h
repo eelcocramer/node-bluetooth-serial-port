@@ -14,6 +14,7 @@ class BTSerialPortBinding : public node::ObjectWrap {
 	private:
 		struct connect_baton_t {
 		    BTSerialPortBinding *rfcomm;
+		    uv_work_t request;
 		    v8::Persistent<v8::Function> cb;
 		    v8::Persistent<v8::Function> ecb;
 		    char address[19];
@@ -23,6 +24,7 @@ class BTSerialPortBinding : public node::ObjectWrap {
 
 		struct read_baton_t {
 		    BTSerialPortBinding *rfcomm;
+		    uv_work_t request;
 		    v8::Persistent<v8::Function> cb;
 		    char result[1024];
 		    int errorno;

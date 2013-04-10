@@ -65,8 +65,6 @@ void BTSerialPortBinding::EIO_Connect(uv_work_t *req) {
     
 void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
     connect_baton_t *baton = static_cast<connect_baton_t *>(req->data);
-    uv_unref((uv_handle_t*) &req);
-    baton->rfcomm->Unref();
     
     TryCatch try_catch;
     
@@ -82,9 +80,10 @@ void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
         FatalException(try_catch);
     }
     
+    baton->rfcomm->Unref();
     baton->cb.Dispose();
     delete baton;
-    delete req;
+    baton = NULL;
 }
      
 void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
@@ -101,8 +100,6 @@ void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
     
 void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
     read_baton_t *baton = static_cast<read_baton_t *>(req->data);
-    uv_unref((uv_handle_t*) &req);
-    baton->rfcomm->Unref();
     
     TryCatch try_catch;
     
@@ -115,9 +112,10 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
         FatalException(try_catch);
     }
     
+    baton->rfcomm->Unref();
     baton->cb.Dispose();
     delete baton;
-    delete req;
+    baton = NULL;
 }
     
     
@@ -168,17 +166,15 @@ Handle<Value> BTSerialPortBinding::New(const Arguments& args) {
     rfcomm->Wrap(args.This());
 
     connect_baton_t *baton = new connect_baton_t();
-    baton->rfcomm = rfcomm;
+    baton->rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
     baton->channel = channel;
     strcpy(baton->address, *address);
     baton->cb = Persistent<Function>::New(cb);
     baton->ecb = Persistent<Function>::New(ecb);
-    rfcomm->Ref();
+    baton->request.data = baton;
+    baton->rfcomm->Ref();
 
-    uv_work_t *req = new uv_work_t;
-    req->data = baton;
-    uv_queue_work(uv_default_loop(), req, EIO_Connect, (uv_after_work_cb)EIO_AfterConnect);
-    uv_ref((uv_handle_t *) &req);
+    uv_queue_work(uv_default_loop(), &baton->request, EIO_Connect, (uv_after_work_cb)EIO_AfterConnect);
 
     return args.This();
 }
@@ -254,12 +250,10 @@ Handle<Value> BTSerialPortBinding::Read(const Arguments& args) {
     read_baton_t *baton = new read_baton_t();
     baton->rfcomm = rfcomm;
     baton->cb = Persistent<Function>::New(cb);
-    rfcomm->Ref();
+    baton->request.data = baton;
+    baton->rfcomm->Ref();
 
-    uv_work_t *req = new uv_work_t;
-    req->data = baton;
-    uv_queue_work(uv_default_loop(), req, EIO_Read, (uv_after_work_cb)EIO_AfterRead);
-    uv_ref((uv_handle_t *) &req);
+    uv_queue_work(uv_default_loop(), &baton->request, EIO_Read, (uv_after_work_cb)EIO_AfterRead);
 
     return Undefined();
 }
