@@ -4,15 +4,16 @@ This node module lets you communicate over Bluetooth serial port with devices us
 
 # Limitations
 
-* Only tested on Linux
-* Only available on Linux and BSD like systems
-* Not available for Windows and Mac OS X
-* Currently all data is passed as strings
+* Tested on Linux
+* Available for Linux and BSD like systems
+* Not available (yet) for Windows and Mac OS X
+* Data is passed as strings
 
 # Pre-requests
 
-* Needs bluetooth development packages to build.
-* The bluetooth device should already be paired.
+* Needs Bluetooth development packages to build
+
+`apt-get install libbluetooth-dev`
 
 # Install
 
@@ -107,4 +108,4 @@ Writes a string to the serial port connection.
 
 ## LICENSE
 
-This module is available under a [FreeBSD license](http://opensource.org/licenses/BSD-2-Clause), see also the [LICENSE file](https://raw.github.com/eelcocramer/node-bluetooth-serial-port/master/LICENSE) for details.
+This module is available under a [FreeBSD license](http://opensource.org/licenses/BSD-2-Clause), see the [LICENSE file](https://raw.github.com/eelcocramer/node-bluetooth-serial-port/master/LICENSE) for details.
