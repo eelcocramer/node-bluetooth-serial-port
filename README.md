@@ -98,6 +98,10 @@ Connects to a remote bluetooth device.
 
 Closes the connection.
 
+#### BluetoothSerialPort.isOpen()
+
+Check whether the connection is open or not.
+
 #### BluetoothSerialPort.write(data)
 
 Writes a string to the serial port connection.
