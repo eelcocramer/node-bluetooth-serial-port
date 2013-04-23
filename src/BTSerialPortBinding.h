@@ -32,6 +32,7 @@ class BTSerialPortBinding : public node::ObjectWrap {
 		};
 
 	    int s;
+	    int rep[2];
 
   		BTSerialPortBinding();
   		~BTSerialPortBinding();

@@ -27,6 +27,7 @@ extern "C"{
     #include <sys/poll.h>
     #include <sys/ioctl.h>
     #include <sys/socket.h>
+    #include <sys/types.h>
     #include <assert.h>
 
 
@@ -93,9 +94,24 @@ void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
 
     memset(buf, 0, sizeof(buf));
     
-    baton->size = read(baton->rfcomm->s, buf, sizeof(buf));
+    fd_set read, rem;
+    FD_ZERO(&set);
+    FD_SET(baton->rfcomm->s, &set);
 
-    strcpy(baton->result, buf);
+    FD_ZERO(&rem);
+    FD_SET(baton->rfcomm->rem, &rem);
+
+    if (pselect(1, &set, NULL, &rem, NULL, NULL) >= 0) {
+        if (set) {
+            baton->size = read(baton->rfcomm->s, buf, sizeof(buf));
+        } else {
+            // when set is not selected rem must be. In that case we assume
+            // that no data has been read.
+            baton->size = 0;
+        }
+
+        strcpy(baton->result, buf);
+    }
 }
     
 void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
@@ -137,7 +153,6 @@ void BTSerialPortBinding::Init(Handle<Object> target) {
     
 BTSerialPortBinding::BTSerialPortBinding() : 
     s(0) {
-    
 }
 
 BTSerialPortBinding::~BTSerialPortBinding() {
@@ -157,6 +172,11 @@ Handle<Value> BTSerialPortBinding::New(const Arguments& args) {
     int channel = args[1]->Int32Value(); 
     if (channel <= 0) { 
       return ThrowException(Exception::Error(String::New("Channel should be a positive int value.")));
+    }
+
+    // allocate an error pipe
+    if (pipe(rep) == -1) {
+      return ThrowException(Exception::Error(String::New("Cannot create pipe for reading.")));
     }
     
     Local<Function> cb = Local<Function>::Cast(args[2]);
@@ -224,6 +244,7 @@ Handle<Value> BTSerialPortBinding::Close(const Arguments& args) {
 
     if (rfcomm->s != 0) {
         close(rfcomm->s);
+        write(rfcomm->rep[1], "1", 1);
         rfcomm->s = 0;
     }    
     
