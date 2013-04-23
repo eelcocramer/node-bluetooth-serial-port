@@ -62,6 +62,9 @@ void BTSerialPortBinding::EIO_Connect(uv_work_t *req) {
 
     // connect to server
     baton->status = connect(baton->rfcomm->s, (struct sockaddr *)&addr, sizeof(addr));
+
+    int sock_flags = fcntl(baton->rfcomm->s, F_GETFL, 0);
+    fcntl(baton->rfcomm->s, F_SETFL, sock_flags | O_NONBLOCK);
 }
     
 void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
@@ -94,19 +97,18 @@ void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
 
     memset(buf, 0, sizeof(buf));
     
-    fd_set read, rem;
+    fd_set set;
     FD_ZERO(&set);
     FD_SET(baton->rfcomm->s, &set);
+    FD_SET(baton->rfcomm->rep[0], &set);
 
-    FD_ZERO(&rem);
-    FD_SET(baton->rfcomm->rem, &rem);
+    int nfds = (baton->rfcomm->s > baton->rfcomm->rep[0]) ? baton->rfcomm->s : baton->rfcomm->rep[0];
 
-    if (pselect(1, &set, NULL, &rem, NULL, NULL) >= 0) {
-        if (set) {
+    if (pselect(nfds + 1, &set, NULL, NULL, NULL, NULL) >= 0) {
+        if (FD_ISSET(baton->rfcomm->s, &set)) {
             baton->size = read(baton->rfcomm->s, buf, sizeof(buf));
         } else {
-            // when set is not selected rem must be. In that case we assume
-            // that no data has been read.
+            // when no data is read from rfcomm the connection has been closed.
             baton->size = 0;
         }
 
@@ -174,11 +176,6 @@ Handle<Value> BTSerialPortBinding::New(const Arguments& args) {
       return ThrowException(Exception::Error(String::New("Channel should be a positive int value.")));
     }
 
-    // allocate an error pipe
-    if (pipe(rep) == -1) {
-      return ThrowException(Exception::Error(String::New("Cannot create pipe for reading.")));
-    }
-    
     Local<Function> cb = Local<Function>::Cast(args[2]);
     Local<Function> ecb = Local<Function>::Cast(args[3]);
     
@@ -188,6 +185,15 @@ Handle<Value> BTSerialPortBinding::New(const Arguments& args) {
     connect_baton_t *baton = new connect_baton_t();
     baton->rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
     baton->channel = channel;
+
+    // allocate an error pipe
+    if (pipe(baton->rfcomm->rep) == -1) {
+      return ThrowException(Exception::Error(String::New("Cannot create pipe for reading.")));
+    }
+
+    int flags = fcntl(baton->rfcomm->rep[0], F_GETFL, 0);
+    fcntl(baton->rfcomm->rep[0], F_SETFL, flags | O_NONBLOCK);
+
     strcpy(baton->address, *address);
     baton->cb = Persistent<Function>::New(cb);
     baton->ecb = Persistent<Function>::New(ecb);
@@ -244,7 +250,7 @@ Handle<Value> BTSerialPortBinding::Close(const Arguments& args) {
 
     if (rfcomm->s != 0) {
         close(rfcomm->s);
-        write(rfcomm->rep[1], "1", 1);
+        write(rfcomm->rep[1], "close", (strlen("close")+1));
         rfcomm->s = 0;
     }    
     
