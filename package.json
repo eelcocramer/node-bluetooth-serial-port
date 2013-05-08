@@ -27,6 +27,6 @@
 , "scripts":
   { "install": "node-gyp configure build"
   }
-, "license": "FreeBSD"
+, "license": "BSD-2-Clause"
 , "contributors": ["Eric Smekens", "Juho Vepsäläinen"]
 }
