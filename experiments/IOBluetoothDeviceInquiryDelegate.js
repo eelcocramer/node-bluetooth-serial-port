@@ -14,15 +14,15 @@ module.exports = function (IOBluetoothDeviceInquiryDelegate) {
   // AppDelegate.addMethod('applicationWillTerminate:', 'v@:@', function (self, _cmd, notif) {});
   
   IOBluetoothDeviceInquiryDelegate.addMethod('deviceInquiryDeviceFound:', 'v@:@', function(self, _device, device) {
-      console.log('blaat');
+      console.log('found');
   });
 
   IOBluetoothDeviceInquiryDelegate.addMethod('deviceInquiryComplete:', 'v@:@', function(self, _error, error, _aborted, aborted)  {
-      console.log('blaat');
+      console.log('complete');
   });
 
   IOBluetoothDeviceInquiryDelegate.addMethod('deviceInquiryStarted:', 'v@:@', function(self)  {
-      console.log('blaat123');
+      console.log('started');
   });
 
   

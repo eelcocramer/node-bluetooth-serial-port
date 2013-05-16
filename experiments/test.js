@@ -35,19 +35,24 @@ var pool = $.NSAutoreleasePool('alloc')('init');
 //     console.log('blaat123');
 // });
 
-var bdi = $.IOBluetoothDeviceInquiry('alloc')('init');
-console.log('blat');
-
 var discovery = IOBluetoothDeviceInquiryDelegate($.NSObject.extend('IOBluetoothDeviceInquiryDelegate'));
 
-bdi('setDelegate', discovery);
+var bdi = $.IOBluetoothDeviceInquiry('alloc')('initWithDelegate', discovery);
 
-console.log('blat');
+
+//bdi('setDelegate', discovery);
 
 console.log(bdi('start'));
 
-console.log('start');
+$.CFRunLoopRun();
+var readline = require('readline');
+var rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
 
-//$.CFRunLoopRun();
+rl.question('What is your favorite food?', function(answer) {
+  console.log('Oh, so your favorite food is ' + answer);
+	pool('drain');
+});
 
-pool('drain');
