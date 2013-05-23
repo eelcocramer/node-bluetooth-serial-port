@@ -216,7 +216,7 @@ Handle<Value> DeviceINQ::Inquire(const Arguments& args) {
       memset(name, 0, sizeof(name));
       if (hci_read_remote_name(sock, &(ii+i)->bdaddr, sizeof(name), 
           name, 0) < 0)
-      strcpy(name, "[unknown]");
+        strcpy(name, addr);
 
       // fprintf(stderr, "%s [%s]\n", addr, name);
 

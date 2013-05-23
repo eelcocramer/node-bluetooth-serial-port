@@ -83,7 +83,7 @@ using namespace v8;
     Local<Value> argv[3] = {
       String::New("found"),
       String::New([[device getAddressString] cString]),
-      String::New([[device getName] cString])
+      String::New([[device getNameOrAddress] cString])
     };
 
     MakeCallback(m_baton->args->This(), "emit", 3, argv);

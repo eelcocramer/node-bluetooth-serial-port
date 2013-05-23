@@ -70,7 +70,7 @@ Emitted when reading form the serial port connection results in an error. The co
 Emitted when a bluetooth device was found.
 
 * address - the address of the device
-* name - the name of the device
+* name - the name of the device (or the address if the name is unavailable)
 
 #### Event: ('finished')
 
