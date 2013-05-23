@@ -82,13 +82,13 @@ using namespace v8;
 {
     Local<Value> argv[3] = {
       String::New("found"),
-      String::New([[device getAddressString] cString]),
-      String::New([[device getNameOrAddress] cString])
+      String::New([[device getAddressString] UTF8String]),
+      String::New([[device getNameOrAddress] UTF8String])
     };
 
     MakeCallback(m_baton->args->This(), "emit", 3, argv);
 
-    //printf("discovered %s\n", [[device getAddressString] cString]);
+    //printf("discovered %s\n", [[device getAddressString] UTF8String]);
 }
 @end
 
