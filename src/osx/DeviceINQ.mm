@@ -98,10 +98,34 @@ void DeviceINQ::EIO_SdpSearch(uv_work_t *req) {
     // default, no channel is found
     baton->channel = -1;
 
-    // if( proto == RFCOMM_UUID ) {
-    //     baton->channel = d->val.int8;
-    //     return; // stop if channel is found
-    // }
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+
+    NSString *address = [NSString stringWithCString:baton->address encoding:NSASCIIStringEncoding];
+    IOBluetoothDevice *device = [IOBluetoothDevice deviceWithAddressString:address];
+    NSArray *services = [device services];
+
+    if (services == NULL) {
+        //TODO do this case...
+    } else {
+        //TODO probably move this to another method...
+        IOBluetoothSDPUUID *uuid = [[IOBluetoothSDPUUID alloc] initWithUUID16:0x0003];
+        NSArray *uuids = [NSArray arrayWithObject:uuid];
+
+        for (NSUInteger i=0; i<[services count]; i++) {
+            IOBluetoothSDPServiceRecord *sr = [services objectAtIndex: i];
+            
+            if ([sr hasServiceFromArray: uuids]) {
+                BluetoothRFCOMMChannelID channelId = -1;
+                if ([sr getRFCOMMChannelID: &channelId] == kIOReturnSuccess) {
+                    baton->channel = channelId;
+                    [pool release];
+                    return;
+                }
+            }
+        }
+    }
+
+    [pool release];
 }
 
 void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
@@ -170,6 +194,7 @@ Handle<Value> DeviceINQ::Inquire(const Arguments& args) {
     objc_baton_t *baton = new objc_baton_t();
     baton->args = &args;
 
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     Discoverer *d = [[Discoverer alloc] initWithBaton: baton];
 
     IOBluetoothDeviceInquiry *bdi = 
@@ -180,6 +205,7 @@ Handle<Value> DeviceINQ::Inquire(const Arguments& args) {
         CFRunLoopRun();
     }
     
+    [pool release];
     return Undefined();
 }
     
