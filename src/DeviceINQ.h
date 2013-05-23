@@ -5,6 +5,10 @@
 
 class DeviceINQ : public node::ObjectWrap {
 	public:
+		struct objc_baton_t {
+	    	const v8::Arguments* args;
+	    };
+ 
 		static void Init(v8::Handle<v8::Object> exports);
 		static void EIO_SdpSearch(uv_work_t *req);
 		static void EIO_AfterSdpSearch(uv_work_t *req);
@@ -17,7 +21,7 @@ class DeviceINQ : public node::ObjectWrap {
 	        int channel;
 	        char address[19];
 	    };
-	
+
   		DeviceINQ();
   		~DeviceINQ();
 

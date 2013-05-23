@@ -21,17 +21,17 @@
     inquiry.on('found', function (address, name) {
         console.log('Found: ' + address + ' with name ' + name);
 
-        inquiry.findSerialPortChannel(address, function(channel) {
-            console.log('Found RFCOMM channel for serial port on ' + name + ': ' + channel);
+        // inquiry.findSerialPortChannel(address, function(channel) {
+        //     console.log('Found RFCOMM channel for serial port on ' + name + ': ' + channel);
 
-            if (channel != -1) {
-                btSerial.connect(address, channel, function() {
-                    btSerial.write('1');
-                    btSerial.close();
-                    console.log('closed and ready');
-                });
-            }
-        });
+        //     if (channel != -1) {
+        //         btSerial.connect(address, channel, function() {
+        //             btSerial.write('1');
+        //             btSerial.close();
+        //             console.log('closed and ready');
+        //         });
+        //     }
+        // });
     });
 
     inquiry.on('finished', function() {
