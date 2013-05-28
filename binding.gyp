@@ -12,8 +12,8 @@
           'cflags':['-std=gnu++0x'] 
         }],
         [ 'OS=="mac"', {
-          'sources': ['src/osx/DeviceINQ.mm', 'src/osx/BluetoothSerialPort.mm' ],
-          'include_dirs' : [ 'src' ],
+          'sources': ['src/osx/DeviceINQ.mm', 'src/osx/BluetoothSerialPort.mm', 'src/osx/Discoverer.mm' ],
+          'include_dirs' : [ 'src', 'src/osx' ],
           'libraries':['-framework Foundation', '-framework IOBluetooth', '-fobjc-arc'],
           'cflags!': [ '-fno-exceptions' ],
           'cflags_cc!': [ '-fno-exceptions' ],
