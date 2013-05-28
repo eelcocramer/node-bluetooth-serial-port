@@ -29,68 +29,17 @@ extern "C"{
     #include <sys/ioctl.h>
     #include <sys/socket.h>
     #include <assert.h>
+    #include <time.h>
 }
 
 #import <Foundation/NSObject.h>
 #import <IOBluetooth/objc/IOBluetoothDevice.h>
 #import <IOBluetooth/objc/IOBluetoothDeviceInquiry.h>
+#import "Discoverer.h"
 
 using namespace std;
 using namespace node;
 using namespace v8;
-
-@interface Discoverer: NSObject {
-    DeviceINQ::objc_baton_t *m_baton;
-}
-
-- (id) initWithBaton:(DeviceINQ::objc_baton_t *)baton;
-
-- (void) deviceInquiryComplete: (IOBluetoothDeviceInquiry*) sender 
-                            error: (IOReturn) error
-                            aborted: (BOOL) aborted;
-- (void) deviceInquiryDeviceFound: (IOBluetoothDeviceInquiry*) sender
-                            device: (IOBluetoothDevice*) device;
-@end
-
-@implementation Discoverer
-
-- (id) initWithBaton:(DeviceINQ::objc_baton_t *)baton
-{
-  self = [super init];
-  if (self) {
-    m_baton = baton;
-  }
-  return self;
-}
-
--(void) deviceInquiryComplete: (IOBluetoothDeviceInquiry*) sender 
-                            error: (IOReturn) error
-                            aborted: (BOOL) aborted
-{
-    // finnished
-    Local<Value> argv[1] = {
-        String::New("finished")
-    };
-
-    MakeCallback(m_baton->args->This(), "emit", 1, argv);
-
-    CFRunLoopStop( CFRunLoopGetCurrent() );
-}
-
--(void) deviceInquiryDeviceFound: (IOBluetoothDeviceInquiry*) sender
-                            device: (IOBluetoothDevice*) device
-{
-    Local<Value> argv[3] = {
-      String::New("found"),
-      String::New([[device getAddressString] UTF8String]),
-      String::New([[device getNameOrAddress] UTF8String])
-    };
-
-    MakeCallback(m_baton->args->This(), "emit", 3, argv);
-
-    //printf("discovered %s\n", [[device getAddressString] UTF8String]);
-}
-@end
 
 void DeviceINQ::EIO_SdpSearch(uv_work_t *req) {
     sdp_baton_t *baton = static_cast<sdp_baton_t *>(req->data);
@@ -103,14 +52,33 @@ void DeviceINQ::EIO_SdpSearch(uv_work_t *req) {
     NSString *address = [NSString stringWithCString:baton->address encoding:NSASCIIStringEncoding];
     IOBluetoothDevice *device = [IOBluetoothDevice deviceWithAddressString:address];
     NSArray *services = [device services];
+    NSDate *lastServicesUpdate = [device getLastServicesUpdate];
+
+    IOBluetoothSDPUUID *uuid = [[IOBluetoothSDPUUID alloc] initWithUUID16:RFCOMM_UUID];
+    NSArray *uuids = [NSArray arrayWithObject:uuid];
 
     if (services == NULL) {
-        //TODO do this case...
+        //TODO move this to a separate thread using uv_async...
+        
+        NSDate *currentServiceUpdate = NULL;
+        [device performSDPQuery: NULL uuids: uuids];
+
+        do {
+            fprintf(stderr, "Performing SDP search...\n\r");
+            sleep(100);
+            currentServiceUpdate = [device getLastServicesUpdate];
+        } while ([currentServiceUpdate laterDate: lastServicesUpdate]);
+    }
+
+    services = [device services];
+    
+    if (services == NULL) {
+        if ([device getLastServicesUpdate] == NULL) {
+            //TODO not sure if this will happen...
+            fprintf(stderr, "[device services] == NULL -> This was not expected. Please file a bug for node-bluetooth-serial-port on Github. Thanks.\n\r");
+        }
     } else {
         //TODO probably move this to another method...
-        IOBluetoothSDPUUID *uuid = [[IOBluetoothSDPUUID alloc] initWithUUID16:0x0003];
-        NSArray *uuids = [NSArray arrayWithObject:uuid];
-
         for (NSUInteger i=0; i<[services count]; i++) {
             IOBluetoothSDPServiceRecord *sr = [services objectAtIndex: i];
             

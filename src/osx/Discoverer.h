@@ -9,42 +9,26 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
  */
 
-#ifndef NODE_BTSP_SRC_DEVICE_INQ_H
-#define NODE_BTSP_SRC_DEVICE_INQ_H
+#ifndef NODE_BTSP_SRC_DISCOVERER_H
+#define NODE_BTSP_SRC_DISCOVERER_H
 
-#include <node.h>
+#import <Foundation/NSObject.h>
+#import <IOBluetooth/objc/IOBluetoothDevice.h>
+#import <IOBluetooth/objc/IOBluetoothDeviceInquiry.h>
+#import "DeviceINQ.h"
 
-#ifndef RFCOMM_UUID
-#define RFCOMM_UUID 0x0003
-#endif
+@interface Discoverer: NSObject {
+    DeviceINQ::objc_baton_t *m_baton;
+}
 
-class DeviceINQ : public node::ObjectWrap {
-	public:
+- (id) initWithBaton:(DeviceINQ::objc_baton_t *)baton;
 
-#ifdef __APPLE__
-		struct objc_baton_t {
-	    	const v8::Arguments* args;
-	    };
- #endif
-		static void Init(v8::Handle<v8::Object> exports);
-		static void EIO_SdpSearch(uv_work_t *req);
-		static void EIO_AfterSdpSearch(uv_work_t *req);
+- (void) deviceInquiryComplete: (IOBluetoothDeviceInquiry*) sender 
+    error: (IOReturn) error
+    aborted: (BOOL) aborted;
 
-	private:
-	  	struct sdp_baton_t {
-	        DeviceINQ *inquire;
-		    uv_work_t request;
-	        v8::Persistent<v8::Function> cb;
-	        int channel;
-	        char address[19];
-	    };
-
-  		DeviceINQ();
-  		~DeviceINQ();
-
-		static v8::Handle<v8::Value> New(const v8::Arguments& args);
-		static v8::Handle<v8::Value> Inquire(const v8::Arguments& args);
-		static v8::Handle<v8::Value> SdpSearch(const v8::Arguments& args);
-};
+- (void) deviceInquiryDeviceFound: (IOBluetoothDeviceInquiry*) sender
+	device: (IOBluetoothDevice*) device;
+@end
 
 #endif

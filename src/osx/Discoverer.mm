@@ -9,42 +9,57 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
  */
 
-#ifndef NODE_BTSP_SRC_DEVICE_INQ_H
-#define NODE_BTSP_SRC_DEVICE_INQ_H
-
+#import "Discoverer.h"
+#import <Foundation/NSObject.h>
+#import <IOBluetooth/objc/IOBluetoothDevice.h>
+#import <IOBluetooth/objc/IOBluetoothDeviceInquiry.h>
+#import "DeviceINQ.h"
+#include <v8.h>
 #include <node.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <node_object_wrap.h>
 
-#ifndef RFCOMM_UUID
-#define RFCOMM_UUID 0x0003
-#endif
+using namespace node;
+using namespace v8;
 
-class DeviceINQ : public node::ObjectWrap {
-	public:
+@implementation Discoverer
 
-#ifdef __APPLE__
-		struct objc_baton_t {
-	    	const v8::Arguments* args;
-	    };
- #endif
-		static void Init(v8::Handle<v8::Object> exports);
-		static void EIO_SdpSearch(uv_work_t *req);
-		static void EIO_AfterSdpSearch(uv_work_t *req);
+- (id) initWithBaton:(DeviceINQ::objc_baton_t *)baton
+{
+  self = [super init];
+  if (self) {
+    m_baton = baton;
+  }
+  return self;
+}
 
-	private:
-	  	struct sdp_baton_t {
-	        DeviceINQ *inquire;
-		    uv_work_t request;
-	        v8::Persistent<v8::Function> cb;
-	        int channel;
-	        char address[19];
-	    };
+-(void) deviceInquiryComplete: (IOBluetoothDeviceInquiry*) sender 
+                            error: (IOReturn) error
+                            aborted: (BOOL) aborted
+{
+    // finnished
+    Local<Value> argv[1] = {
+        String::New("finished")
+    };
 
-  		DeviceINQ();
-  		~DeviceINQ();
+    MakeCallback(m_baton->args->This(), "emit", 1, argv);
 
-		static v8::Handle<v8::Value> New(const v8::Arguments& args);
-		static v8::Handle<v8::Value> Inquire(const v8::Arguments& args);
-		static v8::Handle<v8::Value> SdpSearch(const v8::Arguments& args);
-};
+    CFRunLoopStop( CFRunLoopGetCurrent() );
+}
 
-#endif
+-(void) deviceInquiryDeviceFound: (IOBluetoothDeviceInquiry*) sender
+                            device: (IOBluetoothDevice*) device
+{
+    Local<Value> argv[3] = {
+      String::New("found"),
+      String::New([[device getAddressString] UTF8String]),
+      String::New([[device getNameOrAddress] UTF8String])
+    };
+
+    MakeCallback(m_baton->args->This(), "emit", 3, argv);
+
+    //printf("discovered %s\n", [[device getAddressString] UTF8String]);
+}
+@end
