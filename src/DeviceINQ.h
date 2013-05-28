@@ -25,12 +25,13 @@ class DeviceINQ : public node::ObjectWrap {
 		struct objc_baton_t {
 	    	const v8::Arguments* args;
 	    };
- #endif
+#endif
 		static void Init(v8::Handle<v8::Object> exports);
 		static void EIO_SdpSearch(uv_work_t *req);
 		static void EIO_AfterSdpSearch(uv_work_t *req);
 
 	private:
+
 	  	struct sdp_baton_t {
 	        DeviceINQ *inquire;
 		    uv_work_t request;
