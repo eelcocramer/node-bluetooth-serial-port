@@ -51,28 +51,32 @@ void DeviceINQ::EIO_SdpSearch(uv_work_t *req) {
 
     NSString *address = [NSString stringWithCString:baton->address encoding:NSASCIIStringEncoding];
     IOBluetoothDevice *device = [IOBluetoothDevice deviceWithAddressString:address];
-    NSArray *services = [device services];
-    NSDate *lastServicesUpdate = [device getLastServicesUpdate];
 
     IOBluetoothSDPUUID *uuid = [[IOBluetoothSDPUUID alloc] initWithUUID16:RFCOMM_UUID];
     NSArray *uuids = [NSArray arrayWithObject:uuid];
 
-    if (services == NULL) {
-        //TODO move this to a separate thread using uv_async...
-        
-        NSDate *currentServiceUpdate = NULL;
-        [device performSDPQuery: NULL uuids: uuids];
-        int counter = 0;
+    //TODO move this to a separate thread using uv_async...
 
-        do {
-            fprintf(stderr, "Performing SDP search...\n\r");
-            sleep(100);
-            currentServiceUpdate = [device getLastServicesUpdate];
-            counter++;
-        } while ([currentServiceUpdate laterDate: lastServicesUpdate] || counter > 600); // wait for the device to update for max 1 minute
+    // always perform a new SDP query
+    NSDate *lastServicesUpdate = [device getLastServicesUpdate];
+    NSDate *currentServiceUpdate = NULL;
+    [device performSDPQuery: NULL uuids: uuids];
+    int counter = 0;
+    bool stop = false;
+
+    while (!stop && counter < 60) { // wait no more than 60 seconds for SDP update
+        currentServiceUpdate = [device getLastServicesUpdate];
+
+        if ([currentServiceUpdate laterDate: lastServicesUpdate]) {
+            stop = true;
+        } else {
+            sleep(1);
+        }
+
+        counter++;
     }
 
-    services = [device services];
+    NSArray *services = [device services];
     
     if (services == NULL) {
         if ([device getLastServicesUpdate] == NULL) {
