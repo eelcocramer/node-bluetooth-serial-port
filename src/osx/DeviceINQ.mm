@@ -62,19 +62,22 @@ void DeviceINQ::EIO_SdpSearch(uv_work_t *req) {
         
         NSDate *currentServiceUpdate = NULL;
         [device performSDPQuery: NULL uuids: uuids];
+        int counter = 0;
 
         do {
             fprintf(stderr, "Performing SDP search...\n\r");
             sleep(100);
             currentServiceUpdate = [device getLastServicesUpdate];
-        } while ([currentServiceUpdate laterDate: lastServicesUpdate]);
+            counter++;
+        } while ([currentServiceUpdate laterDate: lastServicesUpdate] || counter > 600); // wait for the device to update for max 1 minute
     }
 
     services = [device services];
     
     if (services == NULL) {
         if ([device getLastServicesUpdate] == NULL) {
-            //TODO not sure if this will happen...
+            //TODO not sure if this will happen... But we should at least throw an exception here that is
+            // logged correctly in Javascript.
             fprintf(stderr, "[device services] == NULL -> This was not expected. Please file a bug for node-bluetooth-serial-port on Github. Thanks.\n\r");
         }
     } else {
