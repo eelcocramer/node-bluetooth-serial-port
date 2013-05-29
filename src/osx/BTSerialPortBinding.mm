@@ -59,13 +59,10 @@ void BTSerialPortBinding::EIO_Connect(uv_work_t *req) {
     baton->rfcomm->consumer = c;
 
     IOBluetoothRFCOMMChannel *channel = [[IOBluetoothRFCOMMChannel alloc] init];
-    fprintf(stderr, "Opening channel: %i\n\r", baton->channelID);
     if ([device openRFCOMMChannelSync: &channel withChannelID: baton->channelID delegate: delegate] == kIOReturnSuccess) {
-        fprintf(stderr, "Success\n\r");
         baton->rfcomm->channel = channel;
         baton->status = 0;
     } else {
-        fprintf(stderr, "No success\n\r");
         baton->status = 1;
     }
 
@@ -131,7 +128,6 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
     delete baton;
     baton = NULL;
 }
-    
     
 void BTSerialPortBinding::Init(Handle<Object> target) {
     HandleScope scope;
