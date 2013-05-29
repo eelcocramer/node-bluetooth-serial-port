@@ -51,7 +51,6 @@ class BTSerialPortBinding : public node::ObjectWrap {
 
 #ifdef __APPLE__
 		IOBluetoothRFCOMMChannel *channel;
-		NSAutoreleasePool *pool;
 		pipe_consumer_t *consumer;
 #elif
 	    int s;

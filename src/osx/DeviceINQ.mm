@@ -35,9 +35,10 @@ extern "C"{
 #import <Foundation/NSObject.h>
 #import <IOBluetooth/objc/IOBluetoothDevice.h>
 #import <IOBluetooth/objc/IOBluetoothDeviceInquiry.h>
+#import <IOBluetooth/objc/IOBluetoothSDPUUID.h>
+#import <IOBluetooth/objc/IOBluetoothSDPServiceRecord.h>
 #import "Discoverer.h"
 
-using namespace std;
 using namespace node;
 using namespace v8;
 

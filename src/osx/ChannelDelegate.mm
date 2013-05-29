@@ -11,8 +11,7 @@
 
 #import "ChannelDelegate.h"
 #import <Foundation/NSObject.h>
-#import <IOBluetooth/objc/IOBluetoothDevice.h>
-#import <IOBluetooth/objc/IOBluetoothDeviceInquiry.h>
+#import <IOBluetooth/objc/IOBluetoothRFCOMMChannel.h>
 #import "BTSerialPortBinding.h"
 #include <v8.h>
 #include <node.h>
@@ -42,6 +41,7 @@ using namespace v8;
 - (void)rfcommChannelData:(IOBluetoothRFCOMMChannel*)rfcommChannel data:(void *)dataPointer length:(size_t)dataLength
 {
 	@synchronized(self) {
+		fprintf(stderr, "Received data!");
 		if (m_producer != NULL) {
 			pipe_push(m_producer, dataPointer, dataLength);
 		}
@@ -60,6 +60,12 @@ using namespace v8;
 			m_producer = NULL;
 		}
 	}
+}
+
+- (void) dealloc {
+	[self close];
+	fprintf(stderr, "Dealloc called!!!!!!!!!!!!!!!!!!\n\r");
+	[super dealloc];
 }
 
 @end

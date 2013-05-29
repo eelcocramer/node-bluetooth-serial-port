@@ -35,8 +35,8 @@ extern "C"{
 #import <Foundation/NSObject.h>
 #import <IOBluetooth/objc/IOBluetoothDevice.h>
 #import <IOBluetooth/objc/IOBluetoothDeviceInquiry.h>
+#import <IOBluetooth/objc/IOBluetoothRFCOMMChannel.h>
 
-using namespace std;
 using namespace node;
 using namespace v8;
 
@@ -50,8 +50,7 @@ void BTSerialPortBinding::EIO_Connect(uv_work_t *req) {
 
     // create pipe to communicate with delegate
     pipe_t *pipe = pipe_new(sizeof(int), 0);
-    pipe_producer_t  *p = pipe_producer_new(pipe);
-    ChannelDelegate *delegate = [[ChannelDelegate alloc] initWithPipe: pipe];
+    ChannelDelegate *channelDelegate = [[ChannelDelegate alloc] initWithPipe: pipe];
     pipe_consumer_t *c = pipe_consumer_new(pipe);
     pipe_free(pipe);
 
@@ -59,7 +58,7 @@ void BTSerialPortBinding::EIO_Connect(uv_work_t *req) {
     baton->rfcomm->consumer = c;
 
     IOBluetoothRFCOMMChannel *channel = [[IOBluetoothRFCOMMChannel alloc] init];
-    if ([device openRFCOMMChannelSync: &channel withChannelID: baton->channelID delegate: delegate] == kIOReturnSuccess) {
+    if ([device openRFCOMMChannelSync: &channel withChannelID: baton->channelID delegate: channelDelegate] == kIOReturnSuccess) {
         baton->rfcomm->channel = channel;
         baton->status = 0;
     } else {
@@ -88,6 +87,7 @@ void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
     
     baton->rfcomm->Unref();
     baton->cb.Dispose();
+
     delete baton;
     baton = NULL;
 }
@@ -147,11 +147,9 @@ void BTSerialPortBinding::Init(Handle<Object> target) {
     
 BTSerialPortBinding::BTSerialPortBinding() : 
     channel(NULL), consumer(NULL) {
-    pool = [[NSAutoreleasePool alloc] init];
 }
 
 BTSerialPortBinding::~BTSerialPortBinding() {
-    [pool release];
 }
     
 Handle<Value> BTSerialPortBinding::New(const Arguments& args) {
@@ -166,7 +164,7 @@ Handle<Value> BTSerialPortBinding::New(const Arguments& args) {
     
     int channelID = args[1]->Int32Value(); 
     if (channelID <= 0) { 
-      return ThrowException(Exception::Error(String::New("ChannelID should be a positive int value.")));
+        return ThrowException(Exception::Error(String::New("ChannelID should be a positive int value.")));
     }
 
     Local<Function> cb = Local<Function>::Cast(args[2]);
@@ -233,6 +231,8 @@ Handle<Value> BTSerialPortBinding::Close(const Arguments& args) {
 
     if (rfcomm->channel != NULL) {
         [rfcomm->channel closeChannel];
+        [[rfcomm->channel delegate] close];
+        [rfcomm->channel release];
         rfcomm->channel = NULL;
     }
     

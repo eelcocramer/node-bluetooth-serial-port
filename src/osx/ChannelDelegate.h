@@ -13,18 +13,19 @@
 #define NODE_BTSP_SRC_RFCOMM_CHANNEL_DELEGATE_H
 
 #import <Foundation/NSObject.h>
-#import <IOBluetooth/objc/IOBluetoothDevice.h>
-#import <IOBluetooth/objc/IOBluetoothDeviceInquiry.h>
+#import <IOBluetooth/objc/IOBluetoothRFCOMMChannel.h>
 #import "BTSerialPortBinding.h"
 #import "pipe.h"
 
-@interface ChannelDelegate: NSObject {
+@class IOBluetoothRFCOMMChannel;
+
+@interface ChannelDelegate: NSObject <IOBluetoothRFCOMMChannelDelegate>{
     pipe_producer_t *m_producer;
 }
 
 - (id) initWithPipe:(pipe_t *)pipe;
-- (void) rfcommChannelData:(IOBluetoothRFCOMMChannel*)rfcommChannel data:(void *)dataPointer length:(size_t)dataLength;
-- (void) rfcommChannelClosed:(IOBluetoothRFCOMMChannel*)rfcommChannel;
+- (void)rfcommChannelData:(IOBluetoothRFCOMMChannel*)rfcommChannel data:(void *)dataPointer length:(size_t)dataLength;
+- (void)rfcommChannelClosed:(IOBluetoothRFCOMMChannel*)rfcommChannel;
 - (void) close;
 
 @end
