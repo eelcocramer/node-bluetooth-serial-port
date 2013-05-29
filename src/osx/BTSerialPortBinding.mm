@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "BTSerialPortBinding.h"
+#include "ChannelDelegate.h"
 
 extern "C"{
     #include <stdio.h>
@@ -29,15 +30,11 @@ extern "C"{
     #include <sys/socket.h>
     #include <sys/types.h>
     #include <assert.h>
-
-
-    #include <bluetooth/bluetooth.h>
-    #include <bluetooth/hci.h>
-    #include <bluetooth/hci_lib.h>
-    #include <bluetooth/sdp.h>
-    #include <bluetooth/sdp_lib.h>
-    #include <bluetooth/rfcomm.h>
 }
+
+#import <Foundation/NSObject.h>
+#import <IOBluetooth/objc/IOBluetoothDevice.h>
+#import <IOBluetooth/objc/IOBluetoothDeviceInquiry.h>
 
 using namespace std;
 using namespace node;
@@ -45,26 +42,34 @@ using namespace v8;
 
 void BTSerialPortBinding::EIO_Connect(uv_work_t *req) {
     connect_baton_t *baton = static_cast<connect_baton_t *>(req->data);
-    
-    struct sockaddr_rc addr = {
-        0x00,
-        { { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } },
-        0x00
-    };
 
-    // allocate a socket
-    baton->rfcomm->s = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
-    // set the connection parameters (who to connect to)
-    addr.rc_family = AF_BLUETOOTH;
-    addr.rc_channel = (uint8_t) baton->channelID;
-    str2ba( baton->address, &addr.rc_bdaddr );
+    NSString *address = [NSString stringWithCString:baton->address encoding:NSASCIIStringEncoding];
+    IOBluetoothDevice *device = [IOBluetoothDevice deviceWithAddressString:address];
 
-    // connect to server
-    baton->status = connect(baton->rfcomm->s, (struct sockaddr *)&addr, sizeof(addr));
+    // create pipe to communicate with delegate
+    pipe_t *pipe = pipe_new(sizeof(int), 0);
+    pipe_producer_t  *p = pipe_producer_new(pipe);
+    ChannelDelegate *delegate = [[ChannelDelegate alloc] initWithPipe: pipe];
+    pipe_consumer_t *c = pipe_consumer_new(pipe);
+    pipe_free(pipe);
 
-    int sock_flags = fcntl(baton->rfcomm->s, F_GETFL, 0);
-    fcntl(baton->rfcomm->s, F_SETFL, sock_flags | O_NONBLOCK);
+    // save consumer side of the pipe
+    baton->rfcomm->consumer = c;
+
+    IOBluetoothRFCOMMChannel *channel = [[IOBluetoothRFCOMMChannel alloc] init];
+    fprintf(stderr, "Opening channel: %i\n\r", baton->channelID);
+    if ([device openRFCOMMChannelSync: &channel withChannelID: baton->channelID delegate: delegate] == kIOReturnSuccess) {
+        fprintf(stderr, "Success\n\r");
+        baton->rfcomm->channel = channel;
+        baton->status = 0;
+    } else {
+        fprintf(stderr, "No success\n\r");
+        baton->status = 1;
+    }
+
+    [pool release];
 }
     
 void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
@@ -94,26 +99,17 @@ void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
     char buf[1024]= { 0 };
 
     read_baton_t *baton = static_cast<read_baton_t *>(req->data);
+    size_t result = 0;
 
     memset(buf, 0, sizeof(buf));
-    
-    fd_set set;
-    FD_ZERO(&set);
-    FD_SET(baton->rfcomm->s, &set);
-    FD_SET(baton->rfcomm->rep[0], &set);
 
-    int nfds = (baton->rfcomm->s > baton->rfcomm->rep[0]) ? baton->rfcomm->s : baton->rfcomm->rep[0];
-
-    if (pselect(nfds + 1, &set, NULL, NULL, NULL, NULL) >= 0) {
-        if (FD_ISSET(baton->rfcomm->s, &set)) {
-            baton->size = read(baton->rfcomm->s, buf, sizeof(buf));
-        } else {
-            // when no data is read from rfcomm the connection has been closed.
-            baton->size = 0;
-        }
-
-        strcpy(baton->result, buf);
+    if (baton->rfcomm->consumer != NULL) {
+        result = pipe_pop(baton->rfcomm->consumer, buf, sizeof(buf));
     }
+
+    // when no data is read from rfcomm the connection has been closed.
+    baton->size = result;
+    strcpy(baton->result, buf);
 }
     
 void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
@@ -154,11 +150,12 @@ void BTSerialPortBinding::Init(Handle<Object> target) {
 }
     
 BTSerialPortBinding::BTSerialPortBinding() : 
-    s(0) {
+    channel(NULL), consumer(NULL) {
+    pool = [[NSAutoreleasePool alloc] init];
 }
 
 BTSerialPortBinding::~BTSerialPortBinding() {
-    
+    [pool release];
 }
     
 Handle<Value> BTSerialPortBinding::New(const Arguments& args) {
@@ -185,14 +182,6 @@ Handle<Value> BTSerialPortBinding::New(const Arguments& args) {
     connect_baton_t *baton = new connect_baton_t();
     baton->rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
     baton->channelID = channelID;
-
-    // allocate an error pipe
-    if (pipe(baton->rfcomm->rep) == -1) {
-      return ThrowException(Exception::Error(String::New("Cannot create pipe for reading.")));
-    }
-
-    int flags = fcntl(baton->rfcomm->rep[0], F_GETFL, 0);
-    fcntl(baton->rfcomm->rep[0], F_SETFL, flags | O_NONBLOCK);
 
     strcpy(baton->address, *address);
     baton->cb = Persistent<Function>::New(cb);
@@ -224,14 +213,12 @@ Handle<Value> BTSerialPortBinding::Write(const Arguments& args) {
     BTSerialPortBinding* rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
     
     const char *has_been_closed = "connection has been closed";
-    if (rfcomm->s == 0) {
+    if (rfcomm->channel == NULL) {
         return ThrowException(Exception::Error(String::New(has_been_closed)));
     }
 
-    int result = write(rfcomm->s, *str, str.length());
-
     const char *write_error = "write was unsuccessful";
-    if (result != str.length()) {
+    if ([rfcomm->channel writeSync: *str length: str.length()] != kIOReturnSuccess) {
         return ThrowException(Exception::Error(String::New(write_error)));
     }
     
@@ -248,11 +235,10 @@ Handle<Value> BTSerialPortBinding::Close(const Arguments& args) {
     
     BTSerialPortBinding* rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
 
-    if (rfcomm->s != 0) {
-        close(rfcomm->s);
-        write(rfcomm->rep[1], "close", (strlen("close")+1));
-        rfcomm->s = 0;
-    }    
+    if (rfcomm->channel != NULL) {
+        [rfcomm->channel closeChannel];
+        rfcomm->channel = NULL;
+    }
     
     return Undefined();
 }
@@ -270,7 +256,7 @@ Handle<Value> BTSerialPortBinding::Read(const Arguments& args) {
     BTSerialPortBinding* rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
 
     const char *has_been_closed = "connection has been closed";
-    if (rfcomm->s == 0) {
+    if (rfcomm->channel == NULL || rfcomm->consumer == NULL) {
         return ThrowException(Exception::Error(String::New(has_been_closed)));
     }
     

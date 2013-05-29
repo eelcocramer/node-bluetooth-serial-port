@@ -5,11 +5,12 @@ This node module lets you communicate over Bluetooth serial port with devices us
 # Limitations
 
 * Tested on Linux
-* Available for Linux and BSD like systems
-* Not available (yet) for Windows and Mac OS X
+* Experimental support for OS X
+* Available for OS X and Linux
+* Not available for Windows
 * Data is passed as strings
 
-# Pre-requests
+# Pre-requests on Linux
 
 * Needs Bluetooth development packages to build
 

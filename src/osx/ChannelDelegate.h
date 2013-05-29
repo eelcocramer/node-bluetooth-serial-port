@@ -9,15 +9,24 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
  */
 
-#include <node.h>
-#include "DeviceINQ.h"
-#include "BTSerialPortBinding.h"
+#ifndef NODE_BTSP_SRC_RFCOMM_CHANNEL_DELEGATE_H
+#define NODE_BTSP_SRC_RFCOMM_CHANNEL_DELEGATE_H
 
-using namespace v8;
+#import <Foundation/NSObject.h>
+#import <IOBluetooth/objc/IOBluetoothDevice.h>
+#import <IOBluetooth/objc/IOBluetoothDeviceInquiry.h>
+#import "BTSerialPortBinding.h"
+#import "pipe.h"
 
-void InitAll(Handle<Object> exports) {
-	DeviceINQ::Init(exports);
-	BTSerialPortBinding::Init(exports);
+@interface ChannelDelegate: NSObject {
+    pipe_producer_t *m_producer;
 }
 
-NODE_MODULE(BluetoothSerialPort, InitAll)
+- (id) initWithPipe:(pipe_t *)pipe;
+- (void) rfcommChannelData:(IOBluetoothRFCOMMChannel*)rfcommChannel data:(void *)dataPointer length:(size_t)dataLength;
+- (void) rfcommChannelClosed:(IOBluetoothRFCOMMChannel*)rfcommChannel;
+- (void) close;
+
+@end
+
+#endif

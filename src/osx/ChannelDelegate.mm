@@ -9,15 +9,57 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
  */
 
+#import "ChannelDelegate.h"
+#import <Foundation/NSObject.h>
+#import <IOBluetooth/objc/IOBluetoothDevice.h>
+#import <IOBluetooth/objc/IOBluetoothDeviceInquiry.h>
+#import "BTSerialPortBinding.h"
+#include <v8.h>
 #include <node.h>
-#include "DeviceINQ.h"
-#include "BTSerialPortBinding.h"
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <node_object_wrap.h>
+#include "pipe.h"
 
+using namespace node;
 using namespace v8;
 
-void InitAll(Handle<Object> exports) {
-	DeviceINQ::Init(exports);
-	BTSerialPortBinding::Init(exports);
+@implementation ChannelDelegate
+
+- (id) initWithPipe:(pipe_t *)pipe
+{
+  self = [super init];
+  if (self) {
+  	@synchronized(self) {
+	    m_producer = pipe_producer_new(pipe);
+  	}
+  }
+
+  return self;
 }
 
-NODE_MODULE(BluetoothSerialPort, InitAll)
+- (void)rfcommChannelData:(IOBluetoothRFCOMMChannel*)rfcommChannel data:(void *)dataPointer length:(size_t)dataLength
+{
+	@synchronized(self) {
+		if (m_producer != NULL) {
+			pipe_push(m_producer, dataPointer, dataLength);
+		}
+	}
+}
+
+- (void)rfcommChannelClosed:(IOBluetoothRFCOMMChannel*)rfcommChannel
+{
+	[self close];
+}
+
+- (void) close {
+	@synchronized(self) {
+		if (m_producer != NULL) {
+			pipe_producer_free(m_producer);
+			m_producer = NULL;
+		}
+	}
+}
+
+@end

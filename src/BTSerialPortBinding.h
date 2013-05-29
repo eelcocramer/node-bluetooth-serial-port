@@ -14,6 +14,13 @@
 
 #include <node.h>
 
+#ifdef __APPLE__
+#import <Foundation/NSObject.h>
+#import <IOBluetooth/objc/IOBluetoothDevice.h>
+#import <IOBluetooth/objc/IOBluetoothDeviceInquiry.h>
+#import "pipe.h"
+#endif
+
 class BTSerialPortBinding : public node::ObjectWrap {
 	public:
 	    static v8::Persistent<v8::FunctionTemplate> s_ct;
@@ -30,7 +37,7 @@ class BTSerialPortBinding : public node::ObjectWrap {
 		    v8::Persistent<v8::Function> ecb;
 		    char address[19];
 		    int status;
-		    int channel;
+		    int channelID;
 		};
 
 		struct read_baton_t {
@@ -42,8 +49,14 @@ class BTSerialPortBinding : public node::ObjectWrap {
 		    int size;
 		};
 
+#ifdef __APPLE__
+		IOBluetoothRFCOMMChannel *channel;
+		NSAutoreleasePool *pool;
+		pipe_consumer_t *consumer;
+#elif
 	    int s;
 	    int rep[2];
+#endif
 
   		BTSerialPortBinding();
   		~BTSerialPortBinding();
