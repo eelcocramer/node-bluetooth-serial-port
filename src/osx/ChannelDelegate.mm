@@ -11,6 +11,7 @@
 
 #import "ChannelDelegate.h"
 #import <Foundation/NSObject.h>
+#import <IOBluetooth/objc/IOBluetoothDevice.h>
 #import <IOBluetooth/objc/IOBluetoothRFCOMMChannel.h>
 #import "BTSerialPortBinding.h"
 #include <v8.h>
@@ -26,23 +27,64 @@ using namespace v8;
 
 @implementation ChannelDelegate
 
-- (id) initWithPipe:(pipe_t *)pipe
+- (id) initWithPipe:(pipe_t *)pipe device: (IOBluetoothDevice *) device
 {
-  self = [super init];
-  if (self) {
-  	@synchronized(self) {
-	    m_producer = pipe_producer_new(pipe);
-  	}
-  }
+  	self = [super init];
 
-  return self;
+  	if (self) {
+  		@synchronized(self) {
+	    	m_producer = pipe_producer_new(pipe);
+  		}
+  	}
+
+  	m_worker = [[NSThread alloc]initWithTarget: self selector: @selector(startBluetoothThread:) object: nil];
+	[m_worker start];
+	fprintf(stderr, "[m_worker start] called\n\r");
+  	m_device = device;
+  
+	return self;
+}
+
+// Create run loop
+- (void) startBluetoothThread: (id) arg
+{
+	[[NSRunLoop currentRunLoop] run];
+}
+
+- (IOReturn) connectOnChannel: (int) channel 
+{
+	fprintf(stderr, "worker is executing...\n");
+
+	[self performSelector: @selector(connectOnChannelTask:) onThread: m_worker withObject: [NSNumber numberWithInt: channel] waitUntilDone:true];
+
+	fprintf(stderr, "connect has been called...\n");
+
+	if (m_channel != NULL) {
+		return kIOReturnSuccess;
+	} else {
+		return kIOReturnError;
+	}
+}
+
+- (void) connectOnChannelTask: (NSNumber *)channelID
+{
+	fprintf(stderr, "connectOnChannelTask: %i\n\r", [channelID intValue]);
+	IOBluetoothRFCOMMChannel *channel = [[IOBluetoothRFCOMMChannel alloc] init];
+	if ([m_device openRFCOMMChannelSync: &channel withChannelID: [channelID intValue] delegate: self] == kIOReturnSuccess) {
+		m_channel = channel;
+	}
+	fprintf(stderr, "ready\n\r");
+}
+
+- (IOReturn)writeSync:(void *)data length:(UInt16)length {
+	return [m_channel writeSync: data length:length];
 }
 
 - (void)rfcommChannelData:(IOBluetoothRFCOMMChannel*)rfcommChannel data:(void *)dataPointer length:(size_t)dataLength
 {
 	@synchronized(self) {
-		fprintf(stderr, "Received data!");
 		if (m_producer != NULL) {
+			fprintf(stderr, "Received data!");
 			pipe_push(m_producer, dataPointer, dataLength);
 		}
 	}
@@ -58,6 +100,11 @@ using namespace v8;
 		if (m_producer != NULL) {
 			pipe_producer_free(m_producer);
 			m_producer = NULL;
+		}
+
+		if (m_device != NULL) {
+			[m_device closeConnection];
+			m_device = NULL;
 		}
 	}
 }

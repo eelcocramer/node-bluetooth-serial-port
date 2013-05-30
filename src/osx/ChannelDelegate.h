@@ -14,19 +14,24 @@
 
 #import <Foundation/NSObject.h>
 #import <IOBluetooth/objc/IOBluetoothRFCOMMChannel.h>
-#import "BTSerialPortBinding.h"
+#import <IOBluetooth/objc/IOBluetoothDevice.h>
 #import "pipe.h"
 
 @class IOBluetoothRFCOMMChannel;
 
 @interface ChannelDelegate: NSObject <IOBluetoothRFCOMMChannelDelegate>{
     pipe_producer_t *m_producer;
+    NSThread *m_worker;
+    IOBluetoothRFCOMMChannel *m_channel;
+    IOBluetoothDevice *m_device;
 }
 
-- (id) initWithPipe:(pipe_t *)pipe;
+- (id) initWithPipe:(pipe_t *)pipe device: (IOBluetoothDevice *) device;
 - (void)rfcommChannelData:(IOBluetoothRFCOMMChannel*)rfcommChannel data:(void *)dataPointer length:(size_t)dataLength;
 - (void)rfcommChannelClosed:(IOBluetoothRFCOMMChannel*)rfcommChannel;
 - (void) close;
+- (IOReturn) connectOnChannel: (int) channel;
+- (IOReturn)writeSync:(void *)data length:(UInt16)length;
 
 @end
 
