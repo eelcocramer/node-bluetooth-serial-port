@@ -33,11 +33,7 @@ extern "C"{
 }
 
 #import <Foundation/NSObject.h>
-#import <IOBluetooth/objc/IOBluetoothDevice.h>
-#import <IOBluetooth/objc/IOBluetoothDeviceInquiry.h>
-#import <IOBluetooth/objc/IOBluetoothSDPUUID.h>
-#import <IOBluetooth/objc/IOBluetoothSDPServiceRecord.h>
-#import "Discoverer.h"
+#import "BluetoothWorker.h"
 
 using namespace node;
 using namespace v8;
@@ -45,61 +41,11 @@ using namespace v8;
 void DeviceINQ::EIO_SdpSearch(uv_work_t *req) {
     sdp_baton_t *baton = static_cast<sdp_baton_t *>(req->data);
 
-    // default, no channel is found
-    baton->channel = -1;
-
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
     NSString *address = [NSString stringWithCString:baton->address encoding:NSASCIIStringEncoding];
-    IOBluetoothDevice *device = [IOBluetoothDevice deviceWithAddressString:address];
-
-    IOBluetoothSDPUUID *uuid = [[IOBluetoothSDPUUID alloc] initWithUUID16:RFCOMM_UUID];
-    NSArray *uuids = [NSArray arrayWithObject:uuid];
-
-    //TODO move this to a separate thread using uv_async...
-
-    // always perform a new SDP query
-    NSDate *lastServicesUpdate = [device getLastServicesUpdate];
-    NSDate *currentServiceUpdate = NULL;
-    [device performSDPQuery: NULL uuids: uuids];
-    int counter = 0;
-    bool stop = false;
-
-    while (!stop && counter < 60) { // wait no more than 60 seconds for SDP update
-        currentServiceUpdate = [device getLastServicesUpdate];
-
-        if ([currentServiceUpdate laterDate: lastServicesUpdate]) {
-            stop = true;
-        } else {
-            sleep(1);
-        }
-
-        counter++;
-    }
-
-    NSArray *services = [device services];
-    
-    if (services == NULL) {
-        if ([device getLastServicesUpdate] == NULL) {
-            //TODO not sure if this will happen... But we should at least throw an exception here that is
-            // logged correctly in Javascript.
-            fprintf(stderr, "[device services] == NULL -> This was not expected. Please file a bug for node-bluetooth-serial-port on Github. Thanks.\n\r");
-        }
-    } else {
-        //TODO probably move this to another method...
-        for (NSUInteger i=0; i<[services count]; i++) {
-            IOBluetoothSDPServiceRecord *sr = [services objectAtIndex: i];
-            
-            if ([sr hasServiceFromArray: uuids]) {
-                BluetoothRFCOMMChannelID channelId = -1;
-                if ([sr getRFCOMMChannelID: &channelId] == kIOReturnSuccess) {
-                    baton->channel = channelId;
-                    [pool release];
-                    return;
-                }
-            }
-        }
-    }
+    BluetoothWorker *worker = [BluetoothWorker getInstance];
+    baton->channelID = [worker getRFCOMMChannelID: address];
 
     [pool release];
 }
@@ -110,7 +56,7 @@ void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
     TryCatch try_catch;
     
     Local<Value> argv[1];
-    argv[0] = Integer::New(baton->channel);
+    argv[0] = Integer::New(baton->channelID);
     baton->cb->Call(Context::GetCurrent()->Global(), 1, argv);
     
     if (try_catch.HasCaught()) {
@@ -167,20 +113,42 @@ Handle<Value> DeviceINQ::Inquire(const Arguments& args) {
         return ThrowException(Exception::Error(String::New(usage)));
     }
 
-    objc_baton_t *baton = new objc_baton_t();
-    baton->args = &args;
-
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-    Discoverer *d = [[Discoverer alloc] initWithBaton: baton];
 
-    IOBluetoothDeviceInquiry *bdi = 
-        [[IOBluetoothDeviceInquiry alloc] init];
-    [bdi setDelegate: d];
+    BluetoothWorker *worker = [BluetoothWorker getInstance];
+
+    // create pipe to communicate with delegate
+    pipe_t *pipe = pipe_new(sizeof(device_info_t), 0);
+    [worker inquireWithPipe: pipe];
+    pipe_consumer_t *c = pipe_consumer_new(pipe);
+    pipe_free(pipe);
+
+    device_info_t *info = new device_info_t;
+    size_t result;
+
+    do {
+        result = pipe_pop(c, info, 1);
+
+        if (result != 0) {
+            Local<Value> argv[3] = {
+                String::New("found"),
+                String::New(info->address),
+                String::New(info->name)
+            };
+
+            MakeCallback(args.This(), "emit", 3, argv);
+        }
+    } while (result != 0);
     
-    if ([bdi start] == kIOReturnSuccess) {
-        CFRunLoopRun();
-    }
-    
+    delete info;
+    pipe_consumer_free(c);
+
+    Local<Value> argv[1] = {
+        String::New("finished")
+    };
+
+    MakeCallback(args.This(), "emit", 1, argv);
+
     [pool release];
     return Undefined();
 }
@@ -207,7 +175,7 @@ Handle<Value> DeviceINQ::SdpSearch(const Arguments& args) {
     baton->inquire = inquire;
     baton->cb = Persistent<Function>::New(cb);
     strcpy(baton->address, *address);
-    baton->channel = -1;
+    baton->channelID = -1;
     baton->request.data = baton;
     baton->inquire->Ref();
 

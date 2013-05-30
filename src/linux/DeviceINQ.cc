@@ -47,7 +47,7 @@ void DeviceINQ::EIO_SdpSearch(uv_work_t *req) {
     sdp_baton_t *baton = static_cast<sdp_baton_t *>(req->data);
 
     // default, no channel is found
-    baton->channel = -1;
+    baton->channelID = -1;
 
     uuid_t svc_uuid;
     bdaddr_t target;
@@ -106,7 +106,7 @@ void DeviceINQ::EIO_SdpSearch(uv_work_t *req) {
                                 break;
                             case SDP_UINT8:
                                 if( proto == RFCOMM_UUID ) {
-                                    baton->channel = d->val.int8;
+                                    baton->channelID = d->val.int8;
                                     return; // stop if channel is found
                                 }
                                 break;
@@ -130,7 +130,7 @@ void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
     TryCatch try_catch;
     
     Local<Value> argv[1];
-    argv[0] = Integer::New(baton->channel);
+    argv[0] = Integer::New(baton->channelID);
     baton->cb->Call(Context::GetCurrent()->Global(), 1, argv);
     
     if (try_catch.HasCaught()) {
@@ -263,7 +263,7 @@ Handle<Value> DeviceINQ::SdpSearch(const Arguments& args) {
     baton->inquire = inquire;
     baton->cb = Persistent<Function>::New(cb);
     strcpy(baton->address, *address);
-    baton->channel = -1;
+    baton->channelID = -1;
     baton->request.data = baton;
     baton->inquire->Ref();
 
