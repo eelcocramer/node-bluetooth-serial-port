@@ -51,7 +51,7 @@ class BTSerialPortBinding : public node::ObjectWrap {
 
 #ifdef __APPLE__
 		pipe_consumer_t *consumer;
-#elif
+#else
 	    int s;
 	    int rep[2];
 #endif
