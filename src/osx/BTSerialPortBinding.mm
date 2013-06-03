@@ -98,9 +98,7 @@ void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
     memset(buf, 0, sizeof(buf));
 
     if (baton->rfcomm->consumer != NULL) {
-        fprintf(stderr, "Waiting for data...\n\r");
         result = pipe_pop_eager(baton->rfcomm->consumer, buf, sizeof(buf));
-        fprintf(stderr, "Got data! %li\n\r", result);
     }
 
     if (result == 0) {

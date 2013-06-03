@@ -90,7 +90,6 @@ using namespace v8;
 - (void) disconnectFromDeviceTask: (NSString *) address
 {
 	@synchronized(self) {
-		fprintf(stderr, "Closing %s\n", [address UTF8String]);
 		BluetoothDeviceResources *res = [devices objectForKey: address];
 
 		if (res != nil) {
@@ -110,7 +109,6 @@ using namespace v8;
 			}
 
 			[devices removeObjectForKey: address];
-			fprintf(stderr, "Closed %s\n", [address UTF8String]);
 		}
 	}
 }
@@ -182,13 +180,8 @@ using namespace v8;
 	@synchronized(self) {
 		BluetoothDeviceResources *res = [devices objectForKey:writeData.address];
 
-		fprintf(stderr, "About to write to device. %s\n", [writeData.address UTF8String]);
 		if (res != nil) {
 			writeResult = [res.channel writeSync: (void *)[writeData.data bytes] length: [writeData.data length]];
-
-			if (writeResult) {
-				fprintf(stderr, "Written data to device.\n");
-			}
 		}
 	}
 }
@@ -302,7 +295,6 @@ using namespace v8;
 			device_info_t *info = new device_info_t;
 			strcpy(info->address, [[device getAddressString] UTF8String]);
 			strcpy(info->name, [[device getNameOrAddress] UTF8String]);
-			fprintf(stderr, "address: %s\n", info->address);
 			pipe_push(inquiryProducer, info, 1);
 			delete info;
 		}
