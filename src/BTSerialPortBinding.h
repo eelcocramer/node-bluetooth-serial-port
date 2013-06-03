@@ -19,7 +19,6 @@
 #import <IOBluetooth/objc/IOBluetoothDevice.h>
 #import <IOBluetooth/objc/IOBluetoothDeviceInquiry.h>
 #import "pipe.h"
-#import "ChannelDelegate.h"
 #endif
 
 class BTSerialPortBinding : public node::ObjectWrap {

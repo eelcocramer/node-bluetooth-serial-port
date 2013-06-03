@@ -209,10 +209,13 @@ Handle<Value> BTSerialPortBinding::New(const Arguments& args) {
 Handle<Value> BTSerialPortBinding::Write(const Arguments& args) {
     HandleScope scope;
     
-    const char *usage = "usage: write(str)";
-    if (args.Length() != 1) {
+    const char *usage = "usage: write(str, address)";
+    if (args.Length() != 2) {
         return ThrowException(Exception::Error(String::New(usage)));
     }
+
+    //NOTE: The address argument is currently only used in OSX.
+    //      On linux each connection is handled by a separate object.
     
     const char *should_be_a_string = "str must be a string";
     if (!args[0]->IsString()) {
@@ -241,11 +244,14 @@ Handle<Value> BTSerialPortBinding::Write(const Arguments& args) {
 Handle<Value> BTSerialPortBinding::Close(const Arguments& args) {
     HandleScope scope;
     
-    const char *usage = "usage: close()";
-    if (args.Length() != 0) {
+    const char *usage = "usage: close(address)";
+    if (args.Length() != 1) {
         return ThrowException(Exception::Error(String::New(usage)));
     }
     
+    //NOTE: The address argument is currently only used in OSX.
+    //      On linux each connection is handled by a separate object.
+
     BTSerialPortBinding* rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
 
     if (rfcomm->s != 0) {

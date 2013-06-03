@@ -127,7 +127,7 @@ Handle<Value> DeviceINQ::Inquire(const Arguments& args) {
     size_t result;
 
     do {
-        result = pipe_pop(c, info, 1);
+        result = pipe_pop_eager(c, info, 1);
 
         if (result != 0) {
             Local<Value> argv[3] = {

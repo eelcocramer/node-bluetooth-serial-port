@@ -24,11 +24,24 @@ using namespace v8;
 @interface Pipe : NSObject {
 	pipe_t *pipe;
 }
-@property (readwrite, assign) pipe_t *pipe;
+@property (nonatomic, assign) pipe_t *pipe;
 @end
 
 @implementation Pipe
 @synthesize pipe;
+@end
+
+@interface BTData : NSObject {
+	NSData *data;
+	NSString *address;
+}
+@property (nonatomic, assign) NSData *data;
+@property (nonatomic, assign) NSString *address;
+@end
+
+@implementation BTData
+@synthesize data;
+@synthesize address;
 @end
 
 @implementation BluetoothWorker
@@ -50,6 +63,8 @@ using namespace v8;
   	self = [super init];
   	sdpLock = [[NSLock alloc] init];
 	devices = [[NSMutableDictionary alloc] init];
+  	connectLock = [[NSLock alloc] init];
+  	writeLock = [[NSLock alloc] init];
   	worker = [[NSThread alloc]initWithTarget: self selector: @selector(startBluetoothThread:) object: nil];
 	[worker start];
 	return self;
@@ -66,22 +81,37 @@ using namespace v8;
  	[[NSRunLoop currentRunLoop] run];
 }
 
-- (void) disconnectFromDevice: (NSString *) address
+- (void) disconnectFromDevice:(NSString *)address
+{
+
+	[self performSelector:@selector(disconnectFromDeviceTask:) onThread:worker withObject: address waitUntilDone:true];
+}
+
+- (void) disconnectFromDeviceTask: (NSString *) address
 {
 	@synchronized(self) {
+		fprintf(stderr, "Closing %s\n", [address UTF8String]);
 		BluetoothDeviceResources *res = [devices objectForKey: address];
-	
-		if (res.producer != NULL) {
-			pipe_producer_free(res.producer);
-			res.producer = NULL;
-		}
 
-		if (res.device != NULL) {
-			[res.device closeConnection];
-			res.device = NULL;
-		}
+		if (res != nil) {
+			if (res.producer != NULL) {
+				pipe_producer_free(res.producer);
+				res.producer = NULL;
+			}
 
-		[devices removeObjectForKey: address];
+			if (res.channel != NULL) {
+				[res.channel closeChannel];
+				res.channel = NULL;
+			}
+
+			if (res.device != NULL) {
+				[res.device closeConnection];
+				res.device = NULL;
+			}
+
+			[devices removeObjectForKey: address];
+			fprintf(stderr, "Closed %s\n", [address UTF8String]);
+		}
 	}
 }
 
@@ -119,9 +149,12 @@ using namespace v8;
 				if ([device openRFCOMMChannelSync: &channel withChannelID:[channelID intValue] delegate: self] == kIOReturnSuccess) {
 					connectResult = kIOReturnSuccess;
 				   	pipe_producer_t *producer = pipe_producer_new(pipe);
-				   	BluetoothDeviceResources *bdr = [[BluetoothDeviceResources alloc] init];
-				   	bdr.device = device;
-				   	bdr.producer = producer;
+				   	BluetoothDeviceResources *res = [[BluetoothDeviceResources alloc] init];
+				   	res.device = device;
+				   	res.producer = producer;
+				   	res.channel = channel;
+
+				   	[devices setObject:res forKey:address];
 				}
 			}
 		}
@@ -130,7 +163,34 @@ using namespace v8;
 
 - (IOReturn)writeSync:(void *)data length:(UInt16)length toDevice: (NSString *)address
 {
-	return kIOReturnSuccess;
+	[writeLock lock];
+	
+	BTData *writeData = [[BTData alloc] init];
+	writeData.data = [NSData dataWithBytes: data length: length];
+	writeData.address = address;
+
+	[self performSelector:@selector(writeSyncTask:) onThread:worker withObject:writeData waitUntilDone:true];
+	
+	IOReturn result = writeResult;
+	[writeLock unlock];
+
+	return result;
+}
+
+- (void)writeSyncTask:(BTData *)writeData
+{
+	@synchronized(self) {
+		BluetoothDeviceResources *res = [devices objectForKey:writeData.address];
+
+		fprintf(stderr, "About to write to device. %s\n", [writeData.address UTF8String]);
+		if (res != nil) {
+			writeResult = [res.channel writeSync: (void *)[writeData.data bytes] length: [writeData.data length]];
+
+			if (writeResult) {
+				fprintf(stderr, "Written data to device.\n");
+			}
+		}
+	}
 }
 
 - (void) inquireWithPipe: (pipe_t *)pipe
@@ -191,7 +251,6 @@ using namespace v8;
             fprintf(stderr, "[device services] == NULL -> This was not expected. Please file a bug for node-bluetooth-serial-port on Github. Thanks.\n\r");
         }
     } else {
-        //TODO probably move this to another method...
         for (NSUInteger i=0; i<[services count]; i++) {
             IOBluetoothSDPServiceRecord *sr = [services objectAtIndex: i];
             
@@ -199,7 +258,6 @@ using namespace v8;
                 BluetoothRFCOMMChannelID cid = -1;
                 if ([sr getRFCOMMChannelID: &cid] == kIOReturnSuccess) {
                 	lastChannelID = cid;
-                	fprintf(stderr, "Found channel: %i\n", lastChannelID);
                 	return;
                 }
             }
@@ -211,7 +269,15 @@ using namespace v8;
 
 - (void)rfcommChannelData:(IOBluetoothRFCOMMChannel*)rfcommChannel data:(void *)dataPointer length:(size_t)dataLength
 {
+	@synchronized(self) {
+		NSString *address = [[rfcommChannel getDevice] getAddressString];
+		NSData *data = [NSData dataWithBytes: dataPointer length: dataLength];
+		BluetoothDeviceResources *res = [devices objectForKey: address];
 
+		if (res != NULL && res.producer != NULL) {
+			pipe_push(res.producer, [data bytes], data.length);
+		}
+	}
 }
 
 - (void)rfcommChannelClosed:(IOBluetoothRFCOMMChannel*)rfcommChannel

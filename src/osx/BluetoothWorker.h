@@ -34,6 +34,8 @@ struct device_info_t {
 	NSLock *connectLock;
 	IOReturn connectResult;
 	int lastChannelID;
+	NSLock *writeLock;
+	IOReturn writeResult;
 }
 
 + (id)getInstance;

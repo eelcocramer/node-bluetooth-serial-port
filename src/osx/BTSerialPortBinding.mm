@@ -99,7 +99,7 @@ void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
 
     if (baton->rfcomm->consumer != NULL) {
         fprintf(stderr, "Waiting for data...\n\r");
-        result = pipe_pop(baton->rfcomm->consumer, buf, sizeof(buf));
+        result = pipe_pop_eager(baton->rfcomm->consumer, buf, sizeof(buf));
         fprintf(stderr, "Got data! %li\n\r", result);
     }
 
@@ -196,8 +196,8 @@ Handle<Value> BTSerialPortBinding::New(const Arguments& args) {
 Handle<Value> BTSerialPortBinding::Write(const Arguments& args) {
     HandleScope scope;
     
-    const char *usage = "usage: write(str)";
-    if (args.Length() != 1) {
+    const char *usage = "usage: write(str, address)";
+    if (args.Length() != 2) {
         return ThrowException(Exception::Error(String::New(usage)));
     }
     
@@ -206,35 +206,62 @@ Handle<Value> BTSerialPortBinding::Write(const Arguments& args) {
         return ThrowException(Exception::Error(String::New(should_be_a_string)));
     }
     
+    const char *address_should_be_a_string = "address must be a string";
+    if (!args[1]->IsString()) {
+        return ThrowException(Exception::Error(String::New(address_should_be_a_string)));
+    }
+
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     String::Utf8Value str(args[0]);
-    
-    BTSerialPortBinding* rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
+
+    //TODO should be a better way to do this...
+    String::Utf8Value addressParameter(args[1]);
+    char addressArray[16];
+    strcpy(addressArray, *addressParameter);
+    NSString *address = [NSString stringWithCString:addressArray encoding:NSASCIIStringEncoding];
+
     BluetoothWorker *worker = [BluetoothWorker getInstance];
-    
+
     // const char *has_been_closed = "connection has been closed";
     // if (rfcomm->channel == NULL) {
     //     return ThrowException(Exception::Error(String::New(has_been_closed)));
     // }
 
     const char *write_error = "write was unsuccessful";
-    if ([worker writeSync: *str length: str.length()] != kIOReturnSuccess) {
+    if ([worker writeSync: *str length: str.length() toDevice: address] != kIOReturnSuccess) {
+        [pool release];
         return ThrowException(Exception::Error(String::New(write_error)));
     }
     
+    [pool release];
     return Undefined();
 }
  
 Handle<Value> BTSerialPortBinding::Close(const Arguments& args) {
     HandleScope scope;
     
-    const char *usage = "usage: close()";
-    if (args.Length() != 0) {
+    const char *usage = "usage: close(address)";
+    if (args.Length() != 1) {
         return ThrowException(Exception::Error(String::New(usage)));
     }
     
-    BTSerialPortBinding* rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
+    const char *address_should_be_a_string = "address must be a string";
+    if (!args[0]->IsString()) {
+        return ThrowException(Exception::Error(String::New(address_should_be_a_string)));
+    }
+
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+
+    //TODO should be a better way to do this...
+    String::Utf8Value addressParameter(args[0]);
+    char addressArray[16];
+    strcpy(addressArray, *addressParameter);
+    NSString *address = [NSString stringWithCString:addressArray encoding:NSASCIIStringEncoding];
+
     BluetoothWorker *worker = [BluetoothWorker getInstance];
-    [worker disconnectFromDevice];
+    [worker disconnectFromDevice: address];
+
+    [pool release];
     
     return Undefined();
 }
