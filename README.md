@@ -2,34 +2,38 @@
 
 This node module lets you communicate over Bluetooth serial port with devices using Node.js. The goal is have an easy to use API. This module is great for communicating with Bluetooth enabled Arduino devices.
 
-# 0.2.0 RELEASE NOTES
+
+
+## RELEASE NOTES
+
+### 0.2.1
+
+* Fixes issue where calling `close` on a connection would result in an `Abort trap: 6` error on OS X.
+
+### 0.2.0
 
 * Experimental support for OS X!
 * `findSerialPortChannel` does not invoke callback anymore when no channel was found.
 * `found` event now emits the Bluetooth address as the value of the name parameter `name` when the name of the device could not be determined (used to be `[undefined]`).
 
-## Known issues on OS X
-
-* Calling `close` on an open connection results in an `Abort trap: 6` error message.
-
-# Limitations
+## Limitations
 
 * Available on Linux
 * Experimental support for OS X
 * Not available for Windows
 * Data is passed as strings
 
-# Pre-requests on Linux
+## Pre-requests on Linux
 
 * Needs Bluetooth development packages to build
 
 `apt-get install libbluetooth-dev`
 
-# Pre-request on OS X
+## Pre-request on OS X
 
 * Needs XCode and XCode command line tools installed.
 
-# Install
+## Install
 
 `npm install bluetooth-serial-port`
 
