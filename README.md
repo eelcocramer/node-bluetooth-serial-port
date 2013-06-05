@@ -8,6 +8,10 @@ This node module lets you communicate over Bluetooth serial port with devices us
 * `findSerialPortChannel` does not invoke callback anymore when no channel was found.
 * `found` event now emits the Bluetooth address as the value of the name parameter `name` when the name of the device could not be determined (used to be `[undefined]`).
 
+## Known issues on OS X
+
+* Calling `close` on an open connection results in an `Abort trap: 6` error message.
+
 # Limitations
 
 * Available on Linux
