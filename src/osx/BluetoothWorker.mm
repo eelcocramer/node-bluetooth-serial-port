@@ -75,7 +75,7 @@ using namespace v8;
 {
 	NSRunLoop *runLoop = [NSRunLoop currentRunLoop];
       //schedule a timer so runMode won't stop immediately
-    NSTimer *keepAliveTimer = [[NSTimer alloc] initWithFireDate:[NSDate distantFuture] 
+    keepAliveTimer = [[NSTimer alloc] initWithFireDate:[NSDate distantFuture] 
         interval:1 target:nil selector:nil userInfo:nil repeats:YES];
     [runLoop addTimer:keepAliveTimer forMode:NSDefaultRunLoopMode];
  	[[NSRunLoop currentRunLoop] run];
@@ -226,7 +226,7 @@ using namespace v8;
     while (!stop && counter < 60) { // wait no more than 60 seconds for SDP update
         currentServiceUpdate = [device getLastServicesUpdate];
 
-        if ([currentServiceUpdate laterDate: lastServicesUpdate]) {
+        if (currentServiceUpdate != NULL && [currentServiceUpdate laterDate: lastServicesUpdate]) {
             stop = true;
         } else {
             sleep(1);

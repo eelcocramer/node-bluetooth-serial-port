@@ -69,7 +69,7 @@ void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
     connect_baton_t *baton = static_cast<connect_baton_t *>(req->data);
     
     TryCatch try_catch;
-    
+
     if (baton->status == 0) {
         baton->cb->Call(Context::GetCurrent()->Global(), 0, NULL);
     } else {
@@ -106,6 +106,7 @@ void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
         baton->rfcomm->consumer = NULL;
     }
 
+
     // when no data is read from rfcomm the connection has been closed.
     baton->size = result;
     strcpy(baton->result, buf);
@@ -115,7 +116,7 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
     read_baton_t *baton = static_cast<read_baton_t *>(req->data);
     
     TryCatch try_catch;
-    
+
     Local<Value> argv[2];
     argv[0] = String::New(baton->result);
     argv[1] = Integer::New(baton->size);

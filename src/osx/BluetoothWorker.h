@@ -36,6 +36,7 @@ struct device_info_t {
 	int lastChannelID;
 	NSLock *writeLock;
 	IOReturn writeResult;
+	NSTimer *keepAliveTimer;
 }
 
 + (id)getInstance;
