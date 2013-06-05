@@ -106,7 +106,6 @@ void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
         baton->rfcomm->consumer = NULL;
     }
 
-
     // when no data is read from rfcomm the connection has been closed.
     baton->size = result;
     strcpy(baton->result, buf);
@@ -249,8 +248,6 @@ Handle<Value> BTSerialPortBinding::Close(const Arguments& args) {
         return ThrowException(Exception::Error(String::New(address_should_be_a_string)));
     }
 
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-
     //TODO should be a better way to do this...
     String::Utf8Value addressParameter(args[0]);
     char addressArray[16];
@@ -259,9 +256,8 @@ Handle<Value> BTSerialPortBinding::Close(const Arguments& args) {
 
     BluetoothWorker *worker = [BluetoothWorker getInstance];
     [worker disconnectFromDevice: address];
+    [address release];
 
-    [pool release];
-    
     return Undefined();
 }
  
