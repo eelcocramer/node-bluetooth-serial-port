@@ -21,16 +21,19 @@
 using namespace node;
 using namespace v8;
 
+/** Private class for wrapping a pipe */
 @interface Pipe : NSObject {
 	pipe_t *pipe;
 }
 @property (nonatomic, assign) pipe_t *pipe;
 @end
 
+/** Implementation of the pipe class */
 @implementation Pipe
 @synthesize pipe;
 @end
 
+/** Private class for wrapping data */
 @interface BTData : NSObject {
 	NSData *data;
 	NSString *address;
@@ -39,13 +42,16 @@ using namespace v8;
 @property (nonatomic, assign) NSString *address;
 @end
 
+/** Implementation of bt data class */
 @implementation BTData
 @synthesize data;
 @synthesize address;
 @end
 
+/** Class that is handling all the Bluetooth work */
 @implementation BluetoothWorker
 
+/** The BluetoothWorker class is a singleton. An instance can be obtained using this method */
 + (id)getInstance
 {
     static BluetoothWorker *instance = nil;
@@ -58,6 +64,7 @@ using namespace v8;
     return instance;
 }
 
+/** Initializes a BluetoothWorker object */
 - (id) init
 {
   	self = [super init];
@@ -65,12 +72,14 @@ using namespace v8;
 	devices = [[NSMutableDictionary alloc] init];
   	connectLock = [[NSLock alloc] init];
   	writeLock = [[NSLock alloc] init];
+
+  	// creates a worker thread that handles all the asynchronous stuff
   	worker = [[NSThread alloc]initWithTarget: self selector: @selector(startBluetoothThread:) object: nil];
 	[worker start];
 	return self;
 }
 
-// Create run loop
+/** Creates a run loop and sets a timer to keep the run loop alive */
 - (void) startBluetoothThread: (id) arg
 {
 	NSRunLoop *runLoop = [NSRunLoop currentRunLoop];
@@ -81,14 +90,17 @@ using namespace v8;
  	[[NSRunLoop currentRunLoop] run];
 }
 
+/** Disconnect from a Bluetooth device */
 - (void) disconnectFromDevice:(NSString *)address
 {
-
+	// this function is called synchronous from javascript so it waits on the worker task to complete.
 	[self performSelector:@selector(disconnectFromDeviceTask:) onThread:worker withObject: address waitUntilDone:true];
 }
 
+/** Task on the worker to disconnect from a Bluetooth device */
 - (void) disconnectFromDeviceTask: (NSString *) address
 {
+	// make it safe
 	@synchronized(self) {
 		BluetoothDeviceResources *res = [devices objectForKey: address];
 
@@ -113,6 +125,7 @@ using namespace v8;
 	}
 }
 
+/** Connect to a Bluetooth device on a specific channel using a pipe to communicate with the main thread */
 - (IOReturn)connectDevice: (NSString *) address onChannel: (int) channel withPipe: (pipe_t *)pipe
 {
 	[connectLock lock];
@@ -123,6 +136,7 @@ using namespace v8;
 	NSDictionary *parameters = [[NSDictionary alloc] initWithObjectsAndKeys:
 		address, @"address", [NSNumber numberWithInt: channel], @"channel", pipeObj, @"pipe", nil];
 
+	// connect to a device and wait for the result 
 	[self performSelector:@selector(connectDeviceTask:) onThread:worker withObject:parameters waitUntilDone:true];
 	IOReturn result = connectResult;
 	[connectLock unlock];
@@ -130,6 +144,7 @@ using namespace v8;
 	return result;
 }
 
+/** Task to connect to a specific device */
 - (void)connectDeviceTask: (NSDictionary *)parameters
 {
 	NSString *address = [parameters objectForKey:@"address"];
@@ -159,6 +174,7 @@ using namespace v8;
 	}
 }
 
+/** Write synchronized to a connected Bluetooth device */
 - (IOReturn)writeSync:(void *)data length:(UInt16)length toDevice: (NSString *)address
 {
 	[writeLock lock];
@@ -167,6 +183,7 @@ using namespace v8;
 	writeData.data = [NSData dataWithBytes: data length: length];
 	writeData.address = address;
 
+	// wait for the write to be performed on the worker thread
 	[self performSelector:@selector(writeSyncTask:) onThread:worker withObject:writeData waitUntilDone:true];
 	
 	IOReturn result = writeResult;
@@ -175,6 +192,7 @@ using namespace v8;
 	return result;
 }
 
+/** Task to do the writing */
 - (void)writeSyncTask:(BTData *)writeData
 {
 	@synchronized(self) {
@@ -186,6 +204,7 @@ using namespace v8;
 	}
 }
 
+/** Inquire Bluetooth devices and send results through the given pipe */
 - (void) inquireWithPipe: (pipe_t *)pipe
 {
 	@synchronized(self) {
@@ -194,6 +213,7 @@ using namespace v8;
 	}
 }
 
+/** Worker task to the the inquiry */
 - (void) inquiryTask
 {
     IOBluetoothDeviceInquiry *bdi = [[IOBluetoothDeviceInquiry alloc] init];
@@ -201,15 +221,18 @@ using namespace v8;
 	[bdi start];
 }
 
+/** Get the RFCOMM channel for a given device */
 - (int) getRFCOMMChannelID: (NSString *) address 
 {
 	[sdpLock lock];
+	// call the task on the worker thread and wait for the result
 	[self performSelector:@selector(getRFCOMMChannelIDTask:) onThread:worker withObject:address waitUntilDone:true];
 	int returnValue = lastChannelID;
 	[sdpLock unlock];
 	return returnValue;
 }
 
+/** Task to get the RFCOMM channel */
 - (void) getRFCOMMChannelIDTask: (NSString *) address
 {
     IOBluetoothDevice *device = [IOBluetoothDevice deviceWithAddressString:address];
@@ -219,10 +242,14 @@ using namespace v8;
     // always perform a new SDP query
     NSDate *lastServicesUpdate = [device getLastServicesUpdate];
     NSDate *currentServiceUpdate = NULL;
+
+    // only search for the UUIDs we are going to need...
     [device performSDPQuery: NULL uuids: uuids];
+
     int counter = 0;
     bool stop = false;
 
+    // if needed wait for a while for the sdp update
     while (!stop && counter < 60) { // wait no more than 60 seconds for SDP update
         currentServiceUpdate = [device getLastServicesUpdate];
 
@@ -237,13 +264,8 @@ using namespace v8;
 
     NSArray *services = [device services];
     
-    if (services == NULL) {
-        if ([device getLastServicesUpdate] == NULL) {
-            //TODO not sure if this will happen... But we should at least throw an exception here that is
-            // logged correctly in Javascript.
-            fprintf(stderr, "[device services] == NULL -> This was not expected. Please file a bug for node-bluetooth-serial-port on Github. Thanks.\n\r");
-        }
-    } else {
+    // if there are services check if it is the one we are looking for.
+    if (services != NULL) {
         for (NSUInteger i=0; i<[services count]; i++) {
             IOBluetoothSDPServiceRecord *sr = [services objectAtIndex: i];
             
@@ -257,9 +279,11 @@ using namespace v8;
         }
     }
 
+    // This can happen is some conditions where the network is unreliable. Just ignore for now...
     lastChannelID = -1;
 }
 
+/** Called when data is received from a remote device */
 - (void)rfcommChannelData:(IOBluetoothRFCOMMChannel*)rfcommChannel data:(void *)dataPointer length:(size_t)dataLength
 {
 	@synchronized(self) {
@@ -268,26 +292,31 @@ using namespace v8;
 		BluetoothDeviceResources *res = [devices objectForKey: address];
 
 		if (res != NULL && res.producer != NULL) {
+			// push the data into the pipe so it can be read from the main thread 
 			pipe_push(res.producer, [data bytes], data.length);
 		}
 	}
 }
 
+/** Called when a channel has been closed */
 - (void)rfcommChannelClosed:(IOBluetoothRFCOMMChannel*)rfcommChannel
 {
 	[self disconnectFromDevice: [[rfcommChannel getDevice] getAddressString]];
 }
 
+/** Called when the device inquiry completes */
 - (void) deviceInquiryComplete: (IOBluetoothDeviceInquiry *) sender error: (IOReturn) error aborted: (BOOL) aborted
 {
 	@synchronized(self) {
 		if (inquiryProducer != NULL) {
+			// free the producer so the main thread is signaled that the inquiry has been completed.
 			pipe_producer_free(inquiryProducer);
 			inquiryProducer = NULL;
 		}
 	}
 }
 
+/** Called when a device has been found */
 - (void) deviceInquiryDeviceFound: (IOBluetoothDeviceInquiry*) sender device: (IOBluetoothDevice*) device 
 {
 	@synchronized(self) {
@@ -295,7 +324,10 @@ using namespace v8;
 			device_info_t *info = new device_info_t;
 			strcpy(info->address, [[device getAddressString] UTF8String]);
 			strcpy(info->name, [[device getNameOrAddress] UTF8String]);
+
+			// push the device data into the pipe to notify the main thread
 			pipe_push(inquiryProducer, info, 1);
+			
 			delete info;
 		}
 	}
