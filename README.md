@@ -2,9 +2,17 @@
 
 This node module lets you communicate over Bluetooth serial port with devices using Node.js. The goal is have an easy to use API. This module is great for communicating with Bluetooth enabled Arduino devices.
 
+# CURRENTLY WORK IN PROGRESS
 
+IF YOU NEED A WORKING VERSION CHECKOUT THE TAGGED 0.2.1 VERSION OR GO TO NPMJS.ORG
 
 ## RELEASE NOTES
+
+### 1.0.0
+
+* Makes the write function asynchrone.
+* Writes binary data instead of strings.
+* Improves error handling when calling the native addon.
 
 ### 0.2.1
 
