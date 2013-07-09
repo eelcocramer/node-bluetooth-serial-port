@@ -11,6 +11,7 @@
 
 #include <v8.h>
 #include <node.h>
+#include <node_buffer.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -36,6 +37,9 @@ extern "C"{
 
 using namespace node;
 using namespace v8;
+
+uv_mutex_t write_queue_mutex;
+ngx_queue_t write_queue;
 
 void BTSerialPortBinding::EIO_Connect(uv_work_t *req) {
     connect_baton_t *baton = static_cast<connect_baton_t *>(req->data);
@@ -87,6 +91,23 @@ void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
 
     delete baton;
     baton = NULL;
+}
+
+void BTSerialPortBinding::EIO_Write(uv_work_t *req) {
+    // NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+    // BluetoothWorker *worker = [BluetoothWorker getInstance];
+
+    // if ([worker writeSync: *str length: str.length() toDevice: address] != kIOReturnSuccess) {
+    //     [pool release];
+    //     return ThrowException(Exception::Error(String::New("write was unsuccessful")));
+    // }
+    
+    // [pool release];
+    // return Undefined();
+}
+
+void BTSerialPortBinding::EIO_AfterWrite(uv_work_t *req) {
+
 }
      
 void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
@@ -157,16 +178,19 @@ BTSerialPortBinding::~BTSerialPortBinding() {
 Handle<Value> BTSerialPortBinding::New(const Arguments& args) {
     HandleScope scope;
 
+    uv_mutex_init(&write_queue_mutex);
+    ngx_queue_init(&write_queue);
+
     const char *usage = "usage: BTSerialPortBinding(address, channelID, callback, error)";
     if (args.Length() != 4) {
-        return ThrowException(Exception::Error(String::New(usage)));
+        return scope.Close(ThrowException(Exception::Error(String::New(usage))));
     }
     
     String::Utf8Value address(args[0]);
     
     int channelID = args[1]->Int32Value(); 
     if (channelID <= 0) { 
-        return ThrowException(Exception::Error(String::New("ChannelID should be a positive int value.")));
+        return scope.Close(ThrowException(Exception::TypeError(String::New("ChannelID should be a positive int value."))));
     }
 
     Local<Function> cb = Local<Function>::Cast(args[2]);
@@ -190,62 +214,72 @@ Handle<Value> BTSerialPortBinding::New(const Arguments& args) {
     return args.This();
 }
     
-    
 Handle<Value> BTSerialPortBinding::Write(const Arguments& args) {
     HandleScope scope;
-    
-    const char *usage = "usage: write(str, address)";
+
+    // usage    
     if (args.Length() != 2) {
-        return ThrowException(Exception::Error(String::New(usage)));
+        return scope.Close(ThrowException(Exception::Error(String::New("usage: write(buf, address, callback)"))));
     }
     
-    const char *should_be_a_string = "str must be a string";
-    if (!args[0]->IsString()) {
-        return ThrowException(Exception::Error(String::New(should_be_a_string)));
+    // buffer
+    if(!args[0]->IsObject() || !Buffer::HasInstance(args[0])) {
+        return scope.Close(ThrowException(Exception::TypeError(String::New("First argument must be a buffer"))));
     }
-    
-    const char *address_should_be_a_string = "address must be a string";
+    v8::Persistent<v8::Object> buffer = v8::Persistent<v8::Object>::New(args[1]->ToObject());
+    char* bufferData = node::Buffer::Data(buffer);
+    size_t bufferLength = node::Buffer::Length(buffer);
+
+    // string
     if (!args[1]->IsString()) {
-        return ThrowException(Exception::Error(String::New(address_should_be_a_string)));
+        return scope.Close(ThrowException(Exception::TypeError(String::New("Second argument must be a string"))));
     }
-
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-    String::Utf8Value str(args[0]);
-
     //TODO should be a better way to do this...
     String::Utf8Value addressParameter(args[1]);
     char addressArray[16];
     strcpy(addressArray, *addressParameter);
     NSString *address = [NSString stringWithCString:addressArray encoding:NSASCIIStringEncoding];
 
-    BluetoothWorker *worker = [BluetoothWorker getInstance];
-
-    // const char *has_been_closed = "connection has been closed";
-    // if (rfcomm->channel == NULL) {
-    //     return ThrowException(Exception::Error(String::New(has_been_closed)));
-    // }
-
-    const char *write_error = "write was unsuccessful";
-    if ([worker writeSync: *str length: str.length() toDevice: address] != kIOReturnSuccess) {
-        [pool release];
-        return ThrowException(Exception::Error(String::New(write_error)));
+    // callback
+    if(!args[2]->IsFunction()) {
+        return scope.Close(ThrowException(Exception::TypeError(String::New("Third argument must be a function"))));
     }
-    
-    [pool release];
-    return Undefined();
+    v8::Local<v8::Value> callback = args[2];
+
+    write_baton_t *baton = new write_baton_t();
+    memset(baton, 0, sizeof(write_baton_t));
+    baton->buffer = buffer;
+    baton->bufferData = bufferData;
+    baton->bufferLength = bufferLength;
+    baton->callback = v8::Persistent<v8::Value>::New(callback);
+
+    queued_write_t *queuedWrite = new queued_write_t();
+    memset(queuedWrite, 0, sizeof(queued_write_t));
+    queuedWrite->baton = baton;
+    queuedWrite->req.data = queuedWrite;
+
+    uv_mutex_lock(&write_queue_mutex);
+    bool empty = ngx_queue_empty(&write_queue);
+
+    ngx_queue_insert_tail(&write_queue, &queuedWrite->queue);
+
+    if (empty) {
+        uv_queue_work(uv_default_loop(), &queuedWrite->req, EIO_Write, (uv_after_work_cb)EIO_AfterWrite);
+    }
+    uv_mutex_unlock(&write_queue_mutex);
+
+    return scope.Close(v8::Undefined());
 }
  
 Handle<Value> BTSerialPortBinding::Close(const Arguments& args) {
     HandleScope scope;
     
-    const char *usage = "usage: close(address)";
     if (args.Length() != 1) {
-        return ThrowException(Exception::Error(String::New(usage)));
+        return scope.Close(ThrowException(Exception::Error(String::New("usage: close(address)"))));
     }
     
-    const char *address_should_be_a_string = "address must be a string";
     if (!args[0]->IsString()) {
-        return ThrowException(Exception::Error(String::New(address_should_be_a_string)));
+        return scope.Close(ThrowException(Exception::TypeError(String::New("Argument should be a string value"))));
     }
 
     //TODO should be a better way to do this...
@@ -264,18 +298,16 @@ Handle<Value> BTSerialPortBinding::Close(const Arguments& args) {
 Handle<Value> BTSerialPortBinding::Read(const Arguments& args) {
     HandleScope scope;
     
-    const char *usage = "usage: read(callback)";
     if (args.Length() != 1) {
-        return ThrowException(Exception::Error(String::New(usage)));
+        return scope.Close(ThrowException(Exception::Error(String::New("usage: read(callback)"))));
     }
 
     Local<Function> cb = Local<Function>::Cast(args[0]);
             
     BTSerialPortBinding* rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
 
-    const char *has_been_closed = "connection has been closed";
     if (rfcomm->consumer == NULL) {
-        return ThrowException(Exception::Error(String::New(has_been_closed)));
+        return scope.Close(ThrowException(Exception::Error(String::New("connection has been closed"))));
     }
     
     read_baton_t *baton = new read_baton_t();

@@ -23,6 +23,8 @@
         serial.findSerialPortChannel(address, function(channel) {
             console.log('Found RFCOMM channel for serial port on ' + name + ': ' + channel);
 
+            if (address !== '00-11-09-06-06-81') return;
+
             serial.connect(address, channel, function() {
                 serial.write('1');
                 serial.close();
