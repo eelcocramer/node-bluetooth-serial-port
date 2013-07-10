@@ -44,7 +44,7 @@ class BTSerialPortBinding : public node::ObjectWrap {
 		    BTSerialPortBinding *rfcomm;
 		    uv_work_t request;
 		    v8::Persistent<v8::Function> cb;
-		    char result[1024];
+		    void *result;
 		    int errorno;
 		    int size;
 		};
@@ -52,6 +52,7 @@ class BTSerialPortBinding : public node::ObjectWrap {
 		struct write_baton_t {
 			BTSerialPortBinding *rfcomm;
 			uv_work_t request;
+		    char address[19];
 			char* bufferData;
 			size_t bufferLength;
 			v8::Persistent<v8::Object> buffer;

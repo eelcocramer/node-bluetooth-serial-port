@@ -95,29 +95,56 @@ void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
 }
 
 void BTSerialPortBinding::EIO_Write(uv_work_t *req) {
-    // BTSerialPortBinding* rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
+    queued_write_t *queuedWrite = static_cast<queued_write_t*>(req->data);
+    write_baton_t *data = static_cast<write_baton_t*>(queuedWrite->baton);
+  
+    BTSerialPortBinding* rfcomm = data->rfcomm;
     
-    // const char *has_been_closed = "connection has been closed";
-    // if (rfcomm->s == 0) {
-    //     return ThrowException(Exception::Error(String::New(has_been_closed)));
-    // }
+    if (rfcomm->s == 0) {
+        sprintf(data->errorString, "Attempting to write to a closed connection");
+    }
 
-    // int result = write(rfcomm->s, *str, str.length());
+    int result = write(rfcomm->s, data->bufferData, data->bufferLength);
 
-    // const char *write_error = "write was unsuccessful";
-    // if (result != str.length()) {
-    //     return ThrowException(Exception::Error(String::New(write_error)));
-    // }
-    
-    // return Undefined();
+    if (result != data->bufferLength) {
+        sprintf(data->errorString, "Writing attempt was unsuccessful");
+    }
 }
 
 void BTSerialPortBinding::EIO_AfterWrite(uv_work_t *req) {
-    
-}
+    queued_write_t *queuedWrite = static_cast<queued_write_t*>(req->data);
+    write_baton_t *data = static_cast<write_baton_t*>(queuedWrite->baton);
 
+    Handle<Value> argv[2];
+    if (data->errorString[0]) {
+        argv[0] = Exception::Error(String::New(data->errorString));
+        argv[1] = Undefined();
+    } else {
+        argv[0] = Undefined();
+        argv[1] = v8::Int32::New(data->result);
+    }
+
+    Function::Cast(*data->callback)->Call(Context::GetCurrent()->Global(), 2, argv);
+
+    uv_mutex_lock(&write_queue_mutex);
+    ngx_queue_remove(&queuedWrite->queue);
+
+    if (!ngx_queue_empty(&write_queue)) {
+        // Always pull the next work item from the head of the queue
+        ngx_queue_t* head = ngx_queue_head(&write_queue);
+        queued_write_t* nextQueuedWrite = ngx_queue_data(head, queued_write_t, queue);
+        uv_queue_work(uv_default_loop(), &nextQueuedWrite->req, EIO_Write, (uv_after_work_cb)EIO_AfterWrite);
+    }
+    uv_mutex_unlock(&write_queue_mutex);
+
+    data->buffer.Dispose();
+    data->callback.Dispose();
+    delete data;
+    delete queuedWrite;
+}
+   
 void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
-    char buf[1024]= { 0 };
+    unsigned int buf[1024]= { 0 };
 
     read_baton_t *baton = static_cast<read_baton_t *>(req->data);
 
@@ -138,7 +165,7 @@ void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
             baton->size = 0;
         }
 
-        strcpy(baton->result, buf);
+        memcpy(baton->result, buf, baton->size);
     }
 }
     
@@ -146,11 +173,18 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
     read_baton_t *baton = static_cast<read_baton_t *>(req->data);
     
     TryCatch try_catch;
-    
-    Local<Value> argv[2];
-    argv[0] = String::New(baton->result);
-    argv[1] = Integer::New(baton->size);
-    baton->cb->Call(Context::GetCurrent()->Global(), 2, argv);
+
+    Local<Value> argv[1];
+
+    Buffer *buffer = Buffer::New(baton->size);
+    memcpy(Buffer::Data(buffer), baton->result, baton->size);
+    Local<Object> globalObj = Context::GetCurrent()->Global();
+    Local<Function> bufferConstructor = Local<Function>::Cast(globalObj->Get(String::New("Buffer")));
+    Handle<Value> constructorArgs[3] = { buffer->handle_, Integer::New(baton->size), Integer::New(0) };
+    Local<Object> resultBuffer = bufferConstructor->NewInstance(3, constructorArgs);
+
+    argv[0] = resultBuffer;
+    baton->cb->Call(Context::GetCurrent()->Global(), 1, argv);
     
     if (try_catch.HasCaught()) {
         FatalException(try_catch);
@@ -159,6 +193,8 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
     baton->rfcomm->Unref();
     baton->cb.Dispose();
     delete baton;
+    delete buffer;
+
     baton = NULL;
 }
     
@@ -266,6 +302,7 @@ Handle<Value> BTSerialPortBinding::Write(const Arguments& args) {
 
     write_baton_t *baton = new write_baton_t();
     memset(baton, 0, sizeof(write_baton_t));
+    baton->rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
     baton->buffer = buffer;
     baton->bufferData = bufferData;
     baton->bufferLength = bufferLength;

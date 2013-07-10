@@ -94,42 +94,74 @@ void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
 }
 
 void BTSerialPortBinding::EIO_Write(uv_work_t *req) {
-    // NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-    // BluetoothWorker *worker = [BluetoothWorker getInstance];
+    queued_write_t *queuedWrite = static_cast<queued_write_t*>(req->data);
+    write_baton_t *data = static_cast<write_baton_t*>(queuedWrite->baton);
 
-    // if ([worker writeSync: *str length: str.length() toDevice: address] != kIOReturnSuccess) {
-    //     [pool release];
-    //     return ThrowException(Exception::Error(String::New("write was unsuccessful")));
-    // }
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+    BluetoothWorker *worker = [BluetoothWorker getInstance];
+    NSString *address = [NSString stringWithCString:data->address encoding:NSASCIIStringEncoding];
+
+    if ([worker writeSync: data->bufferData length: data->bufferLength toDevice: address] != kIOReturnSuccess) {
+        sprintf(data->errorString, "Write was unsuccessful");
+    } else {
+        data->result = data->bufferLength;
+    }
     
-    // [pool release];
-    // return Undefined();
+    [pool release];
 }
 
 void BTSerialPortBinding::EIO_AfterWrite(uv_work_t *req) {
+    queued_write_t *queuedWrite = static_cast<queued_write_t*>(req->data);
+    write_baton_t *data = static_cast<write_baton_t*>(queuedWrite->baton);
 
+    Handle<Value> argv[2];
+    if (data->errorString[0]) {
+        argv[0] = Exception::Error(String::New(data->errorString));
+        argv[1] = Undefined();
+    } else {
+        argv[0] = Undefined();
+        argv[1] = v8::Int32::New(data->result);
+    }
+
+    Function::Cast(*data->callback)->Call(Context::GetCurrent()->Global(), 2, argv);
+
+    uv_mutex_lock(&write_queue_mutex);
+    ngx_queue_remove(&queuedWrite->queue);
+
+    if (!ngx_queue_empty(&write_queue)) {
+        // Always pull the next work item from the head of the queue
+        ngx_queue_t* head = ngx_queue_head(&write_queue);
+        queued_write_t* nextQueuedWrite = ngx_queue_data(head, queued_write_t, queue);
+        uv_queue_work(uv_default_loop(), &nextQueuedWrite->req, EIO_Write, (uv_after_work_cb)EIO_AfterWrite);
+    }
+    uv_mutex_unlock(&write_queue_mutex);
+
+    data->buffer.Dispose();
+    data->callback.Dispose();
+    delete data;
+    delete queuedWrite;
 }
      
 void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
-    char buf[1024]= { 0 };
+    unsigned int buf[1024] = { 0 };
 
     read_baton_t *baton = static_cast<read_baton_t *>(req->data);
-    size_t result = 0;
+    size_t size = 0;
 
     memset(buf, 0, sizeof(buf));
 
     if (baton->rfcomm->consumer != NULL) {
-        result = pipe_pop_eager(baton->rfcomm->consumer, buf, sizeof(buf));
+        size = pipe_pop_eager(baton->rfcomm->consumer, buf, sizeof(buf));
     }
 
-    if (result == 0) {
+    if (size == 0) {
         pipe_consumer_free(baton->rfcomm->consumer);
         baton->rfcomm->consumer = NULL;
     }
 
     // when no data is read from rfcomm the connection has been closed.
-    baton->size = result;
-    strcpy(baton->result, buf);
+    baton->size = size;
+    memcpy(baton->result, buf, size);
 }
     
 void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
@@ -137,10 +169,17 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
     
     TryCatch try_catch;
 
-    Local<Value> argv[2];
-    argv[0] = String::New(baton->result);
-    argv[1] = Integer::New(baton->size);
-    baton->cb->Call(Context::GetCurrent()->Global(), 2, argv);
+    Local<Value> argv[1];
+
+    Buffer *buffer = Buffer::New(baton->size);
+    memcpy(Buffer::Data(buffer), baton->result, baton->size);
+    Local<Object> globalObj = Context::GetCurrent()->Global();
+    Local<Function> bufferConstructor = Local<Function>::Cast(globalObj->Get(String::New("Buffer")));
+    Handle<Value> constructorArgs[3] = { buffer->handle_, Integer::New(baton->size), Integer::New(0) };
+    Local<Object> resultBuffer = bufferConstructor->NewInstance(3, constructorArgs);
+
+    argv[0] = resultBuffer;
+    baton->cb->Call(Context::GetCurrent()->Global(), 1, argv);
     
     if (try_catch.HasCaught()) {
         FatalException(try_catch);
@@ -149,6 +188,8 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
     baton->rfcomm->Unref();
     baton->cb.Dispose();
     delete baton;
+    delete buffer;
+
     baton = NULL;
 }
     
@@ -236,9 +277,6 @@ Handle<Value> BTSerialPortBinding::Write(const Arguments& args) {
     }
     //TODO should be a better way to do this...
     String::Utf8Value addressParameter(args[1]);
-    char addressArray[16];
-    strcpy(addressArray, *addressParameter);
-    NSString *address = [NSString stringWithCString:addressArray encoding:NSASCIIStringEncoding];
 
     // callback
     if(!args[2]->IsFunction()) {
@@ -248,6 +286,7 @@ Handle<Value> BTSerialPortBinding::Write(const Arguments& args) {
 
     write_baton_t *baton = new write_baton_t();
     memset(baton, 0, sizeof(write_baton_t));
+    strcpy(baton->address, *addressParameter);
     baton->buffer = buffer;
     baton->bufferData = bufferData;
     baton->bufferLength = bufferLength;
