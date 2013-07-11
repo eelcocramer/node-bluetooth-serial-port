@@ -26,9 +26,18 @@
             if (address !== '00-11-09-06-06-81') return;
 
             serial.connect(address, channel, function() {
-                serial.write('1');
-                serial.close();
-                console.log('closed and ready');
+                var buf = new Buffer('1');
+                console.log('Size of buf = ' + buf.length);
+                serial.write(buf, function(err, count) {
+                    if (err) {
+                        console.log('Error received: ' + err);
+                    } else {
+                        console.log('Bytes writen is: ' + count);
+                    }
+
+                    serial.close();
+                    console.log('Closed and ready');
+                });
             });
         });
     });

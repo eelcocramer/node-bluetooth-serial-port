@@ -64,8 +64,6 @@ void BTSerialPortBinding::EIO_Connect(uv_work_t *req) {
     }
 
     pipe_free(pipe);
-
-
     [pool release];
 }
     
@@ -78,7 +76,7 @@ void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
         baton->cb->Call(Context::GetCurrent()->Global(), 0, NULL);
     } else {
         Local<Value> argv[1];
-        argv[0] = String::New("Cannot connect.");
+        argv[0] = Exception::Error(String::New("Cannot connect"));
         baton->ecb->Call(Context::GetCurrent()->Global(), 1, argv);
     }
     
@@ -138,6 +136,8 @@ void BTSerialPortBinding::EIO_AfterWrite(uv_work_t *req) {
 
     data->buffer.Dispose();
     data->callback.Dispose();
+    data->rfcomm->Unref();
+
     delete data;
     delete queuedWrite;
 }
@@ -161,7 +161,7 @@ void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
 
     // when no data is read from rfcomm the connection has been closed.
     baton->size = size;
-    memcpy(baton->result, buf, size);
+    memcpy(&baton->result, buf, size);
 }
     
 void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
@@ -169,17 +169,24 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
     
     TryCatch try_catch;
 
-    Local<Value> argv[1];
+    Handle<Value> argv[2];
 
-    Buffer *buffer = Buffer::New(baton->size);
-    memcpy(Buffer::Data(buffer), baton->result, baton->size);
-    Local<Object> globalObj = Context::GetCurrent()->Global();
-    Local<Function> bufferConstructor = Local<Function>::Cast(globalObj->Get(String::New("Buffer")));
-    Handle<Value> constructorArgs[3] = { buffer->handle_, Integer::New(baton->size), Integer::New(0) };
-    Local<Object> resultBuffer = bufferConstructor->NewInstance(3, constructorArgs);
+    if (baton->size < 0) {
+        argv[0] = Exception::Error(String::New("Error reading from connection"));
+        argv[1] = Undefined();
+    } else {
+        Buffer *buffer = Buffer::New(baton->size);
+        memcpy(Buffer::Data(buffer), baton->result, baton->size);
+        Local<Object> globalObj = Context::GetCurrent()->Global();
+        Local<Function> bufferConstructor = Local<Function>::Cast(globalObj->Get(String::New("Buffer")));
+        Handle<Value> constructorArgs[3] = { buffer->handle_, Integer::New(baton->size), Integer::New(0) };
+        Local<Object> resultBuffer = bufferConstructor->NewInstance(3, constructorArgs);
 
-    argv[0] = resultBuffer;
-    baton->cb->Call(Context::GetCurrent()->Global(), 1, argv);
+        argv[0] = Undefined();
+        argv[1] = resultBuffer;
+    }
+
+    baton->cb->Call(Context::GetCurrent()->Global(), 2, argv);
     
     if (try_catch.HasCaught()) {
         FatalException(try_catch);
@@ -188,8 +195,6 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
     baton->rfcomm->Unref();
     baton->cb.Dispose();
     delete baton;
-    delete buffer;
-
     baton = NULL;
 }
     
@@ -259,7 +264,7 @@ Handle<Value> BTSerialPortBinding::Write(const Arguments& args) {
     HandleScope scope;
 
     // usage    
-    if (args.Length() != 2) {
+    if (args.Length() != 3) {
         return scope.Close(ThrowException(Exception::Error(String::New("usage: write(buf, address, callback)"))));
     }
     
@@ -267,15 +272,14 @@ Handle<Value> BTSerialPortBinding::Write(const Arguments& args) {
     if(!args[0]->IsObject() || !Buffer::HasInstance(args[0])) {
         return scope.Close(ThrowException(Exception::TypeError(String::New("First argument must be a buffer"))));
     }
-    v8::Persistent<v8::Object> buffer = v8::Persistent<v8::Object>::New(args[1]->ToObject());
-    char* bufferData = node::Buffer::Data(buffer);
-    size_t bufferLength = node::Buffer::Length(buffer);
+    Persistent<Object> buffer = Persistent<Object>::New(args[0]->ToObject());
+    void* bufferData = Buffer::Data(buffer);
+    size_t bufferLength = Buffer::Length(buffer);
 
     // string
     if (!args[1]->IsString()) {
         return scope.Close(ThrowException(Exception::TypeError(String::New("Second argument must be a string"))));
     }
-    //TODO should be a better way to do this...
     String::Utf8Value addressParameter(args[1]);
 
     // callback
@@ -287,6 +291,8 @@ Handle<Value> BTSerialPortBinding::Write(const Arguments& args) {
     write_baton_t *baton = new write_baton_t();
     memset(baton, 0, sizeof(write_baton_t));
     strcpy(baton->address, *addressParameter);
+    baton->rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
+    baton->rfcomm->Ref();
     baton->buffer = buffer;
     baton->bufferData = bufferData;
     baton->bufferLength = bufferLength;
