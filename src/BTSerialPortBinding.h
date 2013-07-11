@@ -44,10 +44,28 @@ class BTSerialPortBinding : public node::ObjectWrap {
 		    BTSerialPortBinding *rfcomm;
 		    uv_work_t request;
 		    v8::Persistent<v8::Function> cb;
-		    char result[1024];
+		    unsigned int result[1024];
 		    int errorno;
 		    int size;
 		};
+
+		struct write_baton_t {
+			BTSerialPortBinding *rfcomm;
+		    char address[19];
+			void* bufferData;
+			int bufferLength;
+			v8::Persistent<v8::Object> buffer;
+			v8::Persistent<v8::Value> callback;
+			size_t result;
+			char errorString[1024];
+		};
+
+		struct queued_write_t {
+			uv_work_t req;
+			ngx_queue_t queue;
+			write_baton_t* baton;
+		};
+
 
 #ifdef __APPLE__
 		pipe_consumer_t *consumer;
@@ -62,6 +80,8 @@ class BTSerialPortBinding : public node::ObjectWrap {
 		static v8::Handle<v8::Value> New(const v8::Arguments& args);
 		static void EIO_Connect(uv_work_t *req);
 		static void EIO_AfterConnect(uv_work_t *req);
+		static void EIO_Write(uv_work_t *req);
+		static void EIO_AfterWrite(uv_work_t *req);
 		static void EIO_Read(uv_work_t *req);
 		static void EIO_AfterRead(uv_work_t *req);
 };
