@@ -23,9 +23,12 @@
         serial.findSerialPortChannel(address, function(channel) {
             console.log('Found RFCOMM channel for serial port on ' + name + ': ' + channel);
 
-            if (address !== '00-11-09-06-06-81') return;
+            if (name !== 'linvor') return;
+
+            console.log('Attempting to connect...');
 
             serial.connect(address, channel, function() {
+                console.log('Connected. Sending data...');
                 var buf = new Buffer('1');
                 console.log('Size of buf = ' + buf.length);
                 serial.write(buf, function(err, count) {
@@ -35,8 +38,10 @@
                         console.log('Bytes writen is: ' + count);
                     }
 
-                    serial.close();
-                    console.log('Closed and ready');
+                    setTimeout(function() {
+                        serial.close();
+                        console.log('Closed and ready');
+                    }, 1000);
                 });
             });
         });
