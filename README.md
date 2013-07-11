@@ -2,9 +2,14 @@
 
 This node module lets you communicate over Bluetooth serial port with devices using Node.js. The goal is have an easy to use API. This module is great for communicating with Bluetooth enabled Arduino devices.
 
-
-
 ## RELEASE NOTES
+
+### 1.0.0
+
+* Makes the write function asynchrone.
+* Writes data from a [Buffer](http://nodejs.org/api/buffer.html) of from a string.
+* Reads data into a [Buffer](http://nodejs.org/api/buffer.html) instead to a string.
+* Improves error handling when calling the native addon.
 
 ### 0.2.1
 
@@ -50,10 +55,10 @@ btSerial.on('found', function(address, name) {
 		btSerial.connect(address, channel, function() {
 			console.log('connected');
 
-			btSerial.write('my data');
+			btSerial.write(new Buffer('my data', 'utf-8'));
 
-			btSerial.on('data', function(data) {
-				console.log(data);
+			btSerial.on('data', function(buffer) {
+				console.log(buffer.toString('utf-8'));
 			});
 		}, function () {
 			console.log('cannot connect');
@@ -71,17 +76,17 @@ btSerial.inquire();
 
 ### BluetoothSerialPort
 
-#### Event: ('data', data)
+#### Event: ('data', buffer)
 
 Emitted when data is read from the serial port connection.
 
-* data - the data that was read
+* buffer - the data that was read into a [Buffer](http://nodejs.org/api/buffer.html) object.
 
-#### Event: ('failure', message)
+#### Event: ('failure', err)
 
-Emitted when reading form the serial port connection results in an error. The connection is closed.
+Emitted when reading from the serial port connection results in an error. The connection is closed.
 
-* message - an message describing the failure.
+* err - an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object) describing the failure.
 
 #### Event: ('found', address, name)
 
@@ -110,7 +115,7 @@ Connects to a remote bluetooth device.
 
 * bluetoothAddress - the address of the remote Bluetooth device.
 * [successCallback] - called when a connection has been established.
-* [errorCallback(msg)] - called when the connection attempt results in an error.
+* [errorCallback(err)] - called when the connection attempt results in an error. The parameter is an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object).
 
 #### BluetoothSerialPort.close()
 
@@ -120,13 +125,12 @@ Closes the connection.
 
 Check whether the connection is open or not.
 
-#### BluetoothSerialPort.write(data)
+#### BluetoothSerialPort.write(buffer, callback)
 
-Writes a string to the serial port connection.
+Writes a [Buffer](http://nodejs.org/api/buffer.html) to the serial port connection.
 
-* data - the data string to be written.
-
-* Throws an exception when is called before a connection has been established.
+* buffer - the [Buffer](http://nodejs.org/api/buffer.html) to be written.
+* callback(err, bytesWritten) - is called when the write action has been completed. When the `err` parameter is set an error has occured, in that case `err` is an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object). When `err` is not set the write action was succesfull and `bytesWritten` contains the amount of bytes that is written to the connection.
 
 ## LICENSE
 

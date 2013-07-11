@@ -1,11 +1,13 @@
 { "name" : "bluetooth-serial-port"
-, "version" : "0.2.1"
+, "version" : "1.0.0"
 , "description" : "Bluetooth serial port communication for Node.js"
 , "author": "Eelco Cramer <eelco@hailendal.org>"
 , "keywords" :
   [ "bluetooth"
   , "serial port"
+  , "rfcomm"
   , "linux"
+  , "os x"
   ]
 , "homepage" : "https://github.com/eelcocramer/node-bluetooth-serial-port"
 , "bugs" : "https://github.com/eelcocramer/node-bluetooth-serial-port/issues"
@@ -17,6 +19,7 @@
   { "lib" : "./lib"
   }
 , "main" : "./lib/bluetooth-serial-port.js"
+, "os": [ "darwin", "linux" ]
 , "dependencies" :
   { "bindings" : "1.1.x"
   }

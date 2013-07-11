@@ -170,7 +170,7 @@ Handle<Value> DeviceINQ::New(const Arguments& args) {
 
     const char *usage = "usage: DeviceINQ()";
     if (args.Length() != 0) {
-        return ThrowException(Exception::Error(String::New(usage)));
+        return scope.Close(ThrowException(Exception::Error(String::New(usage))));
     }
 
     DeviceINQ* inquire = new DeviceINQ();
@@ -184,7 +184,7 @@ Handle<Value> DeviceINQ::Inquire(const Arguments& args) {
 
     const char *usage = "usage: inquire()";
     if (args.Length() != 0) {
-        return ThrowException(Exception::Error(String::New(usage)));
+        return scope.Close(ThrowException(Exception::Error(String::New(usage))));
     }
     
     // do the bluetooth magic
@@ -198,7 +198,7 @@ Handle<Value> DeviceINQ::Inquire(const Arguments& args) {
     dev_id = hci_get_route(NULL);
     sock = hci_open_dev( dev_id );
     if (dev_id < 0 || sock < 0) {
-        return ThrowException(Exception::Error(String::New("opening socket")));
+        return scope.Close(ThrowException(Exception::Error(String::New("opening socket"))));
     }
 
     len  = 8;
@@ -246,17 +246,19 @@ Handle<Value> DeviceINQ::SdpSearch(const Arguments& args) {
     
     const char *usage = "usage: sdpSearchForRFCOMM(address, callback)";
     if (args.Length() != 2) {
-        return ThrowException(Exception::Error(String::New(usage)));
+        return scope.Close(ThrowException(Exception::Error(String::New(usage))));
     }
     
-    const char *should_be_a_string = "address must be a string";
     if (!args[0]->IsString()) {
-        return ThrowException(Exception::Error(String::New(should_be_a_string)));
+        return scope.Close(ThrowException(Exception::TypeError(String::New("First argument should be a string value"))));
     }
-    
     String::Utf8Value address(args[0]);
+
+    if(!args[1]->IsFunction()) {
+        return scope.Close(ThrowException(Exception::TypeError(String::New("Second argument must be a function"))));
+    }
     Local<Function> cb = Local<Function>::Cast(args[1]);
-            
+    
     DeviceINQ* inquire = ObjectWrap::Unwrap<DeviceINQ>(args.This());
     
     sdp_baton_t *baton = new sdp_baton_t();
