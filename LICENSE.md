@@ -10,5 +10,5 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 Other licenses used are:
 
-[pipe.c](https://github.com/wowus/pipe) - MIT License 
-[pipe.h](https://github.com/wowus/pipe) - MIT License
+* [pipe.c](https://github.com/wowus/pipe) - MIT License 
+* [pipe.h](https://github.com/wowus/pipe) - MIT License

@@ -4,11 +4,20 @@ This node module lets you communicate over Bluetooth serial port with devices us
 
 ## RELEASE NOTES
 
+### 1.0.2
+
+* Updates the documentation.
+* ...
+
+### 1.0.1
+
+* No code changes, only updates the documentation.
+
 ### 1.0.0
 
 * Makes the write function asynchrone.
-* Writes data from a [Buffer](http://nodejs.org/api/buffer.html) of from a string.
-* Reads data into a [Buffer](http://nodejs.org/api/buffer.html) instead to a string.
+* Takes a [Buffer](http://nodejs.org/api/buffer.html) as the input for the write function in favor of a String.
+* Reads data into a [Buffer](http://nodejs.org/api/buffer.html) object instead of using a String.
 * Improves error handling when calling the native addon.
 
 ### 0.2.1
@@ -131,4 +140,4 @@ Writes a [Buffer](http://nodejs.org/api/buffer.html) to the serial port connecti
 
 ## LICENSE
 
-This module is available under a [FreeBSD license](http://opensource.org/licenses/BSD-2-Clause), see the [LICENSE file](https://raw.github.com/eelcocramer/node-bluetooth-serial-port/master/LICENSE) for details.
+This module is available under a [FreeBSD license](http://opensource.org/licenses/BSD-2-Clause), see the [LICENSE file](https://github.com/eelcocramer/node-bluetooth-serial-port/blob/master/LICENSE.md) for details.
