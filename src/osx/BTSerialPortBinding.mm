@@ -335,7 +335,6 @@ Handle<Value> BTSerialPortBinding::Close(const Arguments& args) {
 
     BluetoothWorker *worker = [BluetoothWorker getInstance];
     [worker disconnectFromDevice: address];
-    [address release];
 
     return Undefined();
 }

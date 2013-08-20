@@ -7,7 +7,8 @@ This node module lets you communicate over Bluetooth serial port with devices us
 ### 1.0.2
 
 * Updates the documentation.
-* ...
+* Fixes an issue where memory is freed incorrectly after closing a connection on OS X.
+* Improves the timeout mechanism that is used for getting the Bluetooth service records on a remote device on OS X.
 
 ### 1.0.1
 

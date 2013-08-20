@@ -246,11 +246,11 @@ using namespace v8;
     // only search for the UUIDs we are going to need...
     [device performSDPQuery: NULL uuids: uuids];
 
-    int counter = 0;
     bool stop = false;
 
+	NSTimeInterval endTime = [[NSDate date] timeIntervalSince1970] + 60;
     // if needed wait for a while for the sdp update
-    while (!stop && counter < 60) { // wait no more than 60 seconds for SDP update
+    while (!stop && [[NSDate date] timeIntervalSince1970] < endTime) { // wait no more than 60 seconds for SDP update
         currentServiceUpdate = [device getLastServicesUpdate];
 
         if (currentServiceUpdate != NULL && [currentServiceUpdate laterDate: lastServicesUpdate]) {
@@ -258,8 +258,6 @@ using namespace v8;
         } else {
             sleep(1);
         }
-
-        counter++;
     }
 
     NSArray *services = [device services];
