@@ -166,7 +166,10 @@ void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
             baton->size = 0;
         }
 
-        memcpy(baton->result, buf, baton->size);
+        // determine if we read anything that we can copy.
+        if (baton->size > 0) {
+            memcpy(baton->result, buf, baton->size);
+        }
     }
 }
     
