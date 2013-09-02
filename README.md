@@ -6,7 +6,7 @@ This node module lets you communicate over Bluetooth serial port with devices us
 
 ### 1.0.3
 
-* Fixes an [issue on Linux](https://github.com/eelcocramer/node-bluetooth-serial-port/pull/11) where reading from a closes or reset connection would result into a SEGFAULT.
+* Fixes an [issue on Linux](https://github.com/eelcocramer/node-bluetooth-serial-port/pull/11) where reading from a closed or reset connection would result into a SEGFAULT.
 
 ### 1.0.2
 
