@@ -15,27 +15,39 @@
 #include <node.h>
 
 class DeviceINQ : public node::ObjectWrap {
-	public:
-		static void Init(v8::Handle<v8::Object> exports);
-		static void EIO_SdpSearch(uv_work_t *req);
-		static void EIO_AfterSdpSearch(uv_work_t *req);
+    private:
+#ifdef _WINDOWS_
+        bool initialized;
 
-	private:
+        bool GetInitializedProperty() {
+            return initialized;
+        }
+#endif
 
-	  	struct sdp_baton_t {
-	        DeviceINQ *inquire;
-		    uv_work_t request;
-	        v8::Persistent<v8::Function> cb;
-	        int channelID;
-	        char address[19];
-	    };
+    public:
+#ifdef _WINDOWS_
+        __declspec(property(get = GetInitializedProperty)) bool Initialized;
+#endif
 
-  		DeviceINQ();
-  		~DeviceINQ();
+        static void Init(v8::Handle<v8::Object> exports);
+        static void EIO_SdpSearch(uv_work_t *req);
+        static void EIO_AfterSdpSearch(uv_work_t *req);
 
-		static v8::Handle<v8::Value> New(const v8::Arguments& args);
-		static v8::Handle<v8::Value> Inquire(const v8::Arguments& args);
-		static v8::Handle<v8::Value> SdpSearch(const v8::Arguments& args);
+    private:
+        struct sdp_baton_t {
+            DeviceINQ *inquire;
+            uv_work_t request;
+            v8::Persistent<v8::Function> cb;
+            int channelID;
+            char address[40];
+        };
+
+        DeviceINQ();
+        ~DeviceINQ();
+
+        static v8::Handle<v8::Value> New(const v8::Arguments& args);
+        static v8::Handle<v8::Value> Inquire(const v8::Arguments& args);
+        static v8::Handle<v8::Value> SdpSearch(const v8::Arguments& args);
 };
 
 #endif
