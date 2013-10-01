@@ -4,6 +4,10 @@ This node module lets you communicate over Bluetooth serial port with devices us
 
 ## RELEASE NOTES
 
+### 1.0.4
+
+* Added support for using under windows.
+
 ### 1.0.3
 
 * Fixes an [issue on Linux](https://github.com/eelcocramer/node-bluetooth-serial-port/pull/11) where reading from a closed or reset connection would result into a SEGFAULT.
@@ -35,10 +39,6 @@ This node module lets you communicate over Bluetooth serial port with devices us
 * `findSerialPortChannel` does not invoke callback anymore when no channel was found.
 * `found` event now emits the Bluetooth address as the value of the name parameter `name` when the name of the device could not be determined (used to be `[undefined]`).
 
-## Limitations
-
-* Not available for Windows
-
 ## Pre-requests on Linux
 
 * Needs Bluetooth development packages to build
@@ -48,6 +48,11 @@ This node module lets you communicate over Bluetooth serial port with devices us
 ## Pre-request on OS X
 
 * Needs XCode and XCode command line tools installed.
+
+## Pre-request on Windows
+
+* Needs Visual Studio (Visual C++) and its command line tools installed.
+* Needs Python 2.x installed and accessible form the command line path.
 
 ## Install
 

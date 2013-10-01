@@ -1,3 +1,14 @@
+/*
+ * Copyright (c) 2013, Elmar Langholz
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * 
+ * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+ */
+
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
@@ -74,9 +85,9 @@ void BTSerialPortBinding::EIO_Write(uv_work_t *req) {
     queued_write_t *queuedWrite = static_cast<queued_write_t*>(req->data);
     write_baton_t *data = static_cast<write_baton_t*>(queuedWrite->baton);
 
-    BTSerialPortBinding* rfcomm = data->rfcomm;
+    BTSerialPortBinding *rfcomm = data->rfcomm;
 
-    if (rfcomm->s == INVALID_SOCKET) {
+    if (rfcomm->s != INVALID_SOCKET) {
         data->result = send(rfcomm->s, (const char *)data->bufferData, data->bufferLength, 0);
         if (data->result != data->bufferLength) {
             sprintf_s(data->errorString, "Writing attempt was unsuccessful");
@@ -106,8 +117,8 @@ void BTSerialPortBinding::EIO_AfterWrite(uv_work_t *req) {
 
     if (!ngx_queue_empty(&write_queue)) {
         // Always pull the next work item from the head of the queue
-        ngx_queue_t* head = ngx_queue_head(&write_queue);
-        queued_write_t* nextQueuedWrite = ngx_queue_data(head, queued_write_t, queue);
+        ngx_queue_t *head = ngx_queue_head(&write_queue);
+        queued_write_t *nextQueuedWrite = ngx_queue_data(head, queued_write_t, queue);
         uv_queue_work(uv_default_loop(), &nextQueuedWrite->req, EIO_Write, (uv_after_work_cb)EIO_AfterWrite);
     }
 
@@ -125,7 +136,7 @@ void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
 
     read_baton_t *baton = static_cast<read_baton_t *>(req->data);
 
-    memset(buf, 0, sizeof(buf));
+    memset(buf, 0, _countof(buf));
 
     fd_set set;
     FD_ZERO(&set);
@@ -148,7 +159,7 @@ void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
 
 void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
     read_baton_t *baton = static_cast<read_baton_t *>(req->data);
-    
+
     TryCatch try_catch;
 
     Handle<Value> argv[2];
@@ -231,7 +242,7 @@ Handle<Value> BTSerialPortBinding::New(const Arguments& args) {
         return scope.Close(ThrowException(Exception::TypeError(String::New("Address (first argument) length is invalid"))));
     }
 
-    BTSerialPortBinding* rfcomm = new BTSerialPortBinding();
+    BTSerialPortBinding *rfcomm = new BTSerialPortBinding();
     if (!rfcomm->Initialized) {
         return scope.Close(ThrowException(Exception::Error(String::New("Unable to initialize socket library"))));
     }
@@ -279,7 +290,7 @@ Handle<Value> BTSerialPortBinding::Write(const Arguments& args) {
     }
 
     v8::Persistent<v8::Object> buffer = v8::Persistent<v8::Object>::New(args[0]->ToObject());
-    char* bufferData = node::Buffer::Data(buffer);
+    char *bufferData = node::Buffer::Data(buffer);
     size_t bufferLength = node::Buffer::Length(buffer);
     if (bufferLength > INT_MAX) {
         return scope.Close(ThrowException(Exception::Error(String::New("The size of the buffer is larger than supported"))));
@@ -324,7 +335,7 @@ Handle<Value> BTSerialPortBinding::Read(const Arguments& args) {
 
     Local<Function> cb = Local<Function>::Cast(args[0]);
 
-    BTSerialPortBinding* rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
+    BTSerialPortBinding *rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
 
     if (rfcomm->s == INVALID_SOCKET) {
         return ThrowException(Exception::Error(String::New("connection has been closed")));
@@ -351,7 +362,7 @@ Handle<Value> BTSerialPortBinding::Close(const Arguments& args) {
         return ThrowException(Exception::Error(String::New("usage: close(address)")));
     }
 
-    BTSerialPortBinding* rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
+    BTSerialPortBinding *rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
 
     if (rfcomm->s != INVALID_SOCKET) {
         closesocket(rfcomm->s);
