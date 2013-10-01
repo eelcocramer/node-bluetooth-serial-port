@@ -18,7 +18,12 @@
           'cflags!': [ '-fno-exceptions' ],
           'cflags_cc!': [ '-fno-exceptions' ],
           'xcode_settings': { 'GCC_ENABLE_CPP_EXCEPTIONS': 'YES' }
-        }]
+        }],
+        [ 'OS=="win"', {
+          'sources': [ 'src/windows/BluetoothSerialPort.cc', 'src/windows/DeviceINQ.cc', 'src/windows/BTSerialPortBinding.cc', 'src/windows/BluetoothHelpers.cc' ],
+          'include_dirs' : [ 'src', 'src/windows' ],
+          'libraries': [ '-lkernel32.lib', '-luser32.lib', '-lWs2_32.lib' ]
+        }],
       ]
     }
 
