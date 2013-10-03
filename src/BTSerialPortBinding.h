@@ -22,68 +22,89 @@
 #endif
 
 class BTSerialPortBinding : public node::ObjectWrap {
-	public:
-	    static v8::Persistent<v8::FunctionTemplate> s_ct;
-		static void Init(v8::Handle<v8::Object> exports);
-		static v8::Handle<v8::Value> Write(const v8::Arguments& args);
-		static v8::Handle<v8::Value> Close(const v8::Arguments& args);
-		static v8::Handle<v8::Value> Read(const v8::Arguments& args);
+    private:
+#ifdef _WINDOWS_
+        bool initialized;
 
-	private:
-		struct connect_baton_t {
-		    BTSerialPortBinding *rfcomm;
-		    uv_work_t request;
-		    v8::Persistent<v8::Function> cb;
-		    v8::Persistent<v8::Function> ecb;
-		    char address[19];
-		    int status;
-		    int channelID;
-		};
+        bool GetInitializedProperty() {
+            return initialized;
+        }
+#endif
 
-		struct read_baton_t {
-		    BTSerialPortBinding *rfcomm;
-		    uv_work_t request;
-		    v8::Persistent<v8::Function> cb;
-		    unsigned int result[1024];
-		    int errorno;
-		    int size;
-		};
+    public:
+#ifdef _WINDOWS_
+        __declspec(property(get = GetInitializedProperty)) bool Initialized;
+#endif
 
-		struct write_baton_t {
-			BTSerialPortBinding *rfcomm;
-		    char address[19];
-			void* bufferData;
-			int bufferLength;
-			v8::Persistent<v8::Object> buffer;
-			v8::Persistent<v8::Value> callback;
-			size_t result;
-			char errorString[1024];
-		};
+        static v8::Persistent<v8::FunctionTemplate> s_ct;
+        static void Init(v8::Handle<v8::Object> exports);
+        static v8::Handle<v8::Value> Write(const v8::Arguments& args);
+        static v8::Handle<v8::Value> Close(const v8::Arguments& args);
+        static v8::Handle<v8::Value> Read(const v8::Arguments& args);
 
-		struct queued_write_t {
-			uv_work_t req;
-			ngx_queue_t queue;
-			write_baton_t* baton;
-		};
+    private:
+        struct connect_baton_t {
+            BTSerialPortBinding *rfcomm;
+            uv_work_t request;
+            v8::Persistent<v8::Function> cb;
+            v8::Persistent<v8::Function> ecb;
+            char address[40];
+            int status;
+            int channelID;
+        };
+
+        struct read_baton_t {
+            BTSerialPortBinding *rfcomm;
+            uv_work_t request;
+            v8::Persistent<v8::Function> cb;
+#ifdef _WINDOWS_
+            unsigned char result[1024];
+#else
+            unsigned int result[1024];
+#endif
+            int errorno;
+            int size;
+        };
+
+        struct write_baton_t {
+            BTSerialPortBinding *rfcomm;
+            char address[40];
+            void* bufferData;
+            int bufferLength;
+            v8::Persistent<v8::Object> buffer;
+            v8::Persistent<v8::Value> callback;
+            size_t result;
+            char errorString[1024];
+        };
+
+        struct queued_write_t {
+            uv_work_t req;
+            ngx_queue_t queue;
+            write_baton_t* baton;
+        };
 
 
 #ifdef __APPLE__
-		pipe_consumer_t *consumer;
+        pipe_consumer_t *consumer;
 #else
-	    int s;
-	    int rep[2];
+#ifdef _WINDOWS_
+        SOCKET s;
+#else
+        int s;
+        int rep[2];
+#endif
 #endif
 
-  		BTSerialPortBinding();
-  		~BTSerialPortBinding();
+        BTSerialPortBinding();
+        ~BTSerialPortBinding();
 
-		static v8::Handle<v8::Value> New(const v8::Arguments& args);
-		static void EIO_Connect(uv_work_t *req);
-		static void EIO_AfterConnect(uv_work_t *req);
-		static void EIO_Write(uv_work_t *req);
-		static void EIO_AfterWrite(uv_work_t *req);
-		static void EIO_Read(uv_work_t *req);
-		static void EIO_AfterRead(uv_work_t *req);
+        static v8::Handle<v8::Value> New(const v8::Arguments& args);
+        static void EIO_Connect(uv_work_t *req);
+        static void EIO_AfterConnect(uv_work_t *req);
+        static void EIO_Write(uv_work_t *req);
+        static void EIO_AfterWrite(uv_work_t *req);
+        static void EIO_Read(uv_work_t *req);
+        static void EIO_AfterRead(uv_work_t *req);
 };
 
 #endif

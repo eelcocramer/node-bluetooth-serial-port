@@ -244,7 +244,7 @@ Handle<Value> DeviceINQ::Inquire(const Arguments& args) {
 Handle<Value> DeviceINQ::SdpSearch(const Arguments& args) {
     HandleScope scope;
     
-    const char *usage = "usage: sdpSearchForRFCOMM(address, callback)";
+    const char *usage = "usage: findSerialPortChannel(address, callback)";
     if (args.Length() != 2) {
         return scope.Close(ThrowException(Exception::Error(String::New(usage))));
     }
