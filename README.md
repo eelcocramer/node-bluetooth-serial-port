@@ -4,6 +4,8 @@ This node module lets you communicate over Bluetooth serial port with devices us
 
 ## RELEASE NOTES
 
+* Updates the code example in the README.
+
 ### 1.0.4
 
 * Added windows support.
@@ -71,7 +73,9 @@ btSerial.on('found', function(address, name) {
 		btSerial.connect(address, channel, function() {
 			console.log('connected');
 
-			btSerial.write(new Buffer('my data', 'utf-8'));
+			btSerial.write(new Buffer('my data', 'utf-8'), function(err, bytesWritten) {
+				if (err) console.log(err);
+			});
 
 			btSerial.on('data', function(buffer) {
 				console.log(buffer.toString('utf-8'));
