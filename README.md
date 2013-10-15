@@ -4,7 +4,10 @@ This node module lets you communicate over Bluetooth serial port with devices us
 
 ## RELEASE NOTES
 
+### 1.0.5
+
 * Updates the code example in the README.
+* Adds `win` to the supported OS'es in the `package.json`.
 
 ### 1.0.4
 

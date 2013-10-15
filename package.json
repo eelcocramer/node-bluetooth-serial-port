@@ -19,7 +19,7 @@
   { "lib" : "./lib"
   }
 , "main" : "./lib/bluetooth-serial-port.js"
-, "os": [ "darwin", "linux" ]
+, "os": [ "darwin", "linux", "win" ]
 , "dependencies" :
   { "bindings" : "1.1.x"
   }
