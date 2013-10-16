@@ -8,6 +8,7 @@
   , "rfcomm"
   , "linux"
   , "os x"
+  , "windows"
   ]
 , "homepage" : "https://github.com/eelcocramer/node-bluetooth-serial-port"
 , "bugs" : "https://github.com/eelcocramer/node-bluetooth-serial-port/issues"
