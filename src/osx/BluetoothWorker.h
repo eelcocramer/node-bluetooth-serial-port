@@ -42,7 +42,7 @@ struct device_info_t {
 + (id)getInstance;
 - (void) disconnectFromDevice: (NSString *) address;
 - (IOReturn)connectDevice: (NSString *) address onChannel: (int) channel withPipe: (pipe_t *)pipe;
-- (IOReturn)writeSync:(void *)data length:(UInt16)length toDevice: (NSString *)address;
+- (IOReturn)writeAsync:(void *)data length:(UInt16)length toDevice: (NSString *)address;
 - (void) inquireWithPipe: (pipe_t *)pipe;
 - (int) getRFCOMMChannelID: (NSString *) address;
 
