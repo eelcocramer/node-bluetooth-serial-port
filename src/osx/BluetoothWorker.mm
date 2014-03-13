@@ -175,7 +175,7 @@ using namespace v8;
 }
 
 /** Write synchronized to a connected Bluetooth device */
-- (IOReturn)writeSync:(void *)data length:(UInt16)length toDevice: (NSString *)address
+- (IOReturn)writeAsync:(void *)data length:(UInt16)length toDevice: (NSString *)address
 {
 	[writeLock lock];
 	
@@ -184,7 +184,7 @@ using namespace v8;
 	writeData.address = address;
 
 	// wait for the write to be performed on the worker thread
-	[self performSelector:@selector(writeSyncTask:) onThread:worker withObject:writeData waitUntilDone:true];
+	[self performSelector:@selector(writeAsyncTask:) onThread:worker withObject:writeData waitUntilDone:true];
 	
 	IOReturn result = writeResult;
 	[writeLock unlock];
@@ -193,7 +193,7 @@ using namespace v8;
 }
 
 /** Task to do the writing */
-- (void)writeSyncTask:(BTData *)writeData
+- (void)writeAsyncTask:(BTData *)writeData
 {
 	@synchronized(self) {
 		BluetoothDeviceResources *res = [devices objectForKey:writeData.address];
@@ -216,7 +216,7 @@ using namespace v8;
 				ssize_t numBytesToWrite = ((numBytesRemaining > rfcommChannelMTU) ? rfcommChannelMTU :  numBytesRemaining);
 				
 				// Send the bytes
-				writeResult = [res.channel writeSync:idx length:numBytesToWrite];
+				writeResult = [res.channel writeAsync:idx length:numBytesToWrite refcon:NULL];
 				
 				// Updates the position in the buffer:
 				numBytesRemaining -= numBytesToWrite;

@@ -99,7 +99,7 @@ void BTSerialPortBinding::EIO_Write(uv_work_t *req) {
     BluetoothWorker *worker = [BluetoothWorker getInstance];
     NSString *address = [NSString stringWithCString:data->address encoding:NSASCIIStringEncoding];
 
-    if ([worker writeSync: data->bufferData length: data->bufferLength toDevice: address] != kIOReturnSuccess) {
+    if ([worker writeAsync: data->bufferData length: data->bufferLength toDevice: address] != kIOReturnSuccess) {
         sprintf(data->errorString, "Write was unsuccessful");
     } else {
         data->result = data->bufferLength;
