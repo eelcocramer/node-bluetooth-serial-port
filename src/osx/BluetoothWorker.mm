@@ -199,7 +199,29 @@ using namespace v8;
 		BluetoothDeviceResources *res = [devices objectForKey:writeData.address];
 
 		if (res != nil) {
-			writeResult = [res.channel writeSync: (void *)[writeData.data bytes] length: [writeData.data length]];
+			char *idx = (char *)[writeData.data bytes];
+			ssize_t numBytesRemaining;
+			BluetoothRFCOMMMTU rfcommChannelMTU;
+			
+			numBytesRemaining = [writeData.data length];
+			writeResult = kIOReturnSuccess;
+			
+			// Get the RFCOMM Channel's MTU.  Each write can only
+			// contain up to the MTU size number of bytes.
+			rfcommChannelMTU = [res.channel getMTU];
+			
+			// Loop through the data until we have no more to send.
+			while ((writeResult == kIOReturnSuccess) && (numBytesRemaining > 0)) {
+				// finds how many bytes I can send:
+				ssize_t numBytesToWrite = ((numBytesRemaining > rfcommChannelMTU) ? rfcommChannelMTU :  numBytesRemaining);
+				
+				// Send the bytes
+				writeResult = [res.channel writeSync:idx length:numBytesToWrite];
+				
+				// Updates the position in the buffer:
+				numBytesRemaining -= numBytesToWrite;
+				idx += numBytesToWrite;
+			}
 		}
 	}
 }
