@@ -221,6 +221,12 @@ using namespace v8;
 				// Updates the position in the buffer:
 				numBytesRemaining -= numBytesToWrite;
 				idx += numBytesToWrite;
+
+				// give the reader thread a change to notifiy when there is till
+				// more to write...
+				if (writeResult == kIOReturnSuccess && numBytesRemaining > 0) {
+					usleep(100);
+				}
 			}
 		}
 	}
