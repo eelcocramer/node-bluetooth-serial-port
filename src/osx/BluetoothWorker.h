@@ -32,7 +32,6 @@ struct device_info_t {
     pipe_producer_t *inquiryProducer;
 	NSLock *sdpLock;
 	NSLock *connectLock;
-	NSLock *devicesLock;
 	IOReturn connectResult;
 	int lastChannelID;
 	NSLock *writeLock;
