@@ -329,8 +329,8 @@ Handle<Value> BTSerialPortBinding::Close(const Arguments& args) {
 
     //TODO should be a better way to do this...
     String::Utf8Value addressParameter(args[0]);
-    char addressArray[16];
-    strcpy(addressArray, *addressParameter);
+    char addressArray[32];
+    strncpy(addressArray, *addressParameter, 32);
     NSString *address = [NSString stringWithCString:addressArray encoding:NSASCIIStringEncoding];
 
     BluetoothWorker *worker = [BluetoothWorker getInstance];
