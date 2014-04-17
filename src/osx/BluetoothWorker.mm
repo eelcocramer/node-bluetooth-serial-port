@@ -332,8 +332,6 @@ using namespace v8;
 	NSString *address = [[rfcommChannel getDevice] getAddressString];
 	NSData *data = [NSData dataWithBytes: dataPointer length: dataLength];
 
-	fprintf(stderr, "received data\n\r");
-
 	while (![devicesLock tryLock]) {
 		CFRunLoopRun();
 	}
