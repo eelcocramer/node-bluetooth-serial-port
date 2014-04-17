@@ -56,6 +56,8 @@ struct device_info_t {
 - (void) deviceInquiryDeviceFound: (IOBluetoothDeviceInquiry*) sender
 	device: (IOBluetoothDevice*) device;
 
+- (void) rfcommChannelWriteComplete:(IOBluetoothRFCOMMChannel*)rfcommChannel refcon:(void*)refcon status:(IOReturn)error;
+
 @end
 
 #endif
