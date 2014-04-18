@@ -16,7 +16,7 @@
   { "type" : "git"
   , "url" : "https://github.com/eelcocramer/node-bluetooth-serial-port"
   }
-, "directories" : 
+, "directories" :
   { "lib" : "./lib"
   }
 , "main" : "./lib/bluetooth-serial-port.js"
@@ -32,5 +32,5 @@
   { "install": "node-gyp configure build"
   }
 , "license": "BSD-2-Clause"
-, "contributors": ["Eric Smekens", "Juho Vepsäläinen", "Elmar Langholz", "Donald Ness"]
+, "contributors": ["Eric Smekens", "Juho Vepsäläinen", "Elmar Langholz", "Donald Ness", "Joost Verdoorn"]
 }
