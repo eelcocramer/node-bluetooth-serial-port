@@ -224,14 +224,11 @@ using namespace v8;
 			ssize_t numBytesToWrite = ((numBytesRemaining > rfcommChannelMTU) ? rfcommChannelMTU :  numBytesRemaining);
 
 			// Send the bytes
-			[res.channel setDelegate:self];
 			writeResult = [res.channel writeAsync:idx length:numBytesToWrite refcon:devicesLock];
 
 			while (![devicesLock tryLock]) {
 				CFRunLoopRun();
 			}
-
-			res.channel.delegate = nil;
 
 			// Updates the position in the buffer:
 			numBytesRemaining -= numBytesToWrite;
