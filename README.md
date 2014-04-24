@@ -4,7 +4,7 @@ This node module lets you communicate over Bluetooth serial port with devices us
 
 ## RELEASE NOTES
 
-### 1.1.0 - UNREALESED
+### 1.1.0
 
 * Fixes buffer overflow on close() in Mac OSX.
 * Adds failure callback that is called when no channel can be found.
