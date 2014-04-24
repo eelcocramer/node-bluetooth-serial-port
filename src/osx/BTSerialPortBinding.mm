@@ -3,10 +3,10 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * 
+ *
  * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <v8.h>
@@ -55,7 +55,7 @@ void BTSerialPortBinding::EIO_Connect(uv_work_t *req) {
 
     if (result == kIOReturnSuccess) {
         pipe_consumer_t *c = pipe_consumer_new(pipe);
-        
+
         // save consumer side of the pipe
         baton->rfcomm->consumer = c;
         baton->status = 0;
@@ -66,10 +66,10 @@ void BTSerialPortBinding::EIO_Connect(uv_work_t *req) {
     pipe_free(pipe);
     [pool release];
 }
-    
+
 void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
     connect_baton_t *baton = static_cast<connect_baton_t *>(req->data);
-    
+
     TryCatch try_catch;
 
     if (baton->status == 0) {
@@ -79,11 +79,11 @@ void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
         argv[0] = Exception::Error(String::New("Cannot connect"));
         baton->ecb->Call(Context::GetCurrent()->Global(), 1, argv);
     }
-    
+
     if (try_catch.HasCaught()) {
         FatalException(try_catch);
     }
-    
+
     baton->rfcomm->Unref();
     baton->cb.Dispose();
 
@@ -104,7 +104,7 @@ void BTSerialPortBinding::EIO_Write(uv_work_t *req) {
     } else {
         data->result = data->bufferLength;
     }
-    
+
     [pool release];
 }
 
@@ -141,7 +141,7 @@ void BTSerialPortBinding::EIO_AfterWrite(uv_work_t *req) {
     delete data;
     delete queuedWrite;
 }
-     
+
 void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
     unsigned int buf[1024] = { 0 };
 
@@ -163,10 +163,10 @@ void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
     baton->size = size;
     memcpy(&baton->result, buf, size);
 }
-    
+
 void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
     read_baton_t *baton = static_cast<read_baton_t *>(req->data);
-    
+
     TryCatch try_catch;
 
     Handle<Value> argv[2];
@@ -187,25 +187,25 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
     }
 
     baton->cb->Call(Context::GetCurrent()->Global(), 2, argv);
-    
+
     if (try_catch.HasCaught()) {
         FatalException(try_catch);
     }
-    
+
     baton->rfcomm->Unref();
     baton->cb.Dispose();
     delete baton;
     baton = NULL;
 }
-    
+
 void BTSerialPortBinding::Init(Handle<Object> target) {
     HandleScope scope;
-    
+
     Local<FunctionTemplate> t = FunctionTemplate::New(New);
-    
+
     t->InstanceTemplate()->SetInternalFieldCount(1);
     t->SetClassName(String::NewSymbol("BTSerialPortBinding"));
-    
+
     NODE_SET_PROTOTYPE_METHOD(t, "write", Write);
     NODE_SET_PROTOTYPE_METHOD(t, "read", Read);
     NODE_SET_PROTOTYPE_METHOD(t, "close", Close);
@@ -213,14 +213,14 @@ void BTSerialPortBinding::Init(Handle<Object> target) {
     target->Set(String::NewSymbol("BTSerialPortBinding"), t->GetFunction());
     target->Set(String::NewSymbol("BTSerialPortBinding"), t->GetFunction());
 }
-    
-BTSerialPortBinding::BTSerialPortBinding() : 
+
+BTSerialPortBinding::BTSerialPortBinding() :
     consumer(NULL) {
 }
 
 BTSerialPortBinding::~BTSerialPortBinding() {
 }
-    
+
 Handle<Value> BTSerialPortBinding::New(const Arguments& args) {
     HandleScope scope;
 
@@ -231,17 +231,17 @@ Handle<Value> BTSerialPortBinding::New(const Arguments& args) {
     if (args.Length() != 4) {
         return scope.Close(ThrowException(Exception::Error(String::New(usage))));
     }
-    
+
     String::Utf8Value address(args[0]);
-    
-    int channelID = args[1]->Int32Value(); 
-    if (channelID <= 0) { 
+
+    int channelID = args[1]->Int32Value();
+    if (channelID <= 0) {
         return scope.Close(ThrowException(Exception::TypeError(String::New("ChannelID should be a positive int value."))));
     }
 
     Local<Function> cb = Local<Function>::Cast(args[2]);
     Local<Function> ecb = Local<Function>::Cast(args[3]);
-    
+
     BTSerialPortBinding* rfcomm = new BTSerialPortBinding();
     rfcomm->Wrap(args.This());
 
@@ -259,15 +259,15 @@ Handle<Value> BTSerialPortBinding::New(const Arguments& args) {
 
     return args.This();
 }
-    
+
 Handle<Value> BTSerialPortBinding::Write(const Arguments& args) {
     HandleScope scope;
 
-    // usage    
+    // usage
     if (args.Length() != 3) {
         return scope.Close(ThrowException(Exception::Error(String::New("usage: write(buf, address, callback)"))));
     }
-    
+
     // buffer
     if(!args[0]->IsObject() || !Buffer::HasInstance(args[0])) {
         return scope.Close(ThrowException(Exception::TypeError(String::New("First argument must be a buffer"))));
@@ -315,14 +315,14 @@ Handle<Value> BTSerialPortBinding::Write(const Arguments& args) {
 
     return scope.Close(v8::Undefined());
 }
- 
+
 Handle<Value> BTSerialPortBinding::Close(const Arguments& args) {
     HandleScope scope;
-    
+
     if (args.Length() != 1) {
         return scope.Close(ThrowException(Exception::Error(String::New("usage: close(address)"))));
     }
-    
+
     if (!args[0]->IsString()) {
         return scope.Close(ThrowException(Exception::TypeError(String::New("Argument should be a string value"))));
     }
@@ -338,22 +338,22 @@ Handle<Value> BTSerialPortBinding::Close(const Arguments& args) {
 
     return Undefined();
 }
- 
+
 Handle<Value> BTSerialPortBinding::Read(const Arguments& args) {
     HandleScope scope;
-    
+
     if (args.Length() != 1) {
         return scope.Close(ThrowException(Exception::Error(String::New("usage: read(callback)"))));
     }
 
     Local<Function> cb = Local<Function>::Cast(args[0]);
-            
+
     BTSerialPortBinding* rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
 
     if (rfcomm->consumer == NULL) {
         return scope.Close(ThrowException(Exception::Error(String::New("connection has been closed"))));
     }
-    
+
     read_baton_t *baton = new read_baton_t();
     baton->rfcomm = rfcomm;
     baton->cb = Persistent<Function>::New(cb);
