@@ -8,6 +8,8 @@ This node module lets you communicate over Bluetooth serial port with devices us
 
 * Fixes buffer overflow on close() in Mac OSX.
 * Adds failure callback that is called when no channel can be found.
+* Fixes an issue on Mac OSX where a write action would fail when the MTU was exceeded (issue 23).
+* Fixes an issue on Mac OSX where data would not be written asynchronously (issue 24 and issue 25).
 
 ### 1.0.5
 
