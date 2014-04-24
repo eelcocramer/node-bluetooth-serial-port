@@ -4,16 +4,20 @@ This node module lets you communicate over Bluetooth serial port with devices us
 
 ## RELEASE NOTES
 
+### 1.1.2
+
+* Updates the documentation to reflect the changes made in version 1.1.0.
+
 ### 1.1.1
 
 * Fixes typo in readme.
 
 ### 1.1.0
 
-* Fixes buffer overflow on close() in Mac OSX.
+* Fixes [buffer overflow on close()](https://github.com/eelcocramer/node-bluetooth-serial-port/pull/26) in Mac OSX.
 * Adds failure callback that is called when no channel can be found.
-* Fixes an issue on Mac OSX where a write action would fail when the MTU was exceeded (issue 23).
-* Fixes an issue on Mac OSX where data would not be written asynchronously (issue 24 and issue 25).
+* Fixes an [issue on Mac OSX](https://github.com/eelcocramer/node-bluetooth-serial-port/issues/23) where a write action would fail when the MTU was exceeded.
+* Fixes an [issue on Mac OSX](https://github.com/eelcocramer/node-bluetooth-serial-port/issues/24) where data would not be written asynchronously.
 
 ### 1.0.5
 
@@ -137,11 +141,12 @@ Emitted when the device inquiry execution did finish.
 
 Starts searching for bluetooth devices. When a device is found a 'found' event will be emitted.
 
-#### BluetoothSerialPort.findSerialPortChannel(address, callback)
+#### BluetoothSerialPort.findSerialPortChannel(address, callback[, errorCallback])
 
 Checks if a device has a serial port service running and if it is found it passes the channel id to use for the RFCOMM connection.
 
 * callback(channel) - called when finished looking for a serial port on the device.
+* errorCallback - called the search finished but no serial port channel was found on the device.
 
 #### BluetoothSerialPort.connect(bluetoothAddress[, successCallback, errorCallback])
 
@@ -164,7 +169,7 @@ Check whether the connection is open or not.
 Writes a [Buffer](http://nodejs.org/api/buffer.html) to the serial port connection.
 
 * buffer - the [Buffer](http://nodejs.org/api/buffer.html) to be written.
-* callback(err, bytesWritten) - is called when the write action has been completed. When the `err` parameter is set an error has occured, in that case `err` is an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object). When `err` is not set the write action was succesfull and `bytesWritten` contains the amount of bytes that is written to the connection.
+* callback(err, bytesWritten) - is called when the write action has been completed. When the `err` parameter is set an error has occured, in that case `err` is an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object). When `err` is not set the write action was successful and `bytesWritten` contains the amount of bytes that is written to the connection.
 
 ## LICENSE
 
