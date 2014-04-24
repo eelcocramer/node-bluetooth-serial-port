@@ -1,3 +1,14 @@
+/*
+ * Copyright (c) 2012-2013, Eelco Cramer
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ *
+ * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #import "BluetoothWorker.h"
 #import "BluetoothDeviceResources.h"
 #import <Foundation/NSObject.h>
@@ -56,7 +67,7 @@ using namespace v8;
 {
     static BluetoothWorker *instance = nil;
     static dispatch_once_t onceToken;
-    
+
     dispatch_once(&onceToken, ^{
         instance = [[self alloc] init];
     });
@@ -70,6 +81,7 @@ using namespace v8;
   	self = [super init];
   	sdpLock = [[NSLock alloc] init];
 	devices = [[NSMutableDictionary alloc] init];
+	devicesLock = [[NSLock alloc] init];
   	connectLock = [[NSLock alloc] init];
   	writeLock = [[NSLock alloc] init];
 
@@ -84,7 +96,7 @@ using namespace v8;
 {
 	NSRunLoop *runLoop = [NSRunLoop currentRunLoop];
       //schedule a timer so runMode won't stop immediately
-    keepAliveTimer = [[NSTimer alloc] initWithFireDate:[NSDate distantFuture] 
+    keepAliveTimer = [[NSTimer alloc] initWithFireDate:[NSDate distantFuture]
         interval:1 target:nil selector:nil userInfo:nil repeats:YES];
     [runLoop addTimer:keepAliveTimer forMode:NSDefaultRunLoopMode];
  	[[NSRunLoop currentRunLoop] run];
@@ -101,42 +113,44 @@ using namespace v8;
 - (void) disconnectFromDeviceTask: (NSString *) address
 {
 	// make it safe
-	@synchronized(self) {
-		BluetoothDeviceResources *res = [devices objectForKey: address];
+	[devicesLock lock];
 
-		if (res != nil) {
-			if (res.producer != NULL) {
-				pipe_producer_free(res.producer);
-				res.producer = NULL;
-			}
+	BluetoothDeviceResources *res = [devices objectForKey: address];
 
-			if (res.channel != NULL) {
-				[res.channel closeChannel];
-				res.channel = NULL;
-			}
-
-			if (res.device != NULL) {
-				[res.device closeConnection];
-				res.device = NULL;
-			}
-
-			[devices removeObjectForKey: address];
+	if (res != nil) {
+		if (res.producer != NULL) {
+			pipe_producer_free(res.producer);
+			res.producer = NULL;
 		}
+
+		if (res.channel != NULL) {
+			[res.channel closeChannel];
+			res.channel = NULL;
+		}
+
+		if (res.device != NULL) {
+			[res.device closeConnection];
+			res.device = NULL;
+		}
+
+		[devices removeObjectForKey: address];
 	}
+
+	[devicesLock unlock];
 }
 
 /** Connect to a Bluetooth device on a specific channel using a pipe to communicate with the main thread */
 - (IOReturn)connectDevice: (NSString *) address onChannel: (int) channel withPipe: (pipe_t *)pipe
 {
 	[connectLock lock];
-	
+
 	Pipe *pipeObj = [[Pipe alloc] init];
 	pipeObj.pipe = pipe;
 
 	NSDictionary *parameters = [[NSDictionary alloc] initWithObjectsAndKeys:
 		address, @"address", [NSNumber numberWithInt: channel], @"channel", pipeObj, @"pipe", nil];
 
-	// connect to a device and wait for the result 
+	// connect to a device and wait for the result
 	[self performSelector:@selector(connectDeviceTask:) onThread:worker withObject:parameters waitUntilDone:true];
 	IOReturn result = connectResult;
 	[connectLock unlock];
@@ -151,41 +165,43 @@ using namespace v8;
 	NSNumber *channelID = [parameters objectForKey:@"channel"];
 	pipe_t *pipe = ((Pipe *)[parameters objectForKey:@"pipe"]).pipe;
 
-	@synchronized(self) {
-		connectResult = kIOReturnError;
+	connectResult = kIOReturnError;
 
-		if ([devices objectForKey: address] == nil) {
-			IOBluetoothDevice *device = [IOBluetoothDevice deviceWithAddressString:address];
+	[devicesLock lock];
 
-			if (device != nil) {
-				IOBluetoothRFCOMMChannel *channel = [[IOBluetoothRFCOMMChannel alloc] init];
-				if ([device openRFCOMMChannelSync: &channel withChannelID:[channelID intValue] delegate: self] == kIOReturnSuccess) {
-					connectResult = kIOReturnSuccess;
-				   	pipe_producer_t *producer = pipe_producer_new(pipe);
-				   	BluetoothDeviceResources *res = [[BluetoothDeviceResources alloc] init];
-				   	res.device = device;
-				   	res.producer = producer;
-				   	res.channel = channel;
+	if ([devices objectForKey: address] == nil) {
+		IOBluetoothDevice *device = [IOBluetoothDevice deviceWithAddressString:address];
 
-				   	[devices setObject:res forKey:address];
-				}
+		if (device != nil) {
+			IOBluetoothRFCOMMChannel *channel = [[IOBluetoothRFCOMMChannel alloc] init];
+			if ([device openRFCOMMChannelSync: &channel withChannelID:[channelID intValue] delegate: self] == kIOReturnSuccess) {
+				connectResult = kIOReturnSuccess;
+			   	pipe_producer_t *producer = pipe_producer_new(pipe);
+			   	BluetoothDeviceResources *res = [[BluetoothDeviceResources alloc] init];
+			   	res.device = device;
+			   	res.producer = producer;
+			   	res.channel = channel;
+
+			   	[devices setObject:res forKey:address];
 			}
 		}
 	}
+
+	[devicesLock unlock];
 }
 
 /** Write synchronized to a connected Bluetooth device */
-- (IOReturn)writeSync:(void *)data length:(UInt16)length toDevice: (NSString *)address
+- (IOReturn)writeAsync:(void *)data length:(UInt16)length toDevice: (NSString *)address
 {
 	[writeLock lock];
-	
+
 	BTData *writeData = [[BTData alloc] init];
 	writeData.data = [NSData dataWithBytes: data length: length];
 	writeData.address = address;
 
 	// wait for the write to be performed on the worker thread
-	[self performSelector:@selector(writeSyncTask:) onThread:worker withObject:writeData waitUntilDone:true];
-	
+	[self performSelector:@selector(writeAsyncTask:) onThread:worker withObject:writeData waitUntilDone:true];
+
 	IOReturn result = writeResult;
 	[writeLock unlock];
 
@@ -193,22 +209,59 @@ using namespace v8;
 }
 
 /** Task to do the writing */
-- (void)writeSyncTask:(BTData *)writeData
+- (void)writeAsyncTask:(BTData *)writeData
 {
-	@synchronized(self) {
-		BluetoothDeviceResources *res = [devices objectForKey:writeData.address];
+	while (![devicesLock tryLock]) {
+		CFRunLoopRun();
+	}
 
-		if (res != nil) {
-			writeResult = [res.channel writeSync: (void *)[writeData.data bytes] length: [writeData.data length]];
+	BluetoothDeviceResources *res = [devices objectForKey:writeData.address];
+
+	if (res != nil) {
+		char *idx = (char *)[writeData.data bytes];
+		ssize_t numBytesRemaining;
+		BluetoothRFCOMMMTU rfcommChannelMTU;
+
+		numBytesRemaining = [writeData.data length];
+		writeResult = kIOReturnSuccess;
+
+		// Get the RFCOMM Channel's MTU.  Each write can only
+		// contain up to the MTU size number of bytes.
+		rfcommChannelMTU = [res.channel getMTU];
+
+		// Loop through the data until we have no more to send.
+		while ((writeResult == kIOReturnSuccess) && (numBytesRemaining > 0)) {
+			// finds how many bytes I can send:
+			ssize_t numBytesToWrite = ((numBytesRemaining > rfcommChannelMTU) ? rfcommChannelMTU :  numBytesRemaining);
+
+			// Send the bytes
+			writeResult = [res.channel writeAsync:idx length:numBytesToWrite refcon:devicesLock];
+
+			while (![devicesLock tryLock]) {
+				CFRunLoopRun();
+			}
+
+			// Updates the position in the buffer:
+			numBytesRemaining -= numBytesToWrite;
+			idx += numBytesToWrite;
 		}
 	}
+
+	[devicesLock unlock];
+	CFRunLoopStop(CFRunLoopGetCurrent());
+}
+
+- (void)rfcommChannelWriteComplete:(IOBluetoothRFCOMMChannel*)rfcommChannel refcon:(void*)refcon status:(IOReturn)error
+{
+	[devicesLock unlock];
+	CFRunLoopStop(CFRunLoopGetCurrent());
 }
 
 /** Inquire Bluetooth devices and send results through the given pipe */
 - (void) inquireWithPipe: (pipe_t *)pipe
 {
 	@synchronized(self) {
-	   	inquiryProducer = pipe_producer_new(pipe);
+	  inquiryProducer = pipe_producer_new(pipe);
 		[self performSelector:@selector(inquiryTask) onThread:worker withObject:nil waitUntilDone:false];
 	}
 }
@@ -216,13 +269,13 @@ using namespace v8;
 /** Worker task to the the inquiry */
 - (void) inquiryTask
 {
-    IOBluetoothDeviceInquiry *bdi = [[IOBluetoothDeviceInquiry alloc] init];
+  IOBluetoothDeviceInquiry *bdi = [[IOBluetoothDeviceInquiry alloc] init];
 	[bdi setDelegate: self];
 	[bdi start];
 }
 
 /** Get the RFCOMM channel for a given device */
-- (int) getRFCOMMChannelID: (NSString *) address 
+- (int) getRFCOMMChannelID: (NSString *) address
 {
 	[sdpLock lock];
 	// call the task on the worker thread and wait for the result
@@ -261,12 +314,12 @@ using namespace v8;
     }
 
     NSArray *services = [device services];
-    
+
     // if there are services check if it is the one we are looking for.
     if (services != NULL) {
         for (NSUInteger i=0; i<[services count]; i++) {
             IOBluetoothSDPServiceRecord *sr = [services objectAtIndex: i];
-            
+
             if ([sr hasServiceFromArray: uuids]) {
                 BluetoothRFCOMMChannelID cid = -1;
                 if ([sr getRFCOMMChannelID: &cid] == kIOReturnSuccess) {
@@ -284,16 +337,22 @@ using namespace v8;
 /** Called when data is received from a remote device */
 - (void)rfcommChannelData:(IOBluetoothRFCOMMChannel*)rfcommChannel data:(void *)dataPointer length:(size_t)dataLength
 {
-	@synchronized(self) {
-		NSString *address = [[rfcommChannel getDevice] getAddressString];
-		NSData *data = [NSData dataWithBytes: dataPointer length: dataLength];
-		BluetoothDeviceResources *res = [devices objectForKey: address];
+	NSString *address = [[rfcommChannel getDevice] getAddressString];
+	NSData *data = [NSData dataWithBytes: dataPointer length: dataLength];
 
-		if (res != NULL && res.producer != NULL) {
-			// push the data into the pipe so it can be read from the main thread 
-			pipe_push(res.producer, [data bytes], data.length);
-		}
+	while (![devicesLock tryLock]) {
+		CFRunLoopRun();
 	}
+
+	BluetoothDeviceResources *res = [devices objectForKey: address];
+
+	if (res != NULL && res.producer != NULL) {
+		// push the data into the pipe so it can be read from the main thread
+		pipe_push(res.producer, [data bytes], data.length);
+	}
+
+	[devicesLock unlock];
+	CFRunLoopStop(CFRunLoopGetCurrent());
 }
 
 /** Called when a channel has been closed */
@@ -315,7 +374,7 @@ using namespace v8;
 }
 
 /** Called when a device has been found */
-- (void) deviceInquiryDeviceFound: (IOBluetoothDeviceInquiry*) sender device: (IOBluetoothDevice*) device 
+- (void) deviceInquiryDeviceFound: (IOBluetoothDeviceInquiry*) sender device: (IOBluetoothDevice*) device
 {
 	@synchronized(self) {
 		if (inquiryProducer != NULL) {
@@ -325,7 +384,7 @@ using namespace v8;
 
 			// push the device data into the pipe to notify the main thread
 			pipe_push(inquiryProducer, info, 1);
-			
+
 			delete info;
 		}
 	}

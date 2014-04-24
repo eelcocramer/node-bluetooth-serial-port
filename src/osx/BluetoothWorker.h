@@ -32,6 +32,7 @@ struct device_info_t {
     pipe_producer_t *inquiryProducer;
 	NSLock *sdpLock;
 	NSLock *connectLock;
+	NSLock *devicesLock;
 	IOReturn connectResult;
 	int lastChannelID;
 	NSLock *writeLock;
@@ -42,7 +43,7 @@ struct device_info_t {
 + (id)getInstance;
 - (void) disconnectFromDevice: (NSString *) address;
 - (IOReturn)connectDevice: (NSString *) address onChannel: (int) channel withPipe: (pipe_t *)pipe;
-- (IOReturn)writeSync:(void *)data length:(UInt16)length toDevice: (NSString *)address;
+- (IOReturn)writeAsync:(void *)data length:(UInt16)length toDevice: (NSString *)address;
 - (void) inquireWithPipe: (pipe_t *)pipe;
 - (int) getRFCOMMChannelID: (NSString *) address;
 
@@ -54,6 +55,8 @@ struct device_info_t {
     aborted: (BOOL) aborted;
 - (void) deviceInquiryDeviceFound: (IOBluetoothDeviceInquiry*) sender
 	device: (IOBluetoothDevice*) device;
+
+- (void) rfcommChannelWriteComplete:(IOBluetoothRFCOMMChannel*)rfcommChannel refcon:(void*)refcon status:(IOReturn)error;
 
 @end
 
