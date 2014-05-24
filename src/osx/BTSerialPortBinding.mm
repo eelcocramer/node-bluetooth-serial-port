@@ -165,6 +165,8 @@ void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
 }
 
 void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
+    HandleScope scope;
+
     read_baton_t *baton = static_cast<read_baton_t *>(req->data);
 
     TryCatch try_catch;
@@ -175,15 +177,14 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
         argv[0] = Exception::Error(String::New("Error reading from connection"));
         argv[1] = Undefined();
     } else {
-        Buffer *buffer = Buffer::New(baton->size);
-        memcpy(Buffer::Data(buffer), baton->result, baton->size);
         Local<Object> globalObj = Context::GetCurrent()->Global();
         Local<Function> bufferConstructor = Local<Function>::Cast(globalObj->Get(String::New("Buffer")));
-        Handle<Value> constructorArgs[3] = { buffer->handle_, Integer::New(baton->size), Integer::New(0) };
-        Local<Object> resultBuffer = bufferConstructor->NewInstance(3, constructorArgs);
+        Handle<Value> constructorArgs[1] = { Integer::New(baton->size) };
+        Local<Object> resultBuffer = bufferConstructor->NewInstance(1, constructorArgs);
+        memcpy(Buffer::Data(resultBuffer), baton->result, baton->size);
 
         argv[0] = Undefined();
-        argv[1] = resultBuffer;
+        argv[1] = scope.Close(resultBuffer);
     }
 
     baton->cb->Call(Context::GetCurrent()->Global(), 2, argv);
