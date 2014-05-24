@@ -48,6 +48,7 @@ class DeviceINQ : public node::ObjectWrap {
         static v8::Handle<v8::Value> New(const v8::Arguments& args);
         static v8::Handle<v8::Value> Inquire(const v8::Arguments& args);
         static v8::Handle<v8::Value> SdpSearch(const v8::Arguments& args);
+        static v8::Handle<v8::Value> ListPairedDevices(const v8::Arguments& args);
 };
 
 #endif

@@ -120,6 +120,8 @@ void DeviceINQ::Init(Handle<Object> target) {
     
     NODE_SET_PROTOTYPE_METHOD(t, "inquire", Inquire);
     NODE_SET_PROTOTYPE_METHOD(t, "findSerialPortChannel", SdpSearch);
+    NODE_SET_PROTOTYPE_METHOD(t, "listPairedDevices", ListPairedDevices);
+    target->Set(String::NewSymbol("DeviceINQ"), t->GetFunction());
     target->Set(String::NewSymbol("DeviceINQ"), t->GetFunction());
     target->Set(String::NewSymbol("DeviceINQ"), t->GetFunction());
 }
@@ -277,4 +279,37 @@ Handle<Value> DeviceINQ::SdpSearch(const Arguments& args) {
     uv_queue_work(uv_default_loop(), &baton->request, EIO_SdpSearch, (uv_after_work_cb)EIO_AfterSdpSearch);
 
     return Undefined();
+}
+
+Handle<Value> DeviceINQ::ListPairedDevices(const Arguments& args) {
+    HandleScope scope;
+
+    const char *usage = "usage: listPairedDevices(callback)";
+    if (args.Length() != 1) {
+        return scope.Close(ThrowException(Exception::Error(String::New(usage))));
+    }
+
+    if(!args[0]->IsFunction()) {
+        return scope.Close(ThrowException(Exception::TypeError(String::New("First argument must be a function"))));
+    }
+    Local<Function> cb = Local<Function>::Cast(args[0]);
+
+    Local<Array> resultArray = Array::New(0);
+
+    // TODO: build an array of objects representing a paired device:
+    // ex: {
+    //   name: 'MyBluetoothDeviceName',
+    //   address: '12-34-56-78-90',
+    //   services: [
+    //     { name: 'SPP', channel: 1 },
+    //     { name: 'iAP', channel: 2 }
+    //   ]
+    // }
+
+    Local<Value> argv[1] = {
+        resultArray
+    };
+    cb->Call(Context::GetCurrent()->Global(), 1, argv);
+
+    return scope.Close(Undefined());
 }
