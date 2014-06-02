@@ -4,6 +4,11 @@ This node module lets you communicate over Bluetooth serial port with devices us
 
 ## RELEASE NOTES
 
+### 1.1.3
+
+* Fixes [segfault](https://github.com/eelcocramer/node-bluetooth-serial-port/pull/29) that occurs when a buffer is invalidated by the garbage collector.
+* Adds experimental support for listing paired devices.
+
 ### 1.1.2
 
 * Updates the documentation to reflect the changes made in version 1.1.0.
@@ -170,6 +175,14 @@ Writes a [Buffer](http://nodejs.org/api/buffer.html) to the serial port connecti
 
 * buffer - the [Buffer](http://nodejs.org/api/buffer.html) to be written.
 * callback(err, bytesWritten) - is called when the write action has been completed. When the `err` parameter is set an error has occured, in that case `err` is an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object). When `err` is not set the write action was successful and `bytesWritten` contains the amount of bytes that is written to the connection.
+
+#### BluetoothSerialPort.listPairedDevices(callback)
+
+__ONLY ON OSX__
+
+Lists the devices that are currently paired with the host.
+
+* callback(pairedDevices) - is called when the paired devices object has been populated. See the [pull request](https://github.com/eelcocramer/node-bluetooth-serial-port/pull/30) for more information on the `pairedDevices` object.
 
 ## LICENSE
 
