@@ -77,7 +77,7 @@ This node module lets you communicate over Bluetooth serial port with devices us
 ## Pre-request on Windows
 
 * Needs Visual Studio (Visual C++) and its command line tools installed.
-* Needs Python 2.x installed and accessible form the command line path.
+* Needs Python 2.x installed and accessible from the command line path.
 
 ## Install
 
