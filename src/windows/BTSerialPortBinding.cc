@@ -158,6 +158,8 @@ void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
 }
 
 void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
+    HandleScope scope;
+    
     read_baton_t *baton = static_cast<read_baton_t *>(req->data);
 
     TryCatch try_catch;
