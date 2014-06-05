@@ -4,6 +4,10 @@ This node module lets you communicate over Bluetooth serial port with devices us
 
 ## RELEASE NOTES
 
+### 1.1.4
+
+* Fixes an compile issue on Windows.
+
 ### 1.1.3
 
 * Fixes [segfault](https://github.com/eelcocramer/node-bluetooth-serial-port/pull/29) that occurs when a buffer is invalidated by the garbage collector.
