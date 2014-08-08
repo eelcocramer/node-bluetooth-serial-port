@@ -109,6 +109,8 @@ btSerial.on('found', function(address, name) {
 
 		// close the connection when you're ready
 		btSerial.close();
+	}, function() {
+		console.log('found nothing');
 	});
 });
 
