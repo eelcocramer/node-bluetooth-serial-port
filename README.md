@@ -72,7 +72,7 @@ This node module lets you communicate over Bluetooth serial port with devices us
 
 * Needs Bluetooth development packages to build
 
-`apt-get install libbluetooth-dev`
+`apt-get install build-essential libbluetooth-dev`
 
 ## Pre-request on OS X
 
