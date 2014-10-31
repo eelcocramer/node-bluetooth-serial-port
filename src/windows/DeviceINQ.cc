@@ -294,9 +294,94 @@ Handle<Value> DeviceINQ::ListPairedDevices(const Arguments& args) {
     }
     Local<Function> cb = Local<Function>::Cast(args[0]);
 
-    Local<Array> resultArray = Array::New(0);
+   // Construct windows socket bluetooth variables
+   DWORD flags = LUP_CONTAINERS | LUP_RETURN_NAME | LUP_RETURN_ADDR;
+   DWORD querySetSize = sizeof(WSAQUERYSET);
+   WSAQUERYSET *querySet = (WSAQUERYSET *)malloc(querySetSize);
+   if (querySet == nullptr) {
+	   return scope.Close(ThrowException(Exception::Error(String::New("Out of memory: Unable to allocate memory resource for inquiry"))));
+   }
 
-    // TODO: build an array of objects representing a paired device:
+   ZeroMemory(querySet, querySetSize);
+   querySet->dwSize = querySetSize;
+   querySet->dwNameSpace = NS_BTH;
+
+   std::vector<std::vector<Local<String>>> devices;
+   std::vector<int> channels;
+
+   // Initiate client device inquiry
+   HANDLE lookupServiceHandle;
+   int lookupServiceError = WSALookupServiceBegin(querySet, flags, &lookupServiceHandle);
+   if (lookupServiceError != SOCKET_ERROR) {
+	   // Iterate over each found bluetooth service
+	   bool inquiryComplete = false;
+	   while (!inquiryComplete) {
+		   // For each bluetooth service retrieve its corresponding details
+		   lookupServiceError = WSALookupServiceNext(lookupServiceHandle, flags, &querySetSize, querySet);
+		   if (lookupServiceError != SOCKET_ERROR) {
+			   char address[40] = { 0 };
+			   DWORD addressLength = _countof(address);
+			   SOCKADDR_BTH *bluetoothSocketAddress = (SOCKADDR_BTH *)querySet->lpcsaBuffer->RemoteAddr.lpSockaddr;
+			   BTH_ADDR bluetoothAddress = bluetoothSocketAddress->btAddr;
+
+			   // Emit the corresponding event if we were able to retrieve the address
+			   int addressToStringError = WSAAddressToString(querySet->lpcsaBuffer->RemoteAddr.lpSockaddr,
+															 sizeof(SOCKADDR_BTH),
+															 nullptr,
+															 address,
+															 &addressLength);
+			   if (addressToStringError != SOCKET_ERROR) {
+				   // Strip any leading and trailing parentheses is encountered
+				   char strippedAddress[19] = { 0 };
+				   auto addressString = sscanf_s(address, "(" "%18[^)]" ")", strippedAddress) == 1
+										? String::New(strippedAddress)
+										: String::New(address);
+				   std::vector<Local<String>> device;
+				   device.push_back(addressString);
+				   device.push_back(String::New(querySet->lpszServiceInstanceName));
+
+				   if(SerialPortServiceClass_UUID == bluetoothSocketAddress->serviceClassId)
+				   {
+					   channels.push_back(bluetoothSocketAddress->port);
+				   }
+				   else
+				   {
+					   channels.push_back(-1);
+				   }
+
+				   devices.push_back(device);
+			   }
+		   } else {
+			   int lookupServiceErrorNumber = WSAGetLastError();
+			   if (lookupServiceErrorNumber == WSAEFAULT) {
+				   free(querySet);
+				   querySet = (WSAQUERYSET *)malloc(querySetSize);
+				   if (querySet == nullptr) {
+					   WSALookupServiceEnd(lookupServiceHandle);
+					   return scope.Close(ThrowException(Exception::Error(String::New("Out of memory: Unable to allocate memory resource for inquiry"))));
+				   }
+			   } else if (lookupServiceErrorNumber == WSA_E_NO_MORE) {
+				   // No more services where found
+				   inquiryComplete = true;
+			   } else {
+				   // Unhandled error
+				   inquiryComplete = true;
+			   }
+		   }
+	   }
+   } else {
+	   int lookupServiceErrorNumber = WSAGetLastError();
+	   if (lookupServiceErrorNumber != WSASERVICE_NOT_FOUND) {
+		   free(querySet);
+		   return scope.Close(ThrowException(Exception::Error(String::New("Unable to initiate client device inquiry"))));
+	   }
+   }
+
+   free(querySet);
+   WSALookupServiceEnd(lookupServiceHandle);
+
+
+    // build an array of objects representing a paired device:
     // ex: {
     //   name: 'MyBluetoothDeviceName',
     //   address: '12-34-56-78-90',
@@ -305,6 +390,24 @@ Handle<Value> DeviceINQ::ListPairedDevices(const Arguments& args) {
     //     { name: 'iAP', channel: 2 }
     //   ]
     // }
+
+    Local<Array> resultArray = Array::New(devices.size());
+
+    for (int i = 0; i < devices.size(); i++) {
+        Local<Object> deviceObj = Object::New();
+        deviceObj->Set(String::NewSymbol("name"), devices.at(i).at(1));
+        deviceObj->Set(String::NewSymbol("address"), devices.at(i).at(0));
+
+        // A device may have multiple services, so enumerate each one
+        Local<Array> servicesArray =  Array::New(1);
+        Local<Object> serviceObj = Object::New();
+        //TODO Channel should be found through SDP
+        serviceObj->Set(String::NewSymbol("channel"), Int32::New(1));
+        serviceObj->Set(String::NewSymbol("name"), String::New("SPP"));
+        servicesArray->Set(0, serviceObj);
+        deviceObj->Set(String::NewSymbol("services"), servicesArray);
+        resultArray->Set(i, deviceObj);
+    }
 
     Local<Value> argv[1] = {
         resultArray
