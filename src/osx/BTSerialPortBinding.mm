@@ -49,7 +49,7 @@ void BTSerialPortBinding::EIO_Connect(uv_work_t *req) {
     NSString *address = [NSString stringWithCString:baton->address encoding:NSASCIIStringEncoding];
     BluetoothWorker *worker = [BluetoothWorker getInstance];
     // create pipe to communicate with delegate
-    pipe_t *pipe = pipe_new(sizeof(int), 0);
+    pipe_t *pipe = pipe_new(sizeof(unsigned char), 0);
 
     IOReturn result = [worker connectDevice: address onChannel:baton->channelID withPipe:pipe];
 
