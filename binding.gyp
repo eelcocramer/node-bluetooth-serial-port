@@ -17,7 +17,7 @@
           'libraries':['-framework Foundation', '-framework IOBluetooth', '-fobjc-arc'],
           'cflags!': [ '-fno-exceptions' ],
           'cflags_cc!': [ '-fno-exceptions' ],
-          'xcode_settings': { 'GCC_ENABLE_CPP_EXCEPTIONS': 'YES' }
+          'xcode_settings': { 'GCC_ENABLE_CPP_EXCEPTIONS': 'YES', 'OTHER_CFLAGS': [ '-Wno-unused-function' ] }
         }],
         [ 'OS=="win"', {
           'sources': [ 'src/windows/BluetoothSerialPort.cc', 'src/windows/DeviceINQ.cc', 'src/windows/BTSerialPortBinding.cc', 'src/windows/BluetoothHelpers.cc' ],
