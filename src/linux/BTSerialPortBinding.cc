@@ -49,7 +49,7 @@ ngx_queue_t write_queue;
 
 void BTSerialPortBinding::EIO_Connect(uv_work_t *req) {
     connect_baton_t *baton = static_cast<connect_baton_t *>(req->data);
-    
+
     struct sockaddr_rc addr = {
         0x00,
         { { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } },
@@ -70,12 +70,12 @@ void BTSerialPortBinding::EIO_Connect(uv_work_t *req) {
     int sock_flags = fcntl(baton->rfcomm->s, F_GETFL, 0);
     fcntl(baton->rfcomm->s, F_SETFL, sock_flags | O_NONBLOCK);
 }
-    
+
 void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
     connect_baton_t *baton = static_cast<connect_baton_t *>(req->data);
-    
+
     TryCatch try_catch;
-    
+
     if (baton->status == 0) {
         baton->cb->Call(Context::GetCurrent()->Global(), 0, NULL);
     } else {
@@ -83,11 +83,11 @@ void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
         argv[0] = Exception::Error(String::New("Cannot connect"));
         baton->ecb->Call(Context::GetCurrent()->Global(), 1, argv);
     }
-    
+
     if (try_catch.HasCaught()) {
         FatalException(try_catch);
     }
-    
+
     baton->rfcomm->Unref();
     baton->cb.Dispose();
     delete baton;
@@ -97,9 +97,9 @@ void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
 void BTSerialPortBinding::EIO_Write(uv_work_t *req) {
     queued_write_t *queuedWrite = static_cast<queued_write_t*>(req->data);
     write_baton_t *data = static_cast<write_baton_t*>(queuedWrite->baton);
-  
+
     BTSerialPortBinding* rfcomm = data->rfcomm;
-    
+
     if (rfcomm->s == 0) {
         sprintf(data->errorString, "Attempting to write to a closed connection");
     }
@@ -143,14 +143,14 @@ void BTSerialPortBinding::EIO_AfterWrite(uv_work_t *req) {
     delete data;
     delete queuedWrite;
 }
-   
+
 void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
-    unsigned int buf[1024]= { 0 };
+    unsigned char buf[1024]= { 0 };
 
     read_baton_t *baton = static_cast<read_baton_t *>(req->data);
 
     memset(buf, 0, sizeof(buf));
-    
+
     fd_set set;
     FD_ZERO(&set);
     FD_SET(baton->rfcomm->s, &set);
@@ -172,12 +172,12 @@ void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
         }
     }
 }
-    
+
 void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
     HandleScope scope;
 
     read_baton_t *baton = static_cast<read_baton_t *>(req->data);
-    
+
     TryCatch try_catch;
 
     Handle<Value> argv[2];
@@ -197,26 +197,26 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
     }
 
     baton->cb->Call(Context::GetCurrent()->Global(), 2, argv);
-    
+
     if (try_catch.HasCaught()) {
         FatalException(try_catch);
     }
-    
+
     baton->rfcomm->Unref();
     baton->cb.Dispose();
     delete baton;
 
     baton = NULL;
 }
-    
+
 void BTSerialPortBinding::Init(Handle<Object> target) {
     HandleScope scope;
-    
+
     Local<FunctionTemplate> t = FunctionTemplate::New(New);
-    
+
     t->InstanceTemplate()->SetInternalFieldCount(1);
     t->SetClassName(String::NewSymbol("BTSerialPortBinding"));
-    
+
     NODE_SET_PROTOTYPE_METHOD(t, "write", Write);
     NODE_SET_PROTOTYPE_METHOD(t, "read", Read);
     NODE_SET_PROTOTYPE_METHOD(t, "close", Close);
@@ -224,15 +224,15 @@ void BTSerialPortBinding::Init(Handle<Object> target) {
     target->Set(String::NewSymbol("BTSerialPortBinding"), t->GetFunction());
     target->Set(String::NewSymbol("BTSerialPortBinding"), t->GetFunction());
 }
-    
+
 BTSerialPortBinding::BTSerialPortBinding() : 
     s(0) {
 }
 
 BTSerialPortBinding::~BTSerialPortBinding() {
-    
+
 }
-    
+
 Handle<Value> BTSerialPortBinding::New(const Arguments& args) {
     HandleScope scope;
 
@@ -243,9 +243,9 @@ Handle<Value> BTSerialPortBinding::New(const Arguments& args) {
     if (args.Length() != 4) {
         return ThrowException(Exception::Error(String::New(usage)));
     }
-    
+
     String::Utf8Value address(args[0]);
-    
+
     int channelID = args[1]->Int32Value(); 
     if (channelID <= 0) { 
       return scope.Close(ThrowException(Exception::TypeError(String::New("ChannelID should be a positive int value."))));
@@ -253,7 +253,7 @@ Handle<Value> BTSerialPortBinding::New(const Arguments& args) {
 
     Local<Function> cb = Local<Function>::Cast(args[2]);
     Local<Function> ecb = Local<Function>::Cast(args[3]);
-    
+
     BTSerialPortBinding* rfcomm = new BTSerialPortBinding();
     rfcomm->Wrap(args.This());
 
@@ -279,16 +279,15 @@ Handle<Value> BTSerialPortBinding::New(const Arguments& args) {
 
     return args.This();
 }
-    
-    
+
 Handle<Value> BTSerialPortBinding::Write(const Arguments& args) {
     HandleScope scope;
 
-    // usage    
+    // usage
     if (args.Length() != 3) {
         return scope.Close(ThrowException(Exception::Error(String::New("usage: write(buf, address, callback)"))));
     }
-    
+
     // buffer
     if(!args[0]->IsObject() || !Buffer::HasInstance(args[0])) {
         return scope.Close(ThrowException(Exception::TypeError(String::New("First argument must be a buffer"))));
@@ -336,15 +335,15 @@ Handle<Value> BTSerialPortBinding::Write(const Arguments& args) {
 
     return scope.Close(v8::Undefined());
 }
- 
+
 Handle<Value> BTSerialPortBinding::Close(const Arguments& args) {
     HandleScope scope;
-    
+
     const char *usage = "usage: close(address)";
     if (args.Length() != 1) {
         return ThrowException(Exception::Error(String::New(usage)));
     }
-    
+
     //NOTE: The address argument is currently only used in OSX.
     //      On linux each connection is handled by a separate object.
 
@@ -354,28 +353,28 @@ Handle<Value> BTSerialPortBinding::Close(const Arguments& args) {
         close(rfcomm->s);
         write(rfcomm->rep[1], "close", (strlen("close")+1));
         rfcomm->s = 0;
-    }    
-    
+    }
+
     return Undefined();
 }
- 
+
 Handle<Value> BTSerialPortBinding::Read(const Arguments& args) {
     HandleScope scope;
-    
+
     const char *usage = "usage: read(callback)";
     if (args.Length() != 1) {
         return ThrowException(Exception::Error(String::New(usage)));
     }
 
     Local<Function> cb = Local<Function>::Cast(args[0]);
-            
+
     BTSerialPortBinding* rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
 
     const char *has_been_closed = "connection has been closed";
     if (rfcomm->s == 0) {
         return ThrowException(Exception::Error(String::New(has_been_closed)));
     }
-    
+
     read_baton_t *baton = new read_baton_t();
     baton->rfcomm = rfcomm;
     baton->cb = Persistent<Function>::New(cb);

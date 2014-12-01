@@ -57,11 +57,7 @@ class BTSerialPortBinding : public node::ObjectWrap {
             BTSerialPortBinding *rfcomm;
             uv_work_t request;
             v8::Persistent<v8::Function> cb;
-#ifdef _WINDOWS_
             unsigned char result[1024];
-#else
-            unsigned int result[1024];
-#endif
             int errorno;
             int size;
         };
