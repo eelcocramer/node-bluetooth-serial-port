@@ -6,6 +6,10 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 ## RELEASE NOTES
 
+### 1.1.5
+
+* Fixes an [issue on OSX](https://github.com/eelcocramer/node-bluetooth-serial-port/issues/46) where multiple reads would result into a corrupted read buffer.
+
 ### 1.1.4
 
 * Fixes an compile issue on Windows.
