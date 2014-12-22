@@ -48,7 +48,7 @@ void DeviceINQ::EIO_SdpSearch(uv_work_t *req) {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
     NSString *address = [NSString stringWithCString:baton->address encoding:NSASCIIStringEncoding];
-    BluetoothWorker *worker = [BluetoothWorker getInstance];
+    BluetoothWorker *worker = [BluetoothWorker getInstance: address];
     baton->channelID = [worker getRFCOMMChannelID: address];
 
     [pool release];
@@ -58,11 +58,11 @@ void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
     sdp_baton_t *baton = static_cast<sdp_baton_t *>(req->data);
 
     TryCatch try_catch;
-    
+
     Local<Value> argv[1];
     argv[0] = Integer::New(baton->channelID);
     baton->cb->Call(Context::GetCurrent()->Global(), 1, argv);
-    
+
     if (try_catch.HasCaught()) {
         FatalException(try_catch);
     }
@@ -75,12 +75,12 @@ void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
 
 void DeviceINQ::Init(Handle<Object> target) {
     HandleScope scope;
-    
+
     Local<FunctionTemplate> t = FunctionTemplate::New(New);
 
     t->InstanceTemplate()->SetInternalFieldCount(1);
     t->SetClassName(String::NewSymbol("DeviceINQ"));
-    
+
     NODE_SET_PROTOTYPE_METHOD(t, "inquire", Inquire);
     NODE_SET_PROTOTYPE_METHOD(t, "findSerialPortChannel", SdpSearch);
     NODE_SET_PROTOTYPE_METHOD(t, "listPairedDevices", ListPairedDevices);
@@ -88,15 +88,15 @@ void DeviceINQ::Init(Handle<Object> target) {
     target->Set(String::NewSymbol("DeviceINQ"), t->GetFunction());
     target->Set(String::NewSymbol("DeviceINQ"), t->GetFunction());
 }
-    
+
 DeviceINQ::DeviceINQ() {
-        
+
 }
-    
+
 DeviceINQ::~DeviceINQ() {
-        
+
 }
-    
+
 Handle<Value> DeviceINQ::New(const Arguments& args) {
     HandleScope scope;
 
@@ -110,7 +110,7 @@ Handle<Value> DeviceINQ::New(const Arguments& args) {
 
     return args.This();
 }
- 
+
 Handle<Value> DeviceINQ::Inquire(const Arguments& args) {
     HandleScope scope;
 
@@ -121,7 +121,12 @@ Handle<Value> DeviceINQ::Inquire(const Arguments& args) {
 
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
-    BluetoothWorker *worker = [BluetoothWorker getInstance];
+    fprintf(stderr, "blaat\n");
+    BluetoothWorker *worker = [BluetoothWorker getInstance:nil];
+
+    if (worker == nil) {
+        fprintf(stderr, "no worker\n");
+    }
 
     // create pipe to communicate with delegate
     pipe_t *pipe = pipe_new(sizeof(device_info_t), 0);
@@ -145,7 +150,7 @@ Handle<Value> DeviceINQ::Inquire(const Arguments& args) {
             MakeCallback(args.This(), "emit", 3, argv);
         }
     } while (result != 0);
-    
+
     delete info;
     pipe_consumer_free(c);
 
@@ -158,15 +163,15 @@ Handle<Value> DeviceINQ::Inquire(const Arguments& args) {
     [pool release];
     return Undefined();
 }
-    
+
 Handle<Value> DeviceINQ::SdpSearch(const Arguments& args) {
     HandleScope scope;
-    
+
     const char *usage = "usage: sdpSearchForRFCOMM(address, callback)";
     if (args.Length() != 2) {
         return scope.Close(ThrowException(Exception::Error(String::New(usage))));
     }
-    
+
     if (!args[0]->IsString()) {
         return scope.Close(ThrowException(Exception::TypeError(String::New("First argument should be a string value"))));
     }
@@ -176,9 +181,9 @@ Handle<Value> DeviceINQ::SdpSearch(const Arguments& args) {
         return scope.Close(ThrowException(Exception::TypeError(String::New("Second argument must be a function"))));
     }
     Local<Function> cb = Local<Function>::Cast(args[1]);
-            
+
     DeviceINQ* inquire = ObjectWrap::Unwrap<DeviceINQ>(args.This());
-    
+
     sdp_baton_t *baton = new sdp_baton_t();
     baton->inquire = inquire;
     baton->cb = Persistent<Function>::New(cb);

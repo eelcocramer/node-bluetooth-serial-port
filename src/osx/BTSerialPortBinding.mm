@@ -47,7 +47,7 @@ void BTSerialPortBinding::EIO_Connect(uv_work_t *req) {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
     NSString *address = [NSString stringWithCString:baton->address encoding:NSASCIIStringEncoding];
-    BluetoothWorker *worker = [BluetoothWorker getInstance];
+    BluetoothWorker *worker = [BluetoothWorker getInstance: address];
     // create pipe to communicate with delegate
     pipe_t *pipe = pipe_new(sizeof(unsigned char), 0);
 
@@ -96,8 +96,8 @@ void BTSerialPortBinding::EIO_Write(uv_work_t *req) {
     write_baton_t *data = static_cast<write_baton_t*>(queuedWrite->baton);
 
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-    BluetoothWorker *worker = [BluetoothWorker getInstance];
     NSString *address = [NSString stringWithCString:data->address encoding:NSASCIIStringEncoding];
+    BluetoothWorker *worker = [BluetoothWorker getInstance: address];
 
     if ([worker writeAsync: data->bufferData length: data->bufferLength toDevice: address] != kIOReturnSuccess) {
         sprintf(data->errorString, "Write was unsuccessful");
@@ -334,7 +334,7 @@ Handle<Value> BTSerialPortBinding::Close(const Arguments& args) {
     strncpy(addressArray, *addressParameter, 32);
     NSString *address = [NSString stringWithCString:addressArray encoding:NSASCIIStringEncoding];
 
-    BluetoothWorker *worker = [BluetoothWorker getInstance];
+    BluetoothWorker *worker = [BluetoothWorker getInstance: address];
     [worker disconnectFromDevice: address];
 
     return Undefined();
