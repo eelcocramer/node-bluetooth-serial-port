@@ -11,6 +11,8 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 * Fixes an [issue on OSX](https://github.com/eelcocramer/node-bluetooth-serial-port/issues/46) where multiple reads would result into a corrupted read buffer.
 * [Improves](https://github.com/eelcocramer/node-bluetooth-serial-port/issues/51) the implementation of the Bluetooth worker on OSX.
 * Better [performance](https://github.com/eelcocramer/node-bluetooth-serial-port/issues/35) while writing to the Bluetooth connection on OSX.
+* Keeps the [reader loop from reading from a closed connection]((https://github.com/eelcocramer/node-bluetooth-serial-port/issues/47).
+* Compiles with node v0.11.x on OSX (Linux and Windows to be done).
 
 ### 1.1.4
 

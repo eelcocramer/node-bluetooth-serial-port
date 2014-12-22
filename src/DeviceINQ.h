@@ -13,6 +13,8 @@
 #define NODE_BTSP_SRC_DEVICE_INQ_H
 
 #include <node.h>
+#include <uv.h>
+#include <nan.h>
 
 class DeviceINQ : public node::ObjectWrap {
     private:
@@ -37,7 +39,7 @@ class DeviceINQ : public node::ObjectWrap {
         struct sdp_baton_t {
             DeviceINQ *inquire;
             uv_work_t request;
-            v8::Persistent<v8::Function> cb;
+            NanCallback* cb;
             int channelID;
             char address[40];
         };
@@ -45,10 +47,10 @@ class DeviceINQ : public node::ObjectWrap {
         DeviceINQ();
         ~DeviceINQ();
 
-        static v8::Handle<v8::Value> New(const v8::Arguments& args);
-        static v8::Handle<v8::Value> Inquire(const v8::Arguments& args);
-        static v8::Handle<v8::Value> SdpSearch(const v8::Arguments& args);
-        static v8::Handle<v8::Value> ListPairedDevices(const v8::Arguments& args);
+        static NAN_METHOD(New);
+        static NAN_METHOD(Inquire);
+        static NAN_METHOD(SdpSearch);
+        static NAN_METHOD(ListPairedDevices);
 };
 
 #endif

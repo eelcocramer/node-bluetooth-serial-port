@@ -23,6 +23,7 @@
 , "os": [ "darwin", "linux", "win32" ]
 , "dependencies" :
   { "bindings" : "1.1.x"
+  , "nan" : "^1.4.1"
   }
 , "engines" :
   { "node" : ">= 0.8.x"
