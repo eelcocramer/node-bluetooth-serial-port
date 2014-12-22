@@ -121,12 +121,7 @@ Handle<Value> DeviceINQ::Inquire(const Arguments& args) {
 
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
-    fprintf(stderr, "blaat\n");
     BluetoothWorker *worker = [BluetoothWorker getInstance:nil];
-
-    if (worker == nil) {
-        fprintf(stderr, "no worker\n");
-    }
 
     // create pipe to communicate with delegate
     pipe_t *pipe = pipe_new(sizeof(device_info_t), 0);

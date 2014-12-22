@@ -220,10 +220,6 @@ using namespace v8;
 /** Task to do the writing */
 - (void)writeAsyncTask:(BTData *)writeData
 {
-	while (![deviceLock tryLock]) {
-		CFRunLoopRun();
-	}
-
 	if (res != nil) {
 		char *idx = (char *)[writeData.data bytes];
 		ssize_t numBytesRemaining;
@@ -242,11 +238,7 @@ using namespace v8;
 			ssize_t numBytesToWrite = ((numBytesRemaining > rfcommChannelMTU) ? rfcommChannelMTU :  numBytesRemaining);
 
 			// Send the bytes
-			writeResult = [res.channel writeAsync:idx length:numBytesToWrite refcon:deviceLock];
-
-			while (![deviceLock tryLock]) {
-				CFRunLoopRun();
-			}
+			writeResult = [res.channel writeAsync:idx length:numBytesToWrite refcon:res];
 
 			// Updates the position in the buffer:
 			numBytesRemaining -= numBytesToWrite;
@@ -254,20 +246,17 @@ using namespace v8;
 		}
 	}
 
-	[deviceLock unlock];
 	CFRunLoopStop(CFRunLoopGetCurrent());
 }
 
 - (void)rfcommChannelWriteComplete:(IOBluetoothRFCOMMChannel*)rfcommChannel refcon:(void*)refcon status:(IOReturn)error
 {
-	[deviceLock unlock];
 	CFRunLoopStop(CFRunLoopGetCurrent());
 }
 
 /** Inquire Bluetooth devices and send results through the given pipe */
 - (void) inquireWithPipe: (pipe_t *)pipe
 {
-    NSLog(@"blaat");
 	@synchronized(self) {
 	  inquiryProducer = pipe_producer_new(pipe);
 		[self performSelector:@selector(inquiryTask) onThread:worker withObject:nil waitUntilDone:false];
@@ -347,16 +336,11 @@ using namespace v8;
 {
 	NSData *data = [NSData dataWithBytes: dataPointer length: dataLength];
 
-	while (![deviceLock tryLock]) {
-		CFRunLoopRun();
-	}
-
 	if (res != NULL && res.producer != NULL) {
 		// push the data into the pipe so it can be read from the main thread
 		pipe_push(res.producer, [data bytes], data.length);
 	}
 
-	[deviceLock unlock];
 	CFRunLoopStop(CFRunLoopGetCurrent());
 }
 
