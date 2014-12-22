@@ -59,12 +59,9 @@ using namespace v8;
 @synthesize address;
 @end
 
-<<<<<<< HEAD
-=======
 static NSMutableDictionary *instanceWorkers = nil;
 static NSLock *globalConnectLock = nil;
 
->>>>>>> 0f08ed3... Global lock around channel open.
 /** Class that is handling all the Bluetooth work */
 @implementation BluetoothWorker
 
@@ -79,13 +76,9 @@ static NSLock *globalConnectLock = nil;
     static dispatch_once_t onceToken;
 
     dispatch_once(&onceToken, ^{
-<<<<<<< HEAD
         instances = [[NSMutableDictionary alloc] init];
-=======
-        BTSPLog("Creating worker dictionary.");
         globalConnectLock = [[NSLock alloc] init];
         instanceWorkers = [[NSMutableDictionary alloc] init];
->>>>>>> 0f08ed3... Global lock around channel open.
     });
 
     BluetoothWorker *worker = nil;
@@ -206,15 +199,9 @@ static NSLock *globalConnectLock = nil;
 			   	res.device = device;
 			   	res.producer = producer;
 			   	res.channel = channel;
-<<<<<<< HEAD
-			}
-=======
-
-			   	[devices setObject:res forKey:address];
-            } else {
+			} else {
                 [globalConnectLock unlock];
             }
->>>>>>> 0f08ed3... Global lock around channel open.
 		}
 	}
 
