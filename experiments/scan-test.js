@@ -45,9 +45,19 @@
                     }
 
                     setTimeout(function() {
-                        serial.close();
-                        console.log('Closed and ready');
-                    }, 500000);
+                        serial.write(buf, function (err, count) {
+                            if (err) {
+                                console.log('Error received: ' + err);
+                            } else {
+                                console.log('Bytes writen is: ' + count);
+                            }
+
+                            setTimeout(function() {
+                                serial.close();
+                                console.log('Closed and ready');
+                            }, 5000);
+                        });
+                    }, 5000);
                 });
             });
         });
