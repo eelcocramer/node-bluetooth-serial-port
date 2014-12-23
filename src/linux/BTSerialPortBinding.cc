@@ -374,18 +374,24 @@ NAN_METHOD(BTSerialPortBinding::Read) {
 
     BTSerialPortBinding* rfcomm = ObjectWrap::Unwrap<BTSerialPortBinding>(args.This());
 
-    const char *has_been_closed = "connection has been closed";
+    // callback with an error if the connection has been closed.
     if (rfcomm->s == 0) {
-        NanThrowError(has_been_closed);
+        Handle<Value> argv[2];
+
+        argv[0] = NanError("The connection has been closed");
+        argv[1] = NanUndefined();
+
+        NanCallback *nc = new NanCallback(cb);
+        nc->Call(2, argv);
+    } else {
+        read_baton_t *baton = new read_baton_t();
+        baton->rfcomm = rfcomm;
+        baton->cb = new NanCallback(cb);
+        baton->request.data = baton;
+        baton->rfcomm->Ref();
+
+        uv_queue_work(uv_default_loop(), &baton->request, EIO_Read, (uv_after_work_cb)EIO_AfterRead);
     }
-
-    read_baton_t *baton = new read_baton_t();
-    baton->rfcomm = rfcomm;
-    baton->cb = new NanCallback(cb);
-    baton->request.data = baton;
-    baton->rfcomm->Ref();
-
-    uv_queue_work(uv_default_loop(), &baton->request, EIO_Read, (uv_after_work_cb)EIO_AfterRead);
 
     NanReturnUndefined();
 }
