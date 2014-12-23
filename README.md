@@ -12,7 +12,9 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 * [Improves](https://github.com/eelcocramer/node-bluetooth-serial-port/issues/51) the implementation of the Bluetooth worker on OSX.
 * Better [performance](https://github.com/eelcocramer/node-bluetooth-serial-port/issues/35) while writing to the Bluetooth connection on OSX.
 * Keeps the [reader loop from reading from a closed connection]((https://github.com/eelcocramer/node-bluetooth-serial-port/issues/47).
-* Compiles with node v0.11.x on OSX (Linux and Windows to be done).
+* Will work on both node v0.8.x, v0.10.x and node v0.11.x on OSX and Linux (Windows to be done).
+* When trying to write to closed connection the `write` function will not throw an exception anymore but will call the callback as per documentation.
+* Adds a `closed` event that fires when a connection is closed either by the user or remotely.
 
 ### 1.1.4
 
@@ -140,6 +142,10 @@ btSerial.inquire();
 Emitted when data is read from the serial port connection.
 
 * buffer - the data that was read into a [Buffer](http://nodejs.org/api/buffer.html) object.
+
+### Event: ('closed')
+
+Emitted when a connection was closed either by the user (i.e. calling `close` or remotely).
 
 #### Event: ('failure', err)
 
