@@ -363,7 +363,7 @@ NAN_METHOD(BTSerialPortBinding::Close) {
 }
 
 NAN_METHOD(BTSerialPortBinding::Read) {
-    HandleScope scope;
+    NanScope();
 
     const char *usage = "usage: read(callback)";
     if (args.Length() != 1) {

@@ -293,7 +293,7 @@ NAN_METHOD(DeviceINQ::ListPairedDevices) {
     }
     Local<Function> cb = args[0].As<Function>();
 
-    Local<Array> resultArray = NanNew<v8:Array>((int)0);
+    Local<Array> resultArray = Local<Array>(NanNew<Array>());
 
     // TODO: build an array of objects representing a paired device:
     // ex: {
@@ -308,7 +308,7 @@ NAN_METHOD(DeviceINQ::ListPairedDevices) {
     Local<Value> argv[1] = {
         resultArray
     };
-    cb->Call(1, argv);
+    cb->Call(NanGetCurrentContext()->Global(), 1, argv);
 
     NanReturnUndefined();
 }

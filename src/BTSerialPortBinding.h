@@ -15,7 +15,7 @@
 #include <node.h>
 #include <uv.h>
 #include <nan.h>
-#import "ngx-queue.h"
+#include "ngx-queue.h"
 
 #ifdef __APPLE__
 #import <Foundation/NSObject.h>
