@@ -6,6 +6,10 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 ## RELEASE NOTES
 
+### 1.2.1
+
+* Fixes issues compile issues on OS X and Linux when using newer versions of [nan](https://github.com/rvagg/nan).
+
 ### 1.2.0
 
 > *PLEASE NOTE* This release is not yet available for the Windows platform because the [compilation needs to be verified first](https://github.com/eelcocramer/node-bluetooth-serial-port/issues/53). As there are no major functional changes this release and the release, hopefully, will fix major issues on OSX I decided to go forward without Windows support for the moment. This will hopefully be fixed in the next release. I will update as soon as possible.
