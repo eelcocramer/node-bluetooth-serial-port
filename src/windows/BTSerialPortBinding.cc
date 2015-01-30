@@ -109,7 +109,7 @@ void BTSerialPortBinding::EIO_AfterWrite(uv_work_t *req) {
         argv[1] = NanUndefined();
     } else {
         argv[0] = NanUndefined();
-        argv[1] = NanNew(v8::Integer>(static_cast<int>(data->result));
+        argv[1] = NanNew(<v8::Integer>(static_cast<int32_t>(data->result));
     }
 
     data->callback->Call(2, argv);
