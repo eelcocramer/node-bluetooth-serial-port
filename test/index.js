@@ -1,4 +1,4 @@
-var bt = require('bluetooth-serial-port');
+var bt = require('../lib/bluetooth-serial-port.js');
 var Bt = new bt.BluetoothSerialPort();
 
 [

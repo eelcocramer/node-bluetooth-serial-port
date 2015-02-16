@@ -6,7 +6,7 @@ node_js:
   - "iojs"
 
 before_install:
-  - apt-get install libbluetooth-dev
+  - sudo apt-get install libbluetooth-dev -y
   - npm install node-gyp
   - export PATH=$PATH:./node_modules/.bin
 
@@ -14,4 +14,5 @@ script:
   - node-gyp configure
   - node-gyp build
   - node ./test/index.js
+
 
