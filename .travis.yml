@@ -8,5 +8,10 @@ node_js:
 before_install:
   - apt-get install libbluetooth-dev
   - npm install node-gyp
-script: "./node_modules/.bin/node-gyp configure && ./node_modules/.bin/node-gyp build"
+  - export PATH=$PATH:./node_modules/.bin
+
+script:
+  - node-gyp configure
+  - node-gyp build
+  - node ./test/index.js
 
