@@ -358,7 +358,7 @@ NAN_METHOD(BTSerialPortBinding::Read) {
     NanReturnUndefined();
 }
 
-Handle<Value> BTSerialPortBinding::Close(const Arguments& args) {
+NAN_METHOD(BTSerialPortBinding::Close) {
     NanScope();
 
     //NOTE: The address argument is currently only used in OSX.
