@@ -33,5 +33,5 @@
   { "install": "node-gyp configure build"
   }
 , "license": "BSD-2-Clause"
-, "contributors": ["Eric Smekens", "Juho Vepsäläinen", "Elmar Langholz", "Donald Ness", "Joost Verdoorn", "Max Metral"]
+, "contributors": ["Eric Smekens", "Juho Vepsäläinen", "Elmar Langholz", "Donald Ness", "Joost Verdoorn", "Max Metral", "Thomas Wickham"]
 }
