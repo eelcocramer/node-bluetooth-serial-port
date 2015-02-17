@@ -4,11 +4,12 @@ node_js:
   - "0.11"
   - "0.10"
   - "iojs"
+os:
+  - linux
+  - osx
 
 before_install:
-  - sudo apt-get install libbluetooth-dev -y
-  - npm install node-gyp
-  - export PATH=$PATH:./node_modules/.bin
+  - ./test/before_install.sh
 
 script:
   - node-gyp configure
