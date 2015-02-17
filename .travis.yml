@@ -1,9 +1,9 @@
-language: node_js
-node_js:
-  - "0.12"
-  - "0.11"
-  - "0.10"
-  - "iojs"
+language: ruby # node_js is not supported on osx
+env: # we don't care of rvm, we only want to have the right number fo jobs
+  - NODE_VERSION=0.10
+  - NODE_VERSION=0.11
+  - NODE_VERSION=0.12
+  - NODE_VERSION=iojs
 os:
   - linux
   - osx
@@ -12,6 +12,7 @@ before_install:
   - ./test/before_install.sh
 
 script:
+  - export PATH=$PATH:./node_modules/.bin
   - node-gyp configure
   - node-gyp build
   - node ./test/index.js
