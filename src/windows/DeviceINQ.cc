@@ -114,7 +114,7 @@ void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
 void DeviceINQ::Init(Handle<Object> target) {
     NanScope();
 
-    Local<FunctionTemplate> t = FunctionTemplate::New(New);
+    Local<FunctionTemplate> t = NanNew<FunctionTemplate>(New);
 
     t->InstanceTemplate()->SetInternalFieldCount(1);
     t->SetClassName(NanNew("DeviceINQ"));

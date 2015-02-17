@@ -1,6 +1,7 @@
 # Bluetooth serial port communication for Node.js
 
 [![Build Status](https://travis-ci.org/eelcocramer/node-bluetooth-serial-port.svg)](https://travis-ci.org/eelcocramer/node-bluetooth-serial-port)
+[![Build status](https://ci.appveyor.com/api/projects/status/4p1r3ddoid98qc7k?svg=true)](https://ci.appveyor.com/project/eelcocramer/node-bluetooth-serial-port)
 
 This node module lets you communicate over Bluetooth serial port with devices using Node.js. The goal is have an easy to use API. This module is great for communicating with Bluetooth enabled Arduino devices.
 
