@@ -1,0 +1,35 @@
+environment:
+  matrix:
+  # node.js
+  - nodejs_version: "0.10"
+  - nodejs_version: "0.11"
+  - nodejs_version: "0.12"
+  # io.js
+  - nodejs_version: "1.0"
+  - nodejs_version: "1.1"
+  - nodejs_version: "1.2"
+
+platform:
+  - x86
+  - x64
+
+
+# Install scripts. (runs after repo cloning)
+install:
+  # Get the latest stable version of Node.js or io.js
+  - ps: Install-Product node $env:nodejs_version
+  # install modules
+  - npm install node-gyp
+  - npm install
+
+# Post-install test scripts.
+test_script:
+  - node --version
+  - npm --version
+  # run tests
+  - node_modules\.bin\node-gyp configure
+  - node_modules\.bin\node-gyp build
+  - node test\index.js
+
+# Don't actually build.
+build: off
