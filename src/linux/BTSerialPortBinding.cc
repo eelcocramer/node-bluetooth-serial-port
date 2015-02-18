@@ -359,6 +359,10 @@ NAN_METHOD(BTSerialPortBinding::Close) {
         rfcomm->s = 0;
     }
 
+    // closing pipes
+    close(rfcomm->rep[0]);
+    close(rfcomm->rep[1]);
+
     NanReturnUndefined();
 }
 
