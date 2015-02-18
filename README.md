@@ -9,10 +9,11 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 ## RELEASE NOTES
 
-### NEXT RELEASE
+### 1.2.2
 
 * Adds [cross-platform continues integration](https://github.com/eelcocramer/node-bluetooth-serial-port/pull/58) to the repository. Thanks @mackwic.
-* ...
+* [Re-enables windows](https://github.com/eelcocramer/node-bluetooth-serial-port/issues/53) support.
+* Fixes an issue where [pipes and file descriptors are leaked](https://github.com/eelcocramer/node-bluetooth-serial-port/issues/57) when a connection could not be established.
 
 ### 1.2.1
 
