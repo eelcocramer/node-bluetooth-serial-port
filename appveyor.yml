@@ -21,7 +21,6 @@ install:
   # install modules
   - node --version
   - npm --version
-  - SET PATH=%APPDATA%\npm;%PATH
   - npm update -g npm
   - npm version
   - node -e "console.log(process.arch);"
