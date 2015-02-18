@@ -17,7 +17,7 @@ platform:
 # Install scripts. (runs after repo cloning)
 install:
   # Get the latest stable version of Node.js or io.js
-    - ps: Install-Product node $env:nodejs_version $env:Platform
+  - ps: Install-Product node $env:nodejs_version $env:Platform
   # install modules
   - node --version
   - npm --version
