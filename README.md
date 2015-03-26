@@ -190,11 +190,12 @@ Checks if a device has a serial port service running and if it is found it passe
 * callback(channel) - called when finished looking for a serial port on the device.
 * errorCallback - called the search finished but no serial port channel was found on the device.
 
-#### BluetoothSerialPort.connect(bluetoothAddress[, successCallback, errorCallback])
+#### BluetoothSerialPort.connect(bluetoothAddress, channel[, successCallback, errorCallback])
 
 Connects to a remote bluetooth device.
 
 * bluetoothAddress - the address of the remote Bluetooth device.
+* channel - the channel to connect to.
 * [successCallback] - called when a connection has been established.
 * [errorCallback(err)] - called when the connection attempt results in an error. The parameter is an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object).
 
