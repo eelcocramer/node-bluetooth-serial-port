@@ -13,6 +13,9 @@
 #define NODE_BTSP_SRC_SERIAL_PORT_BINDING_H
 
 #include <node.h>
+#include <uv.h>
+#include <nan.h>
+#include "ngx-queue.h"
 
 #ifdef __APPLE__
 #import <Foundation/NSObject.h>
@@ -38,16 +41,16 @@ class BTSerialPortBinding : public node::ObjectWrap {
 
         static v8::Persistent<v8::FunctionTemplate> s_ct;
         static void Init(v8::Handle<v8::Object> exports);
-        static v8::Handle<v8::Value> Write(const v8::Arguments& args);
-        static v8::Handle<v8::Value> Close(const v8::Arguments& args);
-        static v8::Handle<v8::Value> Read(const v8::Arguments& args);
+        static NAN_METHOD(Write);
+        static NAN_METHOD(Close);
+        static NAN_METHOD(Read);
 
     private:
         struct connect_baton_t {
             BTSerialPortBinding *rfcomm;
             uv_work_t request;
-            v8::Persistent<v8::Function> cb;
-            v8::Persistent<v8::Function> ecb;
+            NanCallback* cb;
+            NanCallback* ecb;
             char address[40];
             int status;
             int channelID;
@@ -56,12 +59,8 @@ class BTSerialPortBinding : public node::ObjectWrap {
         struct read_baton_t {
             BTSerialPortBinding *rfcomm;
             uv_work_t request;
-            v8::Persistent<v8::Function> cb;
-#ifdef _WINDOWS_
+            NanCallback* cb;
             unsigned char result[1024];
-#else
-            unsigned int result[1024];
-#endif
             int errorno;
             int size;
         };
@@ -72,7 +71,7 @@ class BTSerialPortBinding : public node::ObjectWrap {
             void* bufferData;
             int bufferLength;
             v8::Persistent<v8::Object> buffer;
-            v8::Persistent<v8::Value> callback;
+            NanCallback* callback;
             size_t result;
             char errorString[1024];
         };
@@ -98,7 +97,7 @@ class BTSerialPortBinding : public node::ObjectWrap {
         BTSerialPortBinding();
         ~BTSerialPortBinding();
 
-        static v8::Handle<v8::Value> New(const v8::Arguments& args);
+        static NAN_METHOD(New);
         static void EIO_Connect(uv_work_t *req);
         static void EIO_AfterConnect(uv_work_t *req);
         static void EIO_Write(uv_work_t *req);

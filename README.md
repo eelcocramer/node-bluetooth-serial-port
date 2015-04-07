@@ -1,8 +1,35 @@
 # Bluetooth serial port communication for Node.js
 
+[![Build Status](https://travis-ci.org/eelcocramer/node-bluetooth-serial-port.svg)](https://travis-ci.org/eelcocramer/node-bluetooth-serial-port)
+[![Build status](https://ci.appveyor.com/api/projects/status/4p1r3ddoid98qc7k?svg=true)](https://ci.appveyor.com/project/eelcocramer/node-bluetooth-serial-port)
+
 This node module lets you communicate over Bluetooth serial port with devices using Node.js. The goal is have an easy to use API. This module is great for communicating with Bluetooth enabled Arduino devices.
 
+If you have any problems make sure to [checkout the FAQ](https://github.com/eelcocramer/node-bluetooth-serial-port/issues?q=label%3AFAQ).
+
 ## RELEASE NOTES
+
+### 1.2.2
+
+* Adds [cross-platform continues integration](https://github.com/eelcocramer/node-bluetooth-serial-port/pull/58) to the repository. Thanks @mackwic.
+* [Re-enables windows](https://github.com/eelcocramer/node-bluetooth-serial-port/issues/53) support.
+* Fixes an issue where [pipes and file descriptors are leaked](https://github.com/eelcocramer/node-bluetooth-serial-port/issues/57) when a connection could not be established.
+
+### 1.2.1
+
+* Fixes issues compile issues on OS X and Linux when using newer versions of [nan](https://github.com/rvagg/nan).
+
+### 1.2.0
+
+> *PLEASE NOTE* This release is not yet available for the Windows platform because the [compilation needs to be verified first](https://github.com/eelcocramer/node-bluetooth-serial-port/issues/53). As there are no major functional changes this release and the release, hopefully, will fix major issues on OSX I decided to go forward without Windows support for the moment. This will hopefully be fixed in the next release. I will update as soon as possible.
+
+* Fixes an [issue on OSX](https://github.com/eelcocramer/node-bluetooth-serial-port/issues/46) where multiple reads would result into a corrupted read buffer.
+* [Improves](https://github.com/eelcocramer/node-bluetooth-serial-port/issues/51) the implementation of the Bluetooth worker on OSX.
+* Better [performance](https://github.com/eelcocramer/node-bluetooth-serial-port/issues/35) while writing to the Bluetooth connection on OSX.
+* Keeps the [reader loop from reading from a closed connection]((https://github.com/eelcocramer/node-bluetooth-serial-port/issues/47).
+* Will work on both node v0.8.x, v0.10.x and node v0.11.x on OSX and Linux (Windows to be done).
+* When trying to write to closed connection the `write` function will not throw an exception anymore but will call the callback as per documentation.
+* Adds a `closed` event that fires when a connection is closed either by the user or remotely.
 
 ### 1.1.4
 
@@ -130,6 +157,10 @@ btSerial.inquire();
 Emitted when data is read from the serial port connection.
 
 * buffer - the data that was read into a [Buffer](http://nodejs.org/api/buffer.html) object.
+
+### Event: ('closed')
+
+Emitted when a connection was closed either by the user (i.e. calling `close` or remotely).
 
 #### Event: ('failure', err)
 

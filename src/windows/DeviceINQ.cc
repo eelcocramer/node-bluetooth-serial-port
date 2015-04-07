@@ -96,34 +96,35 @@ void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
 
     TryCatch try_catch;
 
-    Local<Value> argv[1];
-    argv[0] = Integer::New(baton->channelID);
-    baton->cb->Call(Context::GetCurrent()->Global(), 1, argv);
-    
+    Handle<Value> argv[] = {
+        NanNew(baton->channelID)
+    };
+    baton->cb->Call(1, argv);
+
     if (try_catch.HasCaught()) {
         FatalException(try_catch);
     }
 
     baton->inquire->Unref();
-    baton->cb.Dispose();
+    delete baton->cb;
     delete baton;
     baton = nullptr;
 }
 
 void DeviceINQ::Init(Handle<Object> target) {
-    HandleScope scope;
+    NanScope();
 
-    Local<FunctionTemplate> t = FunctionTemplate::New(New);
+    Local<FunctionTemplate> t = NanNew<FunctionTemplate>(New);
 
     t->InstanceTemplate()->SetInternalFieldCount(1);
-    t->SetClassName(String::NewSymbol("DeviceINQ"));
-    
+    t->SetClassName(NanNew("DeviceINQ"));
+
     NODE_SET_PROTOTYPE_METHOD(t, "inquire", Inquire);
     NODE_SET_PROTOTYPE_METHOD(t, "findSerialPortChannel", SdpSearch);
     NODE_SET_PROTOTYPE_METHOD(t, "listPairedDevices", ListPairedDevices);
-    target->Set(String::NewSymbol("DeviceINQ"), t->GetFunction());
-    target->Set(String::NewSymbol("DeviceINQ"), t->GetFunction());
-    target->Set(String::NewSymbol("DeviceINQ"), t->GetFunction());
+    target->Set(NanNew("DeviceINQ"), t->GetFunction());
+    target->Set(NanNew("DeviceINQ"), t->GetFunction());
+    target->Set(NanNew("DeviceINQ"), t->GetFunction());
 }
 
 DeviceINQ::DeviceINQ() {
@@ -136,27 +137,27 @@ DeviceINQ::~DeviceINQ() {
     }
 }
 
-Handle<Value> DeviceINQ::New(const Arguments& args) {
-    HandleScope scope;
+NAN_METHOD(DeviceINQ::New) {
+    NanScope();
 
     if (args.Length() != 0) {
-        return scope.Close(ThrowException(Exception::Error(String::New("usage: DeviceINQ()"))));
+        NanThrowError("usage: DeviceINQ()");
     }
 
     DeviceINQ *inquire = new DeviceINQ();
     if (!inquire->Initialized) {
-        return scope.Close(ThrowException(Exception::Error(String::New("Unable to initialize socket library"))));
+        NanThrowError("Unable to initialize socket library");
     }
 
     inquire->Wrap(args.This());
-    return args.This();
+    NanReturnValue(args.This());
 }
 
-Handle<Value> DeviceINQ::Inquire(const Arguments& args) {
-    HandleScope scope;
+NAN_METHOD(DeviceINQ::Inquire) {
+    NanScope();
 
     if (args.Length() != 0) {
-        return scope.Close(ThrowException(Exception::Error(String::New("usage: inquire()"))));
+        NanThrowError("usage: inquire()");
     }
 
     // Construct windows socket bluetooth variables
@@ -164,7 +165,7 @@ Handle<Value> DeviceINQ::Inquire(const Arguments& args) {
     DWORD querySetSize = sizeof(WSAQUERYSET);
     WSAQUERYSET *querySet = (WSAQUERYSET *)malloc(querySetSize);
     if (querySet == nullptr) {
-        return scope.Close(ThrowException(Exception::Error(String::New("Out of memory: Unable to allocate memory resource for inquiry"))));
+        NanThrowError("Out of memory: Unable to allocate memory resource for inquiry");
     }
 
     ZeroMemory(querySet, querySetSize);
@@ -196,16 +197,16 @@ Handle<Value> DeviceINQ::Inquire(const Arguments& args) {
                     // Strip any leading and trailing parentheses is encountered
                     char strippedAddress[19] = { 0 };
                     auto addressString = sscanf_s(address, "(" "%18[^)]" ")", strippedAddress) == 1
-                                         ? String::New(strippedAddress)
-                                         : String::New(address);
+                                         ? NanNew(strippedAddress)
+                                         : NanNew(address);
 
                     Local<Value> argv[3] = {
-                        String::New("found"),
+                        NanNew("found"),
                         addressString,
-                        String::New(querySet->lpszServiceInstanceName)
+                        NanNew(querySet->lpszServiceInstanceName)
                     };
 
-                    MakeCallback(args.This(), "emit", 3, argv);
+                    NanMakeCallback(args.This(), "emit", 3, argv);
                 }
             } else {
                 int lookupServiceErrorNumber = WSAGetLastError();
@@ -214,7 +215,7 @@ Handle<Value> DeviceINQ::Inquire(const Arguments& args) {
                     querySet = (WSAQUERYSET *)malloc(querySetSize);
                     if (querySet == nullptr) {
                         WSALookupServiceEnd(lookupServiceHandle);
-                        return scope.Close(ThrowException(Exception::Error(String::New("Out of memory: Unable to allocate memory resource for inquiry"))));
+                        NanThrowError("Out of memory: Unable to allocate memory resource for inquiry");
                     }
                 } else if (lookupServiceErrorNumber == WSA_E_NO_MORE) {
                     // No more services where found
@@ -229,7 +230,7 @@ Handle<Value> DeviceINQ::Inquire(const Arguments& args) {
         int lookupServiceErrorNumber = WSAGetLastError();
         if (lookupServiceErrorNumber != WSASERVICE_NOT_FOUND) {
             free(querySet);
-            return scope.Close(ThrowException(Exception::Error(String::New("Unable to initiate client device inquiry"))));
+            NanThrowError("Unable to initiate client device inquiry");
         }
     }
 
@@ -237,182 +238,193 @@ Handle<Value> DeviceINQ::Inquire(const Arguments& args) {
     WSALookupServiceEnd(lookupServiceHandle);
 
     Local<Value> argv[1] = {
-        String::New("finished")
+        NanNew("finished")
     };
 
-    MakeCallback(args.This(), "emit", 1, argv);
+    NanMakeCallback(args.This(), "emit", 1, argv);
 
-    return Undefined();
+    NanReturnUndefined();
 }
 
-Handle<Value> DeviceINQ::SdpSearch(const Arguments& args) {
-    HandleScope scope;
+NAN_METHOD(DeviceINQ::SdpSearch) {
+    NanScope();
 
     if (args.Length() != 2) {
-        return scope.Close(ThrowException(Exception::Error(String::New("usage: findSerialPortChannel(address, callback)"))));
+        NanThrowError("usage: findSerialPortChannel(address, callback)");
     }
 
     if (!args[0]->IsString()) {
-        return scope.Close(ThrowException(Exception::TypeError(String::New("First argument should be a string value"))));
+        NanThrowTypeError("First argument should be a string value");
     }
 
     if(!args[1]->IsFunction()) {
-        return scope.Close(ThrowException(Exception::TypeError(String::New("Second argument must be a function"))));
+        NanThrowTypeError("Second argument must be a function");
     }
 
     sdp_baton_t *baton = new sdp_baton_t();
     String::Utf8Value address(args[0]);
     if (strcpy_s(baton->address, *address) != 0) {
         delete baton;
-        return scope.Close(ThrowException(Exception::TypeError(String::New("Address (first argument) length is invalid"))));
+        NanThrowTypeError("Address (first argument) length is invalid");
     }
 
-    Local<Function> cb = Local<Function>::Cast(args[1]);
+    Local<Function> cb = args[1].As<Function>();
     DeviceINQ *inquire = ObjectWrap::Unwrap<DeviceINQ>(args.This());
 
     baton->inquire = inquire;
-    baton->cb = Persistent<Function>::New(cb);
+    baton->cb = new NanCallback(cb);
     baton->channelID = -1;
     baton->request.data = baton;
     baton->inquire->Ref();
 
     uv_queue_work(uv_default_loop(), &baton->request, EIO_SdpSearch, (uv_after_work_cb)EIO_AfterSdpSearch);
 
-    return Undefined();
+    NanReturnUndefined();
 }
 
 Handle<Value> DeviceINQ::ListPairedDevices(const Arguments& args) {
-    HandleScope scope;
+	HandleScope scope;
 
-    const char *usage = "usage: listPairedDevices(callback)";
-    if (args.Length() != 1) {
-        return scope.Close(ThrowException(Exception::Error(String::New(usage))));
-    }
+	const char *usage = "usage: listPairedDevices(callback)";
+	if (args.Length() != 1) {
+		return scope.Close(ThrowException(Exception::Error(String::New(usage))));
+	}
 
-    if(!args[0]->IsFunction()) {
-        return scope.Close(ThrowException(Exception::TypeError(String::New("First argument must be a function"))));
-    }
-    Local<Function> cb = Local<Function>::Cast(args[0]);
+	if (!args[0]->IsFunction()) {
+		return scope.Close(ThrowException(Exception::TypeError(String::New("First argument must be a function"))));
+	}
+	Local<Function> cb = Local<Function>::Cast(args[0]);
 
-   // Construct windows socket bluetooth variables
-   DWORD flags = LUP_CONTAINERS | LUP_RETURN_NAME | LUP_RETURN_ADDR;
-   DWORD querySetSize = sizeof(WSAQUERYSET);
-   WSAQUERYSET *querySet = (WSAQUERYSET *)malloc(querySetSize);
-   if (querySet == nullptr) {
-	   return scope.Close(ThrowException(Exception::Error(String::New("Out of memory: Unable to allocate memory resource for inquiry"))));
-   }
+	// Construct windows socket bluetooth variables
+	const DWORD flags = LUP_CONTAINERS | LUP_RETURN_NAME | LUP_RETURN_ADDR;
+	DWORD querySetSize = sizeof(WSAQUERYSET);
+	WSAQUERYSET *querySet = (WSAQUERYSET *)malloc(querySetSize);
+	if (querySet == nullptr) {
+		return scope.Close(ThrowException(Exception::Error(String::New("Out of memory: Unable to allocate memory resource for inquiry"))));
+	}
 
-   ZeroMemory(querySet, querySetSize);
-   querySet->dwSize = querySetSize;
-   querySet->dwNameSpace = NS_BTH;
+	ZeroMemory(querySet, querySetSize);
+	querySet->dwSize = querySetSize;
+	querySet->dwNameSpace = NS_BTH;
 
-   std::vector<std::vector<Local<String>>> devices;
-   std::vector<int> channels;
+	std::vector<std::vector<Local<String>>> devices;
+	std::vector<int> channels;
 
-   // Initiate client device inquiry
-   HANDLE lookupServiceHandle;
-   int lookupServiceError = WSALookupServiceBegin(querySet, flags, &lookupServiceHandle);
-   if (lookupServiceError != SOCKET_ERROR) {
-	   // Iterate over each found bluetooth service
-	   bool inquiryComplete = false;
-	   while (!inquiryComplete) {
-		   // For each bluetooth service retrieve its corresponding details
-		   lookupServiceError = WSALookupServiceNext(lookupServiceHandle, flags, &querySetSize, querySet);
-		   if (lookupServiceError != SOCKET_ERROR) {
-			   char address[40] = { 0 };
-			   DWORD addressLength = _countof(address);
-			   SOCKADDR_BTH *bluetoothSocketAddress = (SOCKADDR_BTH *)querySet->lpcsaBuffer->RemoteAddr.lpSockaddr;
-			   BTH_ADDR bluetoothAddress = bluetoothSocketAddress->btAddr;
+	// Initiate client device inquiry
+	HANDLE lookupServiceHandle;
+	int lookupServiceError = WSALookupServiceBegin(querySet, flags, &lookupServiceHandle);
+	if (lookupServiceError != SOCKET_ERROR) {
+		// Iterate over each found bluetooth service
+		bool inquiryComplete = false;
+		while (!inquiryComplete) {
+			// For each bluetooth service retrieve its corresponding details
+			lookupServiceError = WSALookupServiceNext(lookupServiceHandle, flags, &querySetSize, querySet);
+			if (lookupServiceError != SOCKET_ERROR) {
+				char address[40] = { 0 };
+				DWORD addressLength = _countof(address);
+				SOCKADDR_BTH *bluetoothSocketAddress = (SOCKADDR_BTH *)querySet->lpcsaBuffer->RemoteAddr.lpSockaddr;
+				BTH_ADDR bluetoothAddress = bluetoothSocketAddress->btAddr;
 
-			   // Emit the corresponding event if we were able to retrieve the address
-			   int addressToStringError = WSAAddressToString(querySet->lpcsaBuffer->RemoteAddr.lpSockaddr,
-															 sizeof(SOCKADDR_BTH),
-															 nullptr,
-															 address,
-															 &addressLength);
-			   if (addressToStringError != SOCKET_ERROR) {
-				   // Strip any leading and trailing parentheses is encountered
-				   char strippedAddress[19] = { 0 };
-				   auto addressString = sscanf_s(address, "(" "%18[^)]" ")", strippedAddress) == 1
-										? String::New(strippedAddress)
-										: String::New(address);
-				   std::vector<Local<String>> device;
-				   device.push_back(addressString);
-				   device.push_back(String::New(querySet->lpszServiceInstanceName));
+				// Emit the corresponding event if we were able to retrieve the address
+				int addressToStringError = WSAAddressToString(querySet->lpcsaBuffer->RemoteAddr.lpSockaddr,
+					sizeof(SOCKADDR_BTH),
+					nullptr,
+					address,
+					&addressLength);
+				if (addressToStringError != SOCKET_ERROR) {
+					// Strip any leading and trailing parentheses is encountered
+					char strippedAddress[19] = { 0 };
+					auto addressString = sscanf_s(address, "(" "%18[^)]" ")", strippedAddress) == 1
+						? String::New(strippedAddress)
+						: String::New(address);
+					std::vector<Local<String>> device;
+					device.push_back(addressString);
+					if (querySet->lpszServiceInstanceName == NULL || querySet->lpszServiceInstanceName[0] == 0)
+					{//If the device name doesn't exist, use the addressString instead
+						device.push_back(addressString);
+					}
+					else
+					{
+						device.push_back(String::New(querySet->lpszServiceInstanceName));
+					}					
 
-				   if(SerialPortServiceClass_UUID == bluetoothSocketAddress->serviceClassId)
-				   {
-					   channels.push_back(bluetoothSocketAddress->port);
-				   }
-				   else
-				   {
-					   channels.push_back(-1);
-				   }
+					if (SerialPortServiceClass_UUID == bluetoothSocketAddress->serviceClassId)
+					{
+						channels.push_back(bluetoothSocketAddress->port);
+					}
+					else
+					{
+						channels.push_back(-1);
+					}
 
-				   devices.push_back(device);
-			   }
-		   } else {
-			   int lookupServiceErrorNumber = WSAGetLastError();
-			   if (lookupServiceErrorNumber == WSAEFAULT) {
-				   free(querySet);
-				   querySet = (WSAQUERYSET *)malloc(querySetSize);
-				   if (querySet == nullptr) {
-					   WSALookupServiceEnd(lookupServiceHandle);
-					   return scope.Close(ThrowException(Exception::Error(String::New("Out of memory: Unable to allocate memory resource for inquiry"))));
-				   }
-			   } else if (lookupServiceErrorNumber == WSA_E_NO_MORE) {
-				   // No more services where found
-				   inquiryComplete = true;
-			   } else {
-				   // Unhandled error
-				   inquiryComplete = true;
-			   }
-		   }
-	   }
-   } else {
-	   int lookupServiceErrorNumber = WSAGetLastError();
-	   if (lookupServiceErrorNumber != WSASERVICE_NOT_FOUND) {
-		   free(querySet);
-		   return scope.Close(ThrowException(Exception::Error(String::New("Unable to initiate client device inquiry"))));
-	   }
-   }
+					devices.push_back(device);
+				}
+			}
+			else {
+				int lookupServiceErrorNumber = WSAGetLastError();
+				if (lookupServiceErrorNumber == WSAEFAULT) {
+					free(querySet);
+					querySet = (WSAQUERYSET *)malloc(querySetSize);
+					if (querySet == nullptr) {
+						WSALookupServiceEnd(lookupServiceHandle);
+						return scope.Close(ThrowException(Exception::Error(String::New("Out of memory: Unable to allocate memory resource for inquiry"))));
+					}
+				}
+				else if (lookupServiceErrorNumber == WSA_E_NO_MORE) {
+					// No more services where found
+					inquiryComplete = true;
+				}
+				else {
+					// Unhandled error
+					inquiryComplete = true;
+				}
+			}
+		}
+	}
+	else {
+		int lookupServiceErrorNumber = WSAGetLastError();
+		if (lookupServiceErrorNumber != WSASERVICE_NOT_FOUND) {
+			free(querySet);
+			return scope.Close(ThrowException(Exception::Error(String::New("Unable to initiate client device inquiry"))));
+		}
+	}
 
-   free(querySet);
-   WSALookupServiceEnd(lookupServiceHandle);
+	free(querySet);
+	WSALookupServiceEnd(lookupServiceHandle);
 
 
-    // build an array of objects representing a paired device:
-    // ex: {
-    //   name: 'MyBluetoothDeviceName',
-    //   address: '12-34-56-78-90',
-    //   services: [
-    //     { name: 'SPP', channel: 1 },
-    //     { name: 'iAP', channel: 2 }
-    //   ]
-    // }
+	// build an array of objects representing a paired device:
+	// ex: {
+	//   name: 'MyBluetoothDeviceName',
+	//   address: '12-34-56-78-90',
+	//   services: [
+	//     { name: 'SPP', channel: 1 },
+	//     { name: 'iAP', channel: 2 }
+	//   ]
+	// }
 
-    Local<Array> resultArray = Array::New(devices.size());
+	Local<Array> resultArray = Array::New(devices.size());
 
-    for (int i = 0; i < devices.size(); i++) {
-        Local<Object> deviceObj = Object::New();
-        deviceObj->Set(String::NewSymbol("name"), devices.at(i).at(1));
-        deviceObj->Set(String::NewSymbol("address"), devices.at(i).at(0));
+	for (int i = 0; i < devices.size(); i++) {
+		Local<Object> deviceObj = Object::New();
+		deviceObj->Set(String::NewSymbol("name"), devices.at(i).at(1));
+		deviceObj->Set(String::NewSymbol("address"), devices.at(i).at(0));
 
-        // A device may have multiple services, so enumerate each one
-        Local<Array> servicesArray =  Array::New(1);
-        Local<Object> serviceObj = Object::New();
-        //TODO Channel should be found through SDP
-        serviceObj->Set(String::NewSymbol("channel"), Int32::New(1));
-        serviceObj->Set(String::NewSymbol("name"), String::New("SPP"));
-        servicesArray->Set(0, serviceObj);
-        deviceObj->Set(String::NewSymbol("services"), servicesArray);
-        resultArray->Set(i, deviceObj);
-    }
+		// A device may have multiple services, so enumerate each one
+		Local<Array> servicesArray = Array::New(1);
+		Local<Object> serviceObj = Object::New();
+		//TODO Channel should be found through SDP
+		serviceObj->Set(String::NewSymbol("channel"), Int32::New(1));
+		serviceObj->Set(String::NewSymbol("name"), String::New("SPP"));
+		servicesArray->Set(0, serviceObj);
+		deviceObj->Set(String::NewSymbol("services"), servicesArray);
+		resultArray->Set(i, deviceObj);
+	}
 
-    Local<Value> argv[1] = {
-        resultArray
-    };
-    cb->Call(Context::GetCurrent()->Global(), 1, argv);
+	Local<Value> argv[1] = {
+		resultArray
+	};
+	cb->Call(Context::GetCurrent()->Global(), 1, argv);
 
-    return scope.Close(Undefined());
+	return scope.Close(Undefined());
 }

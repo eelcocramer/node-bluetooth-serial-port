@@ -11,6 +11,7 @@
 
 #include <v8.h>
 #include <node.h>
+#include <nan.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -48,7 +49,7 @@ void DeviceINQ::EIO_SdpSearch(uv_work_t *req) {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
     NSString *address = [NSString stringWithCString:baton->address encoding:NSASCIIStringEncoding];
-    BluetoothWorker *worker = [BluetoothWorker getInstance];
+    BluetoothWorker *worker = [BluetoothWorker getInstance: address];
     baton->channelID = [worker getRFCOMMChannelID: address];
 
     [pool release];
@@ -58,70 +59,71 @@ void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
     sdp_baton_t *baton = static_cast<sdp_baton_t *>(req->data);
 
     TryCatch try_catch;
-    
-    Local<Value> argv[1];
-    argv[0] = Integer::New(baton->channelID);
-    baton->cb->Call(Context::GetCurrent()->Global(), 1, argv);
-    
+
+    Handle<Value> argv[] = {
+        NanNew(baton->channelID)
+    };
+    baton->cb->Call(1, argv);
+
     if (try_catch.HasCaught()) {
         FatalException(try_catch);
     }
 
     baton->inquire->Unref();
-    baton->cb.Dispose();
+    delete baton->cb;
     delete baton;
     baton = NULL;
 }
 
 void DeviceINQ::Init(Handle<Object> target) {
-    HandleScope scope;
-    
-    Local<FunctionTemplate> t = FunctionTemplate::New(New);
+    NanScope();
+
+    Local<FunctionTemplate> t = NanNew<FunctionTemplate>(New);
 
     t->InstanceTemplate()->SetInternalFieldCount(1);
-    t->SetClassName(String::NewSymbol("DeviceINQ"));
-    
+    t->SetClassName(NanNew("DeviceINQ"));
+
     NODE_SET_PROTOTYPE_METHOD(t, "inquire", Inquire);
     NODE_SET_PROTOTYPE_METHOD(t, "findSerialPortChannel", SdpSearch);
     NODE_SET_PROTOTYPE_METHOD(t, "listPairedDevices", ListPairedDevices);
-    target->Set(String::NewSymbol("DeviceINQ"), t->GetFunction());
-    target->Set(String::NewSymbol("DeviceINQ"), t->GetFunction());
-    target->Set(String::NewSymbol("DeviceINQ"), t->GetFunction());
+    target->Set(NanNew("DeviceINQ"), t->GetFunction());
+    target->Set(NanNew("DeviceINQ"), t->GetFunction());
+    target->Set(NanNew("DeviceINQ"), t->GetFunction());
 }
-    
+
 DeviceINQ::DeviceINQ() {
-        
+
 }
-    
+
 DeviceINQ::~DeviceINQ() {
-        
+
 }
-    
-Handle<Value> DeviceINQ::New(const Arguments& args) {
-    HandleScope scope;
+
+NAN_METHOD(DeviceINQ::New) {
+    NanScope();
 
     const char *usage = "usage: DeviceINQ()";
     if (args.Length() != 0) {
-        return scope.Close(ThrowException(Exception::Error(String::New(usage))));
+        NanThrowError(usage);
     }
 
     DeviceINQ* inquire = new DeviceINQ();
     inquire->Wrap(args.This());
 
-    return args.This();
+    NanReturnValue(args.This());
 }
- 
-Handle<Value> DeviceINQ::Inquire(const Arguments& args) {
-    HandleScope scope;
+
+NAN_METHOD(DeviceINQ::Inquire) {
+    NanScope();
 
     const char *usage = "usage: inquire()";
     if (args.Length() != 0) {
-        return scope.Close(ThrowException(Exception::Error(String::New(usage))));
+        NanThrowError(usage);
     }
 
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
-    BluetoothWorker *worker = [BluetoothWorker getInstance];
+    BluetoothWorker *worker = [BluetoothWorker getInstance:nil];
 
     // create pipe to communicate with delegate
     pipe_t *pipe = pipe_new(sizeof(device_info_t), 0);
@@ -137,51 +139,51 @@ Handle<Value> DeviceINQ::Inquire(const Arguments& args) {
 
         if (result != 0) {
             Local<Value> argv[3] = {
-                String::New("found"),
-                String::New(info->address),
-                String::New(info->name)
+                NanNew("found"),
+                NanNew(info->address),
+                NanNew(info->name)
             };
 
-            MakeCallback(args.This(), "emit", 3, argv);
+            NanMakeCallback(args.This(), "emit", 3, argv);
         }
     } while (result != 0);
-    
+
     delete info;
     pipe_consumer_free(c);
 
     Local<Value> argv[1] = {
-        String::New("finished")
+        NanNew("finished")
     };
 
-    MakeCallback(args.This(), "emit", 1, argv);
+    NanMakeCallback(args.This(), "emit", 1, argv);
 
     [pool release];
-    return Undefined();
+    NanReturnUndefined();
 }
-    
-Handle<Value> DeviceINQ::SdpSearch(const Arguments& args) {
-    HandleScope scope;
-    
+
+NAN_METHOD(DeviceINQ::SdpSearch) {
+    NanScope();
+
     const char *usage = "usage: sdpSearchForRFCOMM(address, callback)";
     if (args.Length() != 2) {
-        return scope.Close(ThrowException(Exception::Error(String::New(usage))));
+        NanThrowError(usage);
     }
-    
+
     if (!args[0]->IsString()) {
-        return scope.Close(ThrowException(Exception::TypeError(String::New("First argument should be a string value"))));
+        NanThrowTypeError("First argument should be a string value");
     }
     String::Utf8Value address(args[0]);
 
     if(!args[1]->IsFunction()) {
-        return scope.Close(ThrowException(Exception::TypeError(String::New("Second argument must be a function"))));
+        NanThrowTypeError("Second argument must be a function");
     }
-    Local<Function> cb = Local<Function>::Cast(args[1]);
-            
+    Local<Function> cb = args[1].As<Function>();
+
     DeviceINQ* inquire = ObjectWrap::Unwrap<DeviceINQ>(args.This());
-    
+
     sdp_baton_t *baton = new sdp_baton_t();
     baton->inquire = inquire;
-    baton->cb = Persistent<Function>::New(cb);
+    baton->cb = new NanCallback(cb);
     strcpy(baton->address, *address);
     baton->channelID = -1;
     baton->request.data = baton;
@@ -189,25 +191,25 @@ Handle<Value> DeviceINQ::SdpSearch(const Arguments& args) {
 
     uv_queue_work(uv_default_loop(), &baton->request, EIO_SdpSearch, (uv_after_work_cb)EIO_AfterSdpSearch);
 
-    return Undefined();
+    NanReturnUndefined();
 }
 
-Handle<Value> DeviceINQ::ListPairedDevices(const Arguments& args) {
-    HandleScope scope;
+NAN_METHOD(DeviceINQ::ListPairedDevices) {
+    NanScope();
 
     const char *usage = "usage: listPairedDevices(callback)";
     if (args.Length() != 1) {
-        return scope.Close(ThrowException(Exception::Error(String::New(usage))));
+        return NanThrowError(usage);
     }
 
     if(!args[0]->IsFunction()) {
-        return scope.Close(ThrowException(Exception::TypeError(String::New("First argument must be a function"))));
+        return NanThrowTypeError("First argument must be a function");
     }
-    Local<Function> cb = Local<Function>::Cast(args[0]);
+    Local<Function> cb = args[0].As<Function>();
 
     NSArray *pairedDevices = [IOBluetoothDevice pairedDevices];
 
-    Local<Array> resultArray = Array::New((int)pairedDevices.count);
+    Local<Array> resultArray = NanNew<v8::Array>((int)pairedDevices.count);
 
     // Builds an array of objects representing a paired device:
     // ex: {
@@ -221,25 +223,29 @@ Handle<Value> DeviceINQ::ListPairedDevices(const Arguments& args) {
     for (int i = 0; i < (int)pairedDevices.count; ++i) {
         IOBluetoothDevice *device = [pairedDevices objectAtIndex:i];
 
-        Local<Object> deviceObj = Object::New();
+        Local<Object> deviceObj = NanNew<v8::Object>();
 
-        deviceObj->Set(String::NewSymbol("name"), String::New([device.nameOrAddress UTF8String]));
-        deviceObj->Set(String::NewSymbol("address"), String::New([device.addressString UTF8String]));
+        deviceObj->Set(NanNew("name"), NanNew([device.nameOrAddress UTF8String]));
+        deviceObj->Set(NanNew("address"), NanNew([device.addressString UTF8String]));
 
         // A device may have multiple services, so enumerate each one
-        Local<Array> servicesArray =  Array::New((int)device.services.count);
+        Local<Array> servicesArray = NanNew<v8::Array>((int)device.services.count);
         for (int j = 0; j < (int)device.services.count; ++j) {
             IOBluetoothSDPServiceRecord *service = [device.services objectAtIndex:j];
             BluetoothRFCOMMChannelID channelID;
             [service getRFCOMMChannelID:&channelID];
 
-            Local<Object> serviceObj = Object::New();
-            serviceObj->Set(String::NewSymbol("channel"), Int32::New((int)channelID));
-            serviceObj->Set(String::NewSymbol("name"), [service getServiceName] ?
-                String::New([[service getServiceName] UTF8String]) : Undefined());
+            Local<Object> serviceObj = NanNew<v8::Object>();
+            serviceObj->Set(NanNew("channel"), NanNew((int)channelID));
+
+            if ([service getServiceName])
+                serviceObj->Set(NanNew("name"), NanNew([[service getServiceName] UTF8String]));
+            else
+                serviceObj->Set(NanNew("name"), NanUndefined());
+
             servicesArray->Set(j, serviceObj);
         }
-        deviceObj->Set(String::NewSymbol("services"), servicesArray);
+        deviceObj->Set(NanNew("services"), servicesArray);
 
         resultArray->Set(i, deviceObj);
     }
@@ -247,7 +253,7 @@ Handle<Value> DeviceINQ::ListPairedDevices(const Arguments& args) {
     Local<Value> argv[1] = {
         resultArray
     };
-    cb->Call(Context::GetCurrent()->Global(), 1, argv);
+    cb->Call(NanGetCurrentContext()->Global(), 1, argv);
 
-    return scope.Close(Undefined());
+    NanReturnUndefined();
 }

@@ -1,0 +1,40 @@
+environment:
+  # Visual Studio Version
+  MSVS_VERSION: 2013
+  # Test against these versions of Node.js and io.js
+  matrix:
+    # node.js
+    - nodejs_version: "0.10"
+    - nodejs_version: "0.11"
+    - nodejs_version: "0.12"
+    # io.js
+    #- nodejs_version: "1.0"
+    #- nodejs_version: "1.1"
+    #- nodejs_version: "1.2"
+
+platform:
+  - x86
+  #- x64
+
+# Install scripts. (runs after repo cloning)
+install:
+  # Get the latest stable version of Node.js or io.js
+  - ps: Install-Product node $env:nodejs_version $env:Platform
+  # install modules
+  - node --version
+  - npm --version
+  - node -e "console.log(process.arch);"
+  - if "%PLATFORM%" == "x64" SET PATH=C:\Python27-x64;%PATH%
+  - if "%PLATFORM%" == "x86" SET PATH=C:\python27;%PATH%
+  - npm install node-gyp
+  - npm install
+
+# Post-install test scripts.
+test_script:
+  # run tests
+  - node_modules\.bin\node-gyp configure
+  - node_modules\.bin\node-gyp build
+  - node test\index.js
+
+# Don't actually build.
+build: off

@@ -1,5 +1,5 @@
 { "name" : "bluetooth-serial-port"
-, "version" : "1.1.5-NOT_RELEASED"
+, "version" : "1.2.2"
 , "description" : "Bluetooth serial port communication for Node.js"
 , "author": "Eelco Cramer <eelco@hailendal.org>"
 , "keywords" :
@@ -23,6 +23,7 @@
 , "os": [ "darwin", "linux", "win32" ]
 , "dependencies" :
   { "bindings" : "1.1.x"
+  , "nan" : "1.5.x"
   }
 , "engines" :
   { "node" : ">= 0.8.x"
@@ -32,5 +33,5 @@
   { "install": "node-gyp configure build"
   }
 , "license": "BSD-2-Clause"
-, "contributors": ["Eric Smekens", "Juho Vepsäläinen", "Elmar Langholz", "Donald Ness", "Joost Verdoorn"]
+, "contributors": ["Eric Smekens", "Juho Vepsäläinen", "Elmar Langholz", "Donald Ness", "Joost Verdoorn", "Max Metral", "Thomas Wickham"]
 }
