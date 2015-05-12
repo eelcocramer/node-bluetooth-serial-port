@@ -9,6 +9,10 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 ## RELEASE NOTES
 
+### 1.2.3
+
+* [Updates nan](https://github.com/eelcocramer/node-bluetooth-serial-port/pull/67) for io.js 2.x.x compatibility.
+
 ### 1.2.2
 
 * Adds [cross-platform continues integration](https://github.com/eelcocramer/node-bluetooth-serial-port/pull/58) to the repository. Thanks @mackwic.
