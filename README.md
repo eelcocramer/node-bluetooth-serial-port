@@ -9,6 +9,10 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 ## RELEASE NOTES
 
+### X.X.X
+
+* Fixes an issue where the `Error` object is passed in the 2nd argument of the callback function when a `write` is called before the remote device was connected.
+
 ### 1.2.3
 
 * [Updates nan](https://github.com/eelcocramer/node-bluetooth-serial-port/pull/67) for io.js 2.x.x compatibility.
