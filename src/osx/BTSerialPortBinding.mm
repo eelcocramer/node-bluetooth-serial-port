@@ -146,7 +146,7 @@ void BTSerialPortBinding::EIO_AfterWrite(uv_work_t *req) {
 }
 
 void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
-    unsigned int buf[1024] = { 0 };
+    unsigned char buf[1024] = { 0 };
 
     read_baton_t *baton = static_cast<read_baton_t *>(req->data);
     size_t size = 0;
