@@ -178,7 +178,11 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
         Local<Object> resultBuffer = bufferConstructor->NewInstance(1, constructorArgs);
         memcpy_s(Buffer::Data(resultBuffer), baton->size, baton->result, baton->size);
 
-        argv[0] = NanUndefined();
+        /* XXX workaround bad handle returned by NanUndefined()
+         * see issue #74 for detailed traces
+         * https://github.com/eelcocramer/node-bluetooth-serial-port/issues/74
+         */
+        argv[0] = NanNew(false);
         argv[1] = NanEscapeScope(resultBuffer);
     }
 
