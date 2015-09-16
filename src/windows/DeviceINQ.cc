@@ -97,7 +97,7 @@ void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
     TryCatch try_catch;
 
     Handle<Value> argv[] = {
-        NanNew(baton->channelID)
+        Nan::New(baton->channelID)
     };
     baton->cb->Call(1, argv);
 
@@ -112,19 +112,19 @@ void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
 }
 
 void DeviceINQ::Init(Handle<Object> target) {
-    NanScope();
+    Nan::HandleScope scope;
 
-    Local<FunctionTemplate> t = NanNew<FunctionTemplate>(New);
+    Local<FunctionTemplate> t = Nan::New<FunctionTemplate>(New);
 
     t->InstanceTemplate()->SetInternalFieldCount(1);
-    t->SetClassName(NanNew("DeviceINQ"));
+    t->SetClassName(Nan::New("DeviceINQ").ToLocalChecked());
 
-    NODE_SET_PROTOTYPE_METHOD(t, "inquire", Inquire);
-    NODE_SET_PROTOTYPE_METHOD(t, "findSerialPortChannel", SdpSearch);
-    NODE_SET_PROTOTYPE_METHOD(t, "listPairedDevices", ListPairedDevices);
-    target->Set(NanNew("DeviceINQ"), t->GetFunction());
-    target->Set(NanNew("DeviceINQ"), t->GetFunction());
-    target->Set(NanNew("DeviceINQ"), t->GetFunction());
+    Nan::SetPrototypeMethod(t, "inquire", Inquire);
+    Nan::SetPrototypeMethod(t, "findSerialPortChannel", SdpSearch);
+    Nan::SetPrototypeMethod(t, "listPairedDevices", ListPairedDevices);
+    target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
+    target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
+    target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
 }
 
 DeviceINQ::DeviceINQ() {
@@ -138,26 +138,26 @@ DeviceINQ::~DeviceINQ() {
 }
 
 NAN_METHOD(DeviceINQ::New) {
-    NanScope();
+    Nan::HandleScope scope;
 
-    if (args.Length() != 0) {
-        NanThrowError("usage: DeviceINQ()");
+    if (info.Length() != 0) {
+        Nan::ThrowError("usage: DeviceINQ()");
     }
 
     DeviceINQ *inquire = new DeviceINQ();
     if (!inquire->Initialized) {
-        NanThrowError("Unable to initialize socket library");
+        Nan::ThrowError("Unable to initialize socket library");
     }
 
-    inquire->Wrap(args.This());
-    NanReturnValue(args.This());
+    inquire->Wrap(info.This());
+    info.GetReturnValue().Set(info.This());
 }
 
 NAN_METHOD(DeviceINQ::Inquire) {
-    NanScope();
+    Nan::HandleScope scope;
 
-    if (args.Length() != 0) {
-        NanThrowError("usage: inquire()");
+    if (info.Length() != 0) {
+        Nan::ThrowError("usage: inquire()");
     }
 
     // Construct windows socket bluetooth variables
@@ -165,7 +165,7 @@ NAN_METHOD(DeviceINQ::Inquire) {
     DWORD querySetSize = sizeof(WSAQUERYSET);
     WSAQUERYSET *querySet = (WSAQUERYSET *)malloc(querySetSize);
     if (querySet == nullptr) {
-        NanThrowError("Out of memory: Unable to allocate memory resource for inquiry");
+        Nan::ThrowError("Out of memory: Unable to allocate memory resource for inquiry");
     }
 
     ZeroMemory(querySet, querySetSize);
@@ -197,16 +197,16 @@ NAN_METHOD(DeviceINQ::Inquire) {
                     // Strip any leading and trailing parentheses is encountered
                     char strippedAddress[19] = { 0 };
                     auto addressString = sscanf_s(address, "(" "%18[^)]" ")", strippedAddress) == 1
-                                         ? NanNew(strippedAddress)
-                                         : NanNew(address);
+                                         ? Nan::New(strippedAddress)
+                                         : Nan::New(address);
 
                     Local<Value> argv[3] = {
-                        NanNew("found"),
+                        Nan::New("found").ToLocalChecked(),
                         addressString,
-                        NanNew(querySet->lpszServiceInstanceName)
+                        Nan::New(querySet->lpszServiceInstanceName)
                     };
 
-                    NanMakeCallback(args.This(), "emit", 3, argv);
+                    Nan::MakeCallback(info.This(), "emit", 3, argv);
                 }
             } else {
                 int lookupServiceErrorNumber = WSAGetLastError();
@@ -215,7 +215,7 @@ NAN_METHOD(DeviceINQ::Inquire) {
                     querySet = (WSAQUERYSET *)malloc(querySetSize);
                     if (querySet == nullptr) {
                         WSALookupServiceEnd(lookupServiceHandle);
-                        NanThrowError("Out of memory: Unable to allocate memory resource for inquiry");
+                        Nan::ThrowError("Out of memory: Unable to allocate memory resource for inquiry");
                     }
                 } else if (lookupServiceErrorNumber == WSA_E_NO_MORE) {
                     // No more services where found
@@ -230,7 +230,7 @@ NAN_METHOD(DeviceINQ::Inquire) {
         int lookupServiceErrorNumber = WSAGetLastError();
         if (lookupServiceErrorNumber != WSASERVICE_NOT_FOUND) {
             free(querySet);
-            NanThrowError("Unable to initiate client device inquiry");
+            Nan::ThrowError("Unable to initiate client device inquiry");
         }
     }
 
@@ -238,63 +238,63 @@ NAN_METHOD(DeviceINQ::Inquire) {
     WSALookupServiceEnd(lookupServiceHandle);
 
     Local<Value> argv[1] = {
-        NanNew("finished")
+        Nan::New("finished").ToLocalChecked()
     };
 
-    NanMakeCallback(args.This(), "emit", 1, argv);
+    Nan::MakeCallback(info.This(), "emit", 1, argv);
 
-    NanReturnUndefined();
+    return;
 }
 
 NAN_METHOD(DeviceINQ::SdpSearch) {
-    NanScope();
+    Nan::HandleScope scope;
 
-    if (args.Length() != 2) {
-        NanThrowError("usage: findSerialPortChannel(address, callback)");
+    if (info.Length() != 2) {
+        Nan::ThrowError("usage: findSerialPortChannel(address, callback)");
     }
 
-    if (!args[0]->IsString()) {
-        NanThrowTypeError("First argument should be a string value");
+    if (!info[0]->IsString()) {
+        Nan::ThrowTypeError("First argument should be a string value");
     }
 
-    if(!args[1]->IsFunction()) {
-        NanThrowTypeError("Second argument must be a function");
+    if(!info[1]->IsFunction()) {
+        Nan::ThrowTypeError("Second argument must be a function");
     }
 
     sdp_baton_t *baton = new sdp_baton_t();
-    String::Utf8Value address(args[0]);
+    String::Utf8Value address(info[0]);
     if (strcpy_s(baton->address, *address) != 0) {
         delete baton;
-        NanThrowTypeError("Address (first argument) length is invalid");
+        Nan::ThrowTypeError("Address (first argument) length is invalid");
     }
 
-    Local<Function> cb = args[1].As<Function>();
-    DeviceINQ *inquire = ObjectWrap::Unwrap<DeviceINQ>(args.This());
+    Local<Function> cb = info[1].As<Function>();
+    DeviceINQ *inquire = Nan::ObjectWrap::Unwrap<DeviceINQ>(info.This());
 
     baton->inquire = inquire;
-    baton->cb = new NanCallback(cb);
+    baton->cb = new Nan::Callback(cb);
     baton->channelID = -1;
     baton->request.data = baton;
     baton->inquire->Ref();
 
     uv_queue_work(uv_default_loop(), &baton->request, EIO_SdpSearch, (uv_after_work_cb)EIO_AfterSdpSearch);
 
-    NanReturnUndefined();
+    return;
 }
 
 NAN_METHOD(DeviceINQ::ListPairedDevices) {
-    NanScope();
+    Nan::HandleScope scope;
 
     const char *usage = "usage: listPairedDevices(callback)";
-    if (args.Length() != 1) {
-        NanThrowError(usage);
+    if (info.Length() != 1) {
+        Nan::ThrowError(usage);
     }
 
-    if(!args[0]->IsFunction()) {
-        NanThrowTypeError("First argument must be a function");
+    if(!info[0]->IsFunction()) {
+        Nan::ThrowTypeError("First argument must be a function");
     }
-    Local<Function> cb = args[0].As<Function>();
-    Local<Array> resultArray = Local<Array>(NanNew<Array>());
+    Local<Function> cb = info[0].As<Function>();
+    Local<Array> resultArray = Local<Array>(Nan::New<Array>());
 
     // TODO: build an array of objects representing a paired device:
     // ex: {
@@ -309,7 +309,7 @@ NAN_METHOD(DeviceINQ::ListPairedDevices) {
     Local<Value> argv[1] = {
         resultArray
     };
-    cb->Call(NanGetCurrentContext()->Global(), 1, argv);
+    cb->Call(Nan::GetCurrentContext()->Global(), 1, argv);
 
-    NanReturnUndefined();
+    return;
 }

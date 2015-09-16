@@ -131,7 +131,7 @@ void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
     TryCatch try_catch;
 
     Handle<Value> argv[] = {
-        NanNew(baton->channelID)
+        Nan::New(baton->channelID)
     };
 
     baton->cb->Call(1, argv);
@@ -147,19 +147,19 @@ void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
 }
 
 void DeviceINQ::Init(Handle<Object> target) {
-    NanScope();
+    Nan::HandleScope scope;
 
-    Local<FunctionTemplate> t = NanNew<FunctionTemplate>(New);
+    Local<FunctionTemplate> t = Nan::New<FunctionTemplate>(New);
 
     t->InstanceTemplate()->SetInternalFieldCount(1);
-    t->SetClassName(NanNew("DeviceINQ"));
+    t->SetClassName(Nan::New("DeviceINQ").ToLocalChecked());
 
-    NODE_SET_PROTOTYPE_METHOD(t, "inquire", Inquire);
-    NODE_SET_PROTOTYPE_METHOD(t, "findSerialPortChannel", SdpSearch);
-    NODE_SET_PROTOTYPE_METHOD(t, "listPairedDevices", ListPairedDevices);
-    target->Set(NanNew("DeviceINQ"), t->GetFunction());
-    target->Set(NanNew("DeviceINQ"), t->GetFunction());
-    target->Set(NanNew("DeviceINQ"), t->GetFunction());
+    Nan::SetPrototypeMethod(t, "inquire", Inquire);
+    Nan::SetPrototypeMethod(t, "findSerialPortChannel", SdpSearch);
+    Nan::SetPrototypeMethod(t, "listPairedDevices", ListPairedDevices);
+    target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
+    target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
+    target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
 }
 
 DeviceINQ::DeviceINQ() {
@@ -171,25 +171,25 @@ DeviceINQ::~DeviceINQ() {
 }
 
 NAN_METHOD(DeviceINQ::New) {
-    NanScope();
+    Nan::HandleScope scope;
 
     const char *usage = "usage: DeviceINQ()";
-    if (args.Length() != 0) {
-        NanThrowError(usage);
+    if (info.Length() != 0) {
+        Nan::ThrowError(usage);
     }
 
     DeviceINQ* inquire = new DeviceINQ();
-    inquire->Wrap(args.This());
+    inquire->Wrap(info.This());
 
-    NanReturnValue(args.This());
+    info.GetReturnValue().Set(info.This());
 }
 
 NAN_METHOD(DeviceINQ::Inquire) {
-    NanScope();
+    Nan::HandleScope scope;
 
     const char *usage = "usage: inquire()";
-    if (args.Length() != 0) {
-        NanThrowError(usage);
+    if (info.Length() != 0) {
+        Nan::ThrowError(usage);
     }
 
     // do the bluetooth magic
@@ -203,7 +203,7 @@ NAN_METHOD(DeviceINQ::Inquire) {
     dev_id = hci_get_route(NULL);
     sock = hci_open_dev( dev_id );
     if (dev_id < 0 || sock < 0) {
-        NanThrowError("opening socket");
+        Nan::ThrowError("opening socket");
     }
 
     len  = 8;
@@ -226,50 +226,50 @@ NAN_METHOD(DeviceINQ::Inquire) {
       // fprintf(stderr, "%s [%s]\n", addr, name);
 
       Local<Value> argv[3] = {
-          NanNew("found"),
-          NanNew(addr),
-          NanNew(name)
+          Nan::New("found").ToLocalChecked(),
+          Nan::New(addr),
+          Nan::New(name)
       };
 
-      NanMakeCallback(args.This(), "emit", 3, argv);
+      Nan::MakeCallback(info.This(), "emit", 3, argv);
     }
 
     free( ii );
     close( sock );
 
     Local<Value> argv[1] = {
-        NanNew("finished")
+        Nan::New("finished").ToLocalChecked()
     };
 
-    NanMakeCallback(args.This(), "emit", 1, argv);
+    Nan::MakeCallback(info.This(), "emit", 1, argv);
 
-    NanReturnUndefined();
+    return;
 }
 
 NAN_METHOD(DeviceINQ::SdpSearch) {
-    NanScope();
+    Nan::HandleScope scope;
 
     const char *usage = "usage: findSerialPortChannel(address, callback)";
-    if (args.Length() != 2) {
-        NanThrowError(usage);
+    if (info.Length() != 2) {
+        Nan::ThrowError(usage);
     }
 
-    if (!args[0]->IsString()) {
-        NanThrowTypeError("First argument should be a string value");
+    if (!info[0]->IsString()) {
+        Nan::ThrowTypeError("First argument should be a string value");
     }
-    String::Utf8Value address(args[0]);
+    String::Utf8Value address(info[0]);
 
-    if(!args[1]->IsFunction()) {
-        NanThrowTypeError("Second argument must be a function");
+    if(!info[1]->IsFunction()) {
+        Nan::ThrowTypeError("Second argument must be a function");
     }
 
-    Local<Function> cb = args[1].As<Function>();
+    Local<Function> cb = info[1].As<Function>();
 
-    DeviceINQ* inquire = ObjectWrap::Unwrap<DeviceINQ>(args.This());
+    DeviceINQ* inquire = Nan::ObjectWrap::Unwrap<DeviceINQ>(info.This());
 
     sdp_baton_t *baton = new sdp_baton_t();
     baton->inquire = inquire;
-    baton->cb = new NanCallback(cb);
+    baton->cb = new Nan::Callback(cb);
     strcpy(baton->address, *address);
     baton->channelID = -1;
     baton->request.data = baton;
@@ -277,23 +277,23 @@ NAN_METHOD(DeviceINQ::SdpSearch) {
 
     uv_queue_work(uv_default_loop(), &baton->request, EIO_SdpSearch, (uv_after_work_cb)EIO_AfterSdpSearch);
 
-    NanReturnUndefined();
+    return;
 }
 
 NAN_METHOD(DeviceINQ::ListPairedDevices) {
-    NanScope();
+    Nan::HandleScope scope;
 
     const char *usage = "usage: listPairedDevices(callback)";
-    if (args.Length() != 1) {
-        NanThrowError(usage);
+    if (info.Length() != 1) {
+        Nan::ThrowError(usage);
     }
 
-    if(!args[0]->IsFunction()) {
-       NanThrowTypeError("First argument must be a function");
+    if(!info[0]->IsFunction()) {
+       Nan::ThrowTypeError("First argument must be a function");
     }
-    Local<Function> cb = args[0].As<Function>();
+    Local<Function> cb = info[0].As<Function>();
 
-    Local<Array> resultArray = Local<Array>(NanNew<Array>());
+    Local<Array> resultArray = Local<Array>(Nan::New<Array>());
 
     // TODO: build an array of objects representing a paired device:
     // ex: {
@@ -308,7 +308,7 @@ NAN_METHOD(DeviceINQ::ListPairedDevices) {
     Local<Value> argv[1] = {
         resultArray
     };
-    cb->Call(NanGetCurrentContext()->Global(), 1, argv);
+    cb->Call(Nan::GetCurrentContext()->Global(), 1, argv);
 
-    NanReturnUndefined();
+    return;
 }
