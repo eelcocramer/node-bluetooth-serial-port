@@ -57,7 +57,7 @@ void BTSerialPortBinding::EIO_Connect(uv_work_t *req) {
 void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
     connect_baton_t *baton = static_cast<connect_baton_t *>(req->data);
 
-    TryCatch try_catch;
+    Nan::TryCatch try_catch;
 
     if (baton->status == 0) {
         baton->cb->Call(0, nullptr);
@@ -66,14 +66,14 @@ void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
             closesocket(baton->rfcomm->s);
         }
 
-        Handle<Value> argv[] = {
+        Local<Value> argv[] = {
             Nan::Error("Cannot connect")
         };
         baton->ecb->Call(1, argv);
     }
 
     if (try_catch.HasCaught()) {
-        FatalException(try_catch);
+        Nan::FatalException(try_catch);
     }
 
     baton->rfcomm->Unref();
@@ -103,7 +103,7 @@ void BTSerialPortBinding::EIO_AfterWrite(uv_work_t *req) {
     queued_write_t *queuedWrite = static_cast<queued_write_t*>(req->data);
     write_baton_t *data = static_cast<write_baton_t*>(queuedWrite->baton);
 
-    Handle<Value> argv[2];
+    Local<Value> argv[2];
     if (data->errorString[0]) {
         argv[0] = Nan::Error(data->errorString);
         argv[1] = Nan::Undefined();
@@ -166,7 +166,7 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
 
     TryCatch try_catch;
 
-    Handle<Value> argv[2];
+    Local<Value> argv[2];
 
     if (baton->size < 0) {
         argv[0] = Nan::Error("Error reading from connection");
@@ -174,7 +174,7 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
     } else {
         Local<Object> globalObj = Nan::GetCurrentContext()->Global();
         Local<Function> bufferConstructor = Local<Function>::Cast(globalObj->Get(Nan::New("Buffer").ToLocalChecked()));
-        Handle<Value> constructorArgs[1] = { Nan::New<v8::Integer>(baton->size) };
+        Local<Value> constructorArgs[1] = { Nan::New<v8::Integer>(baton->size) };
         Local<Object> resultBuffer = bufferConstructor->NewInstance(1, constructorArgs);
         memcpy_s(Buffer::Data(resultBuffer), baton->size, baton->result, baton->size);
 
@@ -342,7 +342,7 @@ NAN_METHOD(BTSerialPortBinding::Read) {
 
     // callback with an error if the connection has been closed.
     if (rfcomm->s == INVALID_SOCKET) {
-        Handle<Value> argv[2];
+        Local<Value> argv[2];
 
         argv[0] = Nan::Error("The connection has been closed");
         argv[1] = Nan::Undefined();

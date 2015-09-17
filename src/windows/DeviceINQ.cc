@@ -96,7 +96,7 @@ void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
 
     Nan::TryCatch try_catch;
 
-    Handle<Value> argv[] = {
+    Local<Value> argv[] = {
         Nan::New(baton->channelID)
     };
     baton->cb->Call(1, argv);
