@@ -3,10 +3,10 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * 
+ *
  * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <v8.h>
@@ -75,12 +75,12 @@ void BTSerialPortBinding::EIO_Connect(uv_work_t *req) {
 void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
     connect_baton_t *baton = static_cast<connect_baton_t *>(req->data);
 
-    TryCatch try_catch;
+    Nan::TryCatch try_catch;
 
     if (baton->status == 0) {
         baton->cb->Call(0, NULL);
     } else {
-        Handle<Value> argv[] = {
+        Local<Value> argv[] = {
             Nan::Error("Cannot connect")
         };
 
@@ -88,7 +88,7 @@ void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
     }
 
     if (try_catch.HasCaught()) {
-        FatalException(try_catch);
+        Nan::FatalException(try_catch);
     }
 
     baton->rfcomm->Unref();
@@ -119,7 +119,7 @@ void BTSerialPortBinding::EIO_AfterWrite(uv_work_t *req) {
     queued_write_t *queuedWrite = static_cast<queued_write_t*>(req->data);
     write_baton_t *data = static_cast<write_baton_t*>(queuedWrite->baton);
 
-    Handle<Value> argv[2];
+    Local<Value> argv[2];
     if (data->errorString[0]) {
         argv[0] = Nan::Error(data->errorString);
         argv[1] = Nan::Undefined();
@@ -182,9 +182,9 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
 
     read_baton_t *baton = static_cast<read_baton_t *>(req->data);
 
-    TryCatch try_catch;
+    Nan::TryCatch try_catch;
 
-    Handle<Value> argv[2];
+    Local<Value> argv[2];
 
     if (baton->size < 0) {
         argv[0] = Nan::Error("Error reading from connection");
@@ -207,7 +207,7 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
     baton->cb->Call(2, argv);
 
     if (try_catch.HasCaught()) {
-        FatalException(try_catch);
+        Nan::FatalException(try_catch);
     }
 
     baton->rfcomm->Unref();
@@ -233,7 +233,7 @@ void BTSerialPortBinding::Init(Handle<Object> target) {
     target->Set(Nan::New("BTSerialPortBinding").ToLocalChecked(), t->GetFunction());
 }
 
-BTSerialPortBinding::BTSerialPortBinding() : 
+BTSerialPortBinding::BTSerialPortBinding() :
     s(0) {
 }
 
@@ -254,8 +254,8 @@ NAN_METHOD(BTSerialPortBinding::New) {
 
     String::Utf8Value address(info[0]);
 
-    int channelID = info[1]->Int32Value(); 
-    if (channelID <= 0) { 
+    int channelID = info[1]->Int32Value();
+    if (channelID <= 0) {
         Nan::ThrowTypeError("ChannelID should be a positive int value.");
     }
 
@@ -384,7 +384,7 @@ NAN_METHOD(BTSerialPortBinding::Read) {
 
     // callback with an error if the connection has been closed.
     if (rfcomm->s == 0) {
-        Handle<Value> argv[2];
+        Local<Value> argv[2];
 
         argv[0] = Nan::Error("The connection has been closed");
         argv[1] = Nan::Undefined();

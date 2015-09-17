@@ -3,10 +3,10 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * 
+ *
  * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <v8.h>
@@ -99,7 +99,7 @@ void DeviceINQ::EIO_SdpSearch(uv_work_t *req) {
                     sdp_data_t *d = (sdp_data_t*)pds->data;
                     int proto = 0;
                     for( ; d; d = d->next ) {
-                        switch( d->dtd ) { 
+                        switch( d->dtd ) {
                             case SDP_UUID16:
                             case SDP_UUID32:
                             case SDP_UUID128:
@@ -128,16 +128,16 @@ void DeviceINQ::EIO_SdpSearch(uv_work_t *req) {
 void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
     sdp_baton_t *baton = static_cast<sdp_baton_t *>(req->data);
 
-    TryCatch try_catch;
+    Nan::TryCatch try_catch;
 
-    Handle<Value> argv[] = {
+    Local<Value> argv[] = {
         Nan::New(baton->channelID)
     };
 
     baton->cb->Call(1, argv);
 
     if (try_catch.HasCaught()) {
-        FatalException(try_catch);
+        Nan::FatalException(try_catch);
     }
 
     baton->inquire->Unref();
@@ -219,7 +219,7 @@ NAN_METHOD(DeviceINQ::Inquire) {
     for (i = 0; i < num_rsp; i++) {
       ba2str(&(ii+i)->bdaddr, addr);
       memset(name, 0, sizeof(name));
-      if (hci_read_remote_name(sock, &(ii+i)->bdaddr, sizeof(name), 
+      if (hci_read_remote_name(sock, &(ii+i)->bdaddr, sizeof(name),
           name, 0) < 0)
         strcpy(name, addr);
 
@@ -227,8 +227,8 @@ NAN_METHOD(DeviceINQ::Inquire) {
 
       Local<Value> argv[3] = {
           Nan::New("found").ToLocalChecked(),
-          Nan::New(addr),
-          Nan::New(name)
+          Nan::New(addr).ToLocalChecked(),
+          Nan::New(name).ToLocalChecked()
       };
 
       Nan::MakeCallback(info.This(), "emit", 3, argv);
