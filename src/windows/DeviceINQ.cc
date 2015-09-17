@@ -94,7 +94,7 @@ void DeviceINQ::EIO_SdpSearch(uv_work_t *req) {
 void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
     sdp_baton_t *baton = static_cast<sdp_baton_t *>(req->data);
 
-    TryCatch try_catch;
+    Nan::TryCatch try_catch;
 
     Handle<Value> argv[] = {
         Nan::New(baton->channelID)
@@ -102,7 +102,7 @@ void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
     baton->cb->Call(1, argv);
 
     if (try_catch.HasCaught()) {
-        FatalException(try_catch);
+        Nan::FatalException(try_catch);
     }
 
     baton->inquire->Unref();
@@ -202,8 +202,8 @@ NAN_METHOD(DeviceINQ::Inquire) {
 
                     Local<Value> argv[3] = {
                         Nan::New("found").ToLocalChecked(),
-                        addressString,
-                        Nan::New(querySet->lpszServiceInstanceName)
+                        addressString.ToLocalChecked(),
+                        Nan::New(querySet->lpszServiceInstanceName).ToLocalChecked()
                     };
 
                     Nan::MakeCallback(info.This(), "emit", 3, argv);
