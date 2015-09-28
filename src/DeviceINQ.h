@@ -16,7 +16,7 @@
 #include <uv.h>
 #include <nan.h>
 
-class DeviceINQ : public node::ObjectWrap {
+class DeviceINQ : public Nan::ObjectWrap {
     private:
 #ifdef _WINDOWS_
         bool initialized;
@@ -39,7 +39,7 @@ class DeviceINQ : public node::ObjectWrap {
         struct sdp_baton_t {
             DeviceINQ *inquire;
             uv_work_t request;
-            NanCallback* cb;
+            Nan::Callback* cb;
             int channelID;
             char address[40];
         };

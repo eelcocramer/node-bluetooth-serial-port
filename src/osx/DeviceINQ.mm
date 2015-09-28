@@ -3,10 +3,10 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * 
+ *
  * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <v8.h>
@@ -58,15 +58,15 @@ void DeviceINQ::EIO_SdpSearch(uv_work_t *req) {
 void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
     sdp_baton_t *baton = static_cast<sdp_baton_t *>(req->data);
 
-    TryCatch try_catch;
+    Nan::TryCatch try_catch;
 
-    Handle<Value> argv[] = {
-        NanNew(baton->channelID)
+    Local<Value> argv[] = {
+        Nan::New(baton->channelID)
     };
     baton->cb->Call(1, argv);
 
     if (try_catch.HasCaught()) {
-        FatalException(try_catch);
+        Nan::FatalException(try_catch);
     }
 
     baton->inquire->Unref();
@@ -76,19 +76,19 @@ void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
 }
 
 void DeviceINQ::Init(Handle<Object> target) {
-    NanScope();
+    Nan::HandleScope scope;
 
-    Local<FunctionTemplate> t = NanNew<FunctionTemplate>(New);
+    Local<FunctionTemplate> t = Nan::New<FunctionTemplate>(New);
 
     t->InstanceTemplate()->SetInternalFieldCount(1);
-    t->SetClassName(NanNew("DeviceINQ"));
+    t->SetClassName(Nan::New("DeviceINQ").ToLocalChecked());
 
-    NODE_SET_PROTOTYPE_METHOD(t, "inquire", Inquire);
-    NODE_SET_PROTOTYPE_METHOD(t, "findSerialPortChannel", SdpSearch);
-    NODE_SET_PROTOTYPE_METHOD(t, "listPairedDevices", ListPairedDevices);
-    target->Set(NanNew("DeviceINQ"), t->GetFunction());
-    target->Set(NanNew("DeviceINQ"), t->GetFunction());
-    target->Set(NanNew("DeviceINQ"), t->GetFunction());
+    Nan::SetPrototypeMethod(t, "inquire", Inquire);
+    Nan::SetPrototypeMethod(t, "findSerialPortChannel", SdpSearch);
+    Nan::SetPrototypeMethod(t, "listPairedDevices", ListPairedDevices);
+    target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
+    target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
+    target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
 }
 
 DeviceINQ::DeviceINQ() {
@@ -100,25 +100,25 @@ DeviceINQ::~DeviceINQ() {
 }
 
 NAN_METHOD(DeviceINQ::New) {
-    NanScope();
+    Nan::HandleScope scope;
 
     const char *usage = "usage: DeviceINQ()";
-    if (args.Length() != 0) {
-        NanThrowError(usage);
+    if (info.Length() != 0) {
+        Nan::ThrowError(usage);
     }
 
     DeviceINQ* inquire = new DeviceINQ();
-    inquire->Wrap(args.This());
+    inquire->Wrap(info.This());
 
-    NanReturnValue(args.This());
+    info.GetReturnValue().Set(info.This());
 }
 
 NAN_METHOD(DeviceINQ::Inquire) {
-    NanScope();
+    Nan::HandleScope scope;
 
     const char *usage = "usage: inquire()";
-    if (args.Length() != 0) {
-        NanThrowError(usage);
+    if (info.Length() != 0) {
+        Nan::ThrowError(usage);
     }
 
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -131,59 +131,59 @@ NAN_METHOD(DeviceINQ::Inquire) {
     pipe_consumer_t *c = pipe_consumer_new(pipe);
     pipe_free(pipe);
 
-    device_info_t *info = new device_info_t;
+    device_info_t *infod = new device_info_t;
     size_t result;
 
     do {
-        result = pipe_pop_eager(c, info, 1);
+        result = pipe_pop_eager(c, infod, 1);
 
         if (result != 0) {
             Local<Value> argv[3] = {
-                NanNew("found"),
-                NanNew(info->address),
-                NanNew(info->name)
+                Nan::New("found").ToLocalChecked(),
+                Nan::New(infod->address).ToLocalChecked(),
+                Nan::New(infod->name).ToLocalChecked()
             };
 
-            NanMakeCallback(args.This(), "emit", 3, argv);
+            Nan::MakeCallback(info.This(), "emit", 3, argv);
         }
     } while (result != 0);
 
-    delete info;
+    delete infod;
     pipe_consumer_free(c);
 
     Local<Value> argv[1] = {
-        NanNew("finished")
+        Nan::New("finished").ToLocalChecked()
     };
 
-    NanMakeCallback(args.This(), "emit", 1, argv);
+    Nan::MakeCallback(info.This(), "emit", 1, argv);
 
     [pool release];
-    NanReturnUndefined();
+    return;
 }
 
 NAN_METHOD(DeviceINQ::SdpSearch) {
-    NanScope();
+    Nan::HandleScope scope;
 
     const char *usage = "usage: sdpSearchForRFCOMM(address, callback)";
-    if (args.Length() != 2) {
-        NanThrowError(usage);
+    if (info.Length() != 2) {
+        Nan::ThrowError(usage);
     }
 
-    if (!args[0]->IsString()) {
-        NanThrowTypeError("First argument should be a string value");
+    if (!info[0]->IsString()) {
+        Nan::ThrowTypeError("First argument should be a string value");
     }
-    String::Utf8Value address(args[0]);
+    String::Utf8Value address(info[0]);
 
-    if(!args[1]->IsFunction()) {
-        NanThrowTypeError("Second argument must be a function");
+    if(!info[1]->IsFunction()) {
+        Nan::ThrowTypeError("Second argument must be a function");
     }
-    Local<Function> cb = args[1].As<Function>();
+    Local<Function> cb = info[1].As<Function>();
 
-    DeviceINQ* inquire = ObjectWrap::Unwrap<DeviceINQ>(args.This());
+    DeviceINQ* inquire = Nan::ObjectWrap::Unwrap<DeviceINQ>(info.This());
 
     sdp_baton_t *baton = new sdp_baton_t();
     baton->inquire = inquire;
-    baton->cb = new NanCallback(cb);
+    baton->cb = new Nan::Callback(cb);
     strcpy(baton->address, *address);
     baton->channelID = -1;
     baton->request.data = baton;
@@ -191,25 +191,25 @@ NAN_METHOD(DeviceINQ::SdpSearch) {
 
     uv_queue_work(uv_default_loop(), &baton->request, EIO_SdpSearch, (uv_after_work_cb)EIO_AfterSdpSearch);
 
-    NanReturnUndefined();
+    return;
 }
 
 NAN_METHOD(DeviceINQ::ListPairedDevices) {
-    NanScope();
+    Nan::HandleScope scope;
 
     const char *usage = "usage: listPairedDevices(callback)";
-    if (args.Length() != 1) {
-        return NanThrowError(usage);
+    if (info.Length() != 1) {
+        return Nan::ThrowError(usage);
     }
 
-    if(!args[0]->IsFunction()) {
-        return NanThrowTypeError("First argument must be a function");
+    if(!info[0]->IsFunction()) {
+        return Nan::ThrowTypeError("First argument must be a function");
     }
-    Local<Function> cb = args[0].As<Function>();
+    Local<Function> cb = info[0].As<Function>();
 
     NSArray *pairedDevices = [IOBluetoothDevice pairedDevices];
 
-    Local<Array> resultArray = NanNew<v8::Array>((int)pairedDevices.count);
+    Local<Array> resultArray = Nan::New<v8::Array>((int)pairedDevices.count);
 
     // Builds an array of objects representing a paired device:
     // ex: {
@@ -223,29 +223,29 @@ NAN_METHOD(DeviceINQ::ListPairedDevices) {
     for (int i = 0; i < (int)pairedDevices.count; ++i) {
         IOBluetoothDevice *device = [pairedDevices objectAtIndex:i];
 
-        Local<Object> deviceObj = NanNew<v8::Object>();
+        Local<Object> deviceObj = Nan::New<v8::Object>();
 
-        deviceObj->Set(NanNew("name"), NanNew([device.nameOrAddress UTF8String]));
-        deviceObj->Set(NanNew("address"), NanNew([device.addressString UTF8String]));
+        deviceObj->Set(Nan::New("name").ToLocalChecked(), Nan::New([device.nameOrAddress UTF8String]).ToLocalChecked());
+        deviceObj->Set(Nan::New("address").ToLocalChecked(), Nan::New([device.addressString UTF8String]).ToLocalChecked());
 
         // A device may have multiple services, so enumerate each one
-        Local<Array> servicesArray = NanNew<v8::Array>((int)device.services.count);
+        Local<Array> servicesArray = Nan::New<v8::Array>((int)device.services.count);
         for (int j = 0; j < (int)device.services.count; ++j) {
             IOBluetoothSDPServiceRecord *service = [device.services objectAtIndex:j];
             BluetoothRFCOMMChannelID channelID;
             [service getRFCOMMChannelID:&channelID];
 
-            Local<Object> serviceObj = NanNew<v8::Object>();
-            serviceObj->Set(NanNew("channel"), NanNew((int)channelID));
+            Local<Object> serviceObj = Nan::New<v8::Object>();
+            serviceObj->Set(Nan::New("channel").ToLocalChecked(), Nan::New((int)channelID));
 
             if ([service getServiceName])
-                serviceObj->Set(NanNew("name"), NanNew([[service getServiceName] UTF8String]));
+                serviceObj->Set(Nan::New("name").ToLocalChecked(), Nan::New([[service getServiceName] UTF8String]).ToLocalChecked());
             else
-                serviceObj->Set(NanNew("name"), NanUndefined());
+                serviceObj->Set(Nan::New("name").ToLocalChecked(), Nan::Undefined());
 
             servicesArray->Set(j, serviceObj);
         }
-        deviceObj->Set(NanNew("services"), servicesArray);
+        deviceObj->Set(Nan::New("services").ToLocalChecked(), servicesArray);
 
         resultArray->Set(i, deviceObj);
     }
@@ -253,7 +253,7 @@ NAN_METHOD(DeviceINQ::ListPairedDevices) {
     Local<Value> argv[1] = {
         resultArray
     };
-    cb->Call(NanGetCurrentContext()->Global(), 1, argv);
+    cb->Call(Nan::GetCurrentContext()->Global(), 1, argv);
 
-    NanReturnUndefined();
+    return;
 }
