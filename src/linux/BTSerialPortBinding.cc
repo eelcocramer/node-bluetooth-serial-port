@@ -259,9 +259,6 @@ NAN_METHOD(BTSerialPortBinding::New) {
         Nan::ThrowTypeError("ChannelID should be a positive int value.");
     }
 
-    Local<Function> cb = Local<Function>::Cast(info[2]);
-    Local<Function> ecb = Local<Function>::Cast(info[3]);
-
     BTSerialPortBinding* rfcomm = new BTSerialPortBinding();
     rfcomm->Wrap(info.This());
 
