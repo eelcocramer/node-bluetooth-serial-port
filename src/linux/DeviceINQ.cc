@@ -3,10 +3,10 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * 
+ *
  * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <v8.h>
@@ -99,7 +99,7 @@ void DeviceINQ::EIO_SdpSearch(uv_work_t *req) {
                     sdp_data_t *d = (sdp_data_t*)pds->data;
                     int proto = 0;
                     for( ; d; d = d->next ) {
-                        switch( d->dtd ) { 
+                        switch( d->dtd ) {
                             case SDP_UUID16:
                             case SDP_UUID32:
                             case SDP_UUID128:
@@ -128,16 +128,16 @@ void DeviceINQ::EIO_SdpSearch(uv_work_t *req) {
 void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
     sdp_baton_t *baton = static_cast<sdp_baton_t *>(req->data);
 
-    TryCatch try_catch;
+    Nan::TryCatch try_catch;
 
-    Handle<Value> argv[] = {
-        NanNew(baton->channelID)
+    Local<Value> argv[] = {
+        Nan::New(baton->channelID)
     };
 
     baton->cb->Call(1, argv);
 
     if (try_catch.HasCaught()) {
-        FatalException(try_catch);
+        Nan::FatalException(try_catch);
     }
 
     baton->inquire->Unref();
@@ -147,19 +147,19 @@ void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
 }
 
 void DeviceINQ::Init(Handle<Object> target) {
-    NanScope();
+    Nan::HandleScope scope;
 
-    Local<FunctionTemplate> t = NanNew<FunctionTemplate>(New);
+    Local<FunctionTemplate> t = Nan::New<FunctionTemplate>(New);
 
     t->InstanceTemplate()->SetInternalFieldCount(1);
-    t->SetClassName(NanNew("DeviceINQ"));
+    t->SetClassName(Nan::New("DeviceINQ").ToLocalChecked());
 
-    NODE_SET_PROTOTYPE_METHOD(t, "inquire", Inquire);
-    NODE_SET_PROTOTYPE_METHOD(t, "findSerialPortChannel", SdpSearch);
-    NODE_SET_PROTOTYPE_METHOD(t, "listPairedDevices", ListPairedDevices);
-    target->Set(NanNew("DeviceINQ"), t->GetFunction());
-    target->Set(NanNew("DeviceINQ"), t->GetFunction());
-    target->Set(NanNew("DeviceINQ"), t->GetFunction());
+    Nan::SetPrototypeMethod(t, "inquire", Inquire);
+    Nan::SetPrototypeMethod(t, "findSerialPortChannel", SdpSearch);
+    Nan::SetPrototypeMethod(t, "listPairedDevices", ListPairedDevices);
+    target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
+    target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
+    target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
 }
 
 DeviceINQ::DeviceINQ() {
@@ -171,25 +171,25 @@ DeviceINQ::~DeviceINQ() {
 }
 
 NAN_METHOD(DeviceINQ::New) {
-    NanScope();
+    Nan::HandleScope scope;
 
     const char *usage = "usage: DeviceINQ()";
-    if (args.Length() != 0) {
-        NanThrowError(usage);
+    if (info.Length() != 0) {
+        Nan::ThrowError(usage);
     }
 
     DeviceINQ* inquire = new DeviceINQ();
-    inquire->Wrap(args.This());
+    inquire->Wrap(info.This());
 
-    NanReturnValue(args.This());
+    info.GetReturnValue().Set(info.This());
 }
 
 NAN_METHOD(DeviceINQ::Inquire) {
-    NanScope();
+    Nan::HandleScope scope;
 
     const char *usage = "usage: inquire()";
-    if (args.Length() != 0) {
-        NanThrowError(usage);
+    if (info.Length() != 0) {
+        Nan::ThrowError(usage);
     }
 
     // do the bluetooth magic
@@ -203,7 +203,7 @@ NAN_METHOD(DeviceINQ::Inquire) {
     dev_id = hci_get_route(NULL);
     sock = hci_open_dev( dev_id );
     if (dev_id < 0 || sock < 0) {
-        NanThrowError("opening socket");
+        Nan::ThrowError("opening socket");
     }
 
     len  = 8;
@@ -219,57 +219,57 @@ NAN_METHOD(DeviceINQ::Inquire) {
     for (i = 0; i < num_rsp; i++) {
       ba2str(&(ii+i)->bdaddr, addr);
       memset(name, 0, sizeof(name));
-      if (hci_read_remote_name(sock, &(ii+i)->bdaddr, sizeof(name), 
+      if (hci_read_remote_name(sock, &(ii+i)->bdaddr, sizeof(name),
           name, 0) < 0)
         strcpy(name, addr);
 
       // fprintf(stderr, "%s [%s]\n", addr, name);
 
       Local<Value> argv[3] = {
-          NanNew("found"),
-          NanNew(addr),
-          NanNew(name)
+          Nan::New("found").ToLocalChecked(),
+          Nan::New(addr).ToLocalChecked(),
+          Nan::New(name).ToLocalChecked()
       };
 
-      NanMakeCallback(args.This(), "emit", 3, argv);
+      Nan::MakeCallback(info.This(), "emit", 3, argv);
     }
 
     free( ii );
     close( sock );
 
     Local<Value> argv[1] = {
-        NanNew("finished")
+        Nan::New("finished").ToLocalChecked()
     };
 
-    NanMakeCallback(args.This(), "emit", 1, argv);
+    Nan::MakeCallback(info.This(), "emit", 1, argv);
 
-    NanReturnUndefined();
+    return;
 }
 
 NAN_METHOD(DeviceINQ::SdpSearch) {
-    NanScope();
+    Nan::HandleScope scope;
 
     const char *usage = "usage: findSerialPortChannel(address, callback)";
-    if (args.Length() != 2) {
-        NanThrowError(usage);
+    if (info.Length() != 2) {
+        Nan::ThrowError(usage);
     }
 
-    if (!args[0]->IsString()) {
-        NanThrowTypeError("First argument should be a string value");
+    if (!info[0]->IsString()) {
+        Nan::ThrowTypeError("First argument should be a string value");
     }
-    String::Utf8Value address(args[0]);
+    String::Utf8Value address(info[0]);
 
-    if(!args[1]->IsFunction()) {
-        NanThrowTypeError("Second argument must be a function");
+    if(!info[1]->IsFunction()) {
+        Nan::ThrowTypeError("Second argument must be a function");
     }
 
-    Local<Function> cb = args[1].As<Function>();
+    Local<Function> cb = info[1].As<Function>();
 
-    DeviceINQ* inquire = ObjectWrap::Unwrap<DeviceINQ>(args.This());
+    DeviceINQ* inquire = Nan::ObjectWrap::Unwrap<DeviceINQ>(info.This());
 
     sdp_baton_t *baton = new sdp_baton_t();
     baton->inquire = inquire;
-    baton->cb = new NanCallback(cb);
+    baton->cb = new Nan::Callback(cb);
     strcpy(baton->address, *address);
     baton->channelID = -1;
     baton->request.data = baton;
@@ -277,23 +277,23 @@ NAN_METHOD(DeviceINQ::SdpSearch) {
 
     uv_queue_work(uv_default_loop(), &baton->request, EIO_SdpSearch, (uv_after_work_cb)EIO_AfterSdpSearch);
 
-    NanReturnUndefined();
+    return;
 }
 
 NAN_METHOD(DeviceINQ::ListPairedDevices) {
-    NanScope();
+    Nan::HandleScope scope;
 
     const char *usage = "usage: listPairedDevices(callback)";
-    if (args.Length() != 1) {
-        NanThrowError(usage);
+    if (info.Length() != 1) {
+        Nan::ThrowError(usage);
     }
 
-    if(!args[0]->IsFunction()) {
-       NanThrowTypeError("First argument must be a function");
+    if(!info[0]->IsFunction()) {
+       Nan::ThrowTypeError("First argument must be a function");
     }
-    Local<Function> cb = args[0].As<Function>();
+    Local<Function> cb = info[0].As<Function>();
 
-    Local<Array> resultArray = Local<Array>(NanNew<Array>());
+    Local<Array> resultArray = Local<Array>(Nan::New<Array>());
 
     // TODO: build an array of objects representing a paired device:
     // ex: {
@@ -308,7 +308,7 @@ NAN_METHOD(DeviceINQ::ListPairedDevices) {
     Local<Value> argv[1] = {
         resultArray
     };
-    cb->Call(NanGetCurrentContext()->Global(), 1, argv);
+    cb->Call(Nan::GetCurrentContext()->Global(), 1, argv);
 
-    NanReturnUndefined();
+    return;
 }

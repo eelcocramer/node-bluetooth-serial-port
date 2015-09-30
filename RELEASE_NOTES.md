@@ -1,5 +1,10 @@
 ## RELEASE NOTES
 
+### 1.2.5
+
+* Compatible to NodeJS 4.x
+* Dockerfile to test build Linux from OSX or Win
+
 ### 1.2.4
 
 * The release notes for previous version have moved to [a separate file](RELEASE_NOTES.md).

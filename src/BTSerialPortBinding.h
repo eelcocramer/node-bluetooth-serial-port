@@ -24,7 +24,7 @@
 #import "pipe.h"
 #endif
 
-class BTSerialPortBinding : public node::ObjectWrap {
+class BTSerialPortBinding : public Nan::ObjectWrap {
     private:
 #ifdef _WINDOWS_
         bool initialized;
@@ -39,7 +39,7 @@ class BTSerialPortBinding : public node::ObjectWrap {
         __declspec(property(get = GetInitializedProperty)) bool Initialized;
 #endif
 
-        static v8::Persistent<v8::FunctionTemplate> s_ct;
+        static Nan::Persistent<v8::FunctionTemplate> s_ct;
         static void Init(v8::Handle<v8::Object> exports);
         static NAN_METHOD(Write);
         static NAN_METHOD(Close);
@@ -49,8 +49,8 @@ class BTSerialPortBinding : public node::ObjectWrap {
         struct connect_baton_t {
             BTSerialPortBinding *rfcomm;
             uv_work_t request;
-            NanCallback* cb;
-            NanCallback* ecb;
+            Nan::Callback* cb;
+            Nan::Callback* ecb;
             char address[40];
             int status;
             int channelID;
@@ -59,7 +59,7 @@ class BTSerialPortBinding : public node::ObjectWrap {
         struct read_baton_t {
             BTSerialPortBinding *rfcomm;
             uv_work_t request;
-            NanCallback* cb;
+            Nan::Callback* cb;
             unsigned char result[1024];
             int errorno;
             int size;
@@ -70,8 +70,8 @@ class BTSerialPortBinding : public node::ObjectWrap {
             char address[40];
             void* bufferData;
             int bufferLength;
-            v8::Persistent<v8::Object> buffer;
-            NanCallback* callback;
+            Nan::Persistent<v8::Object> buffer;
+            Nan::Callback* callback;
             size_t result;
             char errorString[1024];
         };

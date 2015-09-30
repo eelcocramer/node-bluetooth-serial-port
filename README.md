@@ -9,10 +9,8 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 ## New in this release
 
-* The release notes for previous version have moved to [a separate file](RELEASE_NOTES.md).
-* Fixes an issue where the `Error` object is passed in the 2nd argument of the callback function when a `write` is called before the remote device was connected.
-* Fixes a [segfault on OSX](https://github.com/eelcocramer/node-bluetooth-serial-port/issues/74).
-* Fixes a [buffer overflow on OSX](https://github.com/eelcocramer/node-bluetooth-serial-port/issues/76).
+* Compatible to NodeJS 4.x
+* Dockerfile to test build Linux from OSX or Win
 
 ## Pre-requests on Linux
 
@@ -32,6 +30,10 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 ## Install
 
 `npm install bluetooth-serial-port`
+
+## Test build Linux using docker
+
+`docker build -t bluetooth-serial-port .`
 
 # Documentation
 
