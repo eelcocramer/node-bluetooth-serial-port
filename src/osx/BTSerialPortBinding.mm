@@ -69,6 +69,8 @@ void BTSerialPortBinding::EIO_Connect(uv_work_t *req) {
 }
 
 void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
+    Nan::HandleScope scope;
+
     connect_baton_t *baton = static_cast<connect_baton_t *>(req->data);
 
     Nan::TryCatch try_catch;
@@ -112,6 +114,8 @@ void BTSerialPortBinding::EIO_Write(uv_work_t *req) {
 }
 
 void BTSerialPortBinding::EIO_AfterWrite(uv_work_t *req) {
+    Nan::HandleScope scope;
+
     queued_write_t *queuedWrite = static_cast<queued_write_t*>(req->data);
     write_baton_t *data = static_cast<write_baton_t*>(queuedWrite->baton);
 
@@ -168,6 +172,7 @@ void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
 }
 
 void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
+    Nan::HandleScope sc;
     Nan::EscapableHandleScope scope;
 
     read_baton_t *baton = static_cast<read_baton_t *>(req->data);

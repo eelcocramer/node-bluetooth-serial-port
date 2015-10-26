@@ -56,6 +56,8 @@ void DeviceINQ::EIO_SdpSearch(uv_work_t *req) {
 }
 
 void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
+    Nan::HandleScope scope;
+
     sdp_baton_t *baton = static_cast<sdp_baton_t *>(req->data);
 
     Nan::TryCatch try_catch;
