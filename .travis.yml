@@ -1,21 +1,55 @@
-language: ruby # node_js is not supported on osx
-sudo: required
-env: # we don't care of rvm, we only want to have the right number fo jobs
-    #  - NODE_VERSION=0.10
-    #- NODE_VERSION=0.11
-    #- NODE_VERSION=0.12
-    #- NODE_VERSION=iojs
-  - NODE_VERSION=4.0
+language: cpp # node_js is not supported yet on osx
+compiler: gcc
+sudo: false
+
 os:
   - linux
   - osx
 
+env:
+  matrix:
+    - export NODE_VERSION="0.10"
+    - export NODE_VERSION="0.12"
+    - export NODE_VERSION="iojs-v1.0"
+    - export NODE_VERSION="iojs-v1"
+    - export NODE_VERSION="iojs-v2"
+    - export NODE_VERSION="iojs-v3"
+    - export NODE_VERSION="4.0"
+
+matrix:
+  fast-finish: true
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - gcc-4.7
+      - g++-4.7
+      - libbluetooth-dev
+
 before_install:
-  - ./test/before_install.sh
+  - git clone https://github.com/creationix/nvm.git ./.nvm
+  - source ./.nvm/nvm.sh
+  - nvm install $NODE_VERSION
+  - nvm use $NODE_VERSION
+  - npm config set python `which python`
+  - if [ $TRAVIS_OS_NAME == "linux" ]; then
+      export CC="gcc-4.7";
+      export CXX="g++-4.7";
+      export LINK="gcc-4.7";
+      export LINKXX="g++-4.7";
+    fi
+  - gcc --version
+  - g++ --version
 
 script:
-  - export PATH=$PATH:./node_modules/.bin
-  - node-gyp configure
-  - node-gyp build
+  - npm install
   - node ./test/index.js
+
+cache:
+  directories:
+    - $HOME/.node-gyp
+    - $HOME/.npm
+    - node_modules
 
