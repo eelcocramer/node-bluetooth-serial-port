@@ -102,8 +102,6 @@ DeviceINQ::~DeviceINQ() {
 }
 
 NAN_METHOD(DeviceINQ::New) {
-    Nan::HandleScope scope;
-
     const char *usage = "usage: DeviceINQ()";
     if (info.Length() != 0) {
         Nan::ThrowError(usage);
@@ -116,8 +114,6 @@ NAN_METHOD(DeviceINQ::New) {
 }
 
 NAN_METHOD(DeviceINQ::Inquire) {
-    Nan::HandleScope scope;
-
     const char *usage = "usage: inquire()";
     if (info.Length() != 0) {
         Nan::ThrowError(usage);
@@ -164,8 +160,6 @@ NAN_METHOD(DeviceINQ::Inquire) {
 }
 
 NAN_METHOD(DeviceINQ::SdpSearch) {
-    Nan::HandleScope scope;
-
     const char *usage = "usage: sdpSearchForRFCOMM(address, callback)";
     if (info.Length() != 2) {
         Nan::ThrowError(usage);
@@ -197,8 +191,6 @@ NAN_METHOD(DeviceINQ::SdpSearch) {
 }
 
 NAN_METHOD(DeviceINQ::ListPairedDevices) {
-    Nan::HandleScope scope;
-
     const char *usage = "usage: listPairedDevices(callback)";
     if (info.Length() != 1) {
         return Nan::ThrowError(usage);

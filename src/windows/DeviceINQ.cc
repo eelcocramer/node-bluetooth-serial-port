@@ -140,8 +140,6 @@ DeviceINQ::~DeviceINQ() {
 }
 
 NAN_METHOD(DeviceINQ::New) {
-    Nan::HandleScope scope;
-
     if (info.Length() != 0) {
         Nan::ThrowError("usage: DeviceINQ()");
     }
@@ -156,8 +154,6 @@ NAN_METHOD(DeviceINQ::New) {
 }
 
 NAN_METHOD(DeviceINQ::Inquire) {
-    Nan::HandleScope scope;
-
     if (info.Length() != 0) {
         Nan::ThrowError("usage: inquire()");
     }
@@ -249,8 +245,6 @@ NAN_METHOD(DeviceINQ::Inquire) {
 }
 
 NAN_METHOD(DeviceINQ::SdpSearch) {
-    Nan::HandleScope scope;
-
     if (info.Length() != 2) {
         Nan::ThrowError("usage: findSerialPortChannel(address, callback)");
     }
@@ -285,8 +279,6 @@ NAN_METHOD(DeviceINQ::SdpSearch) {
 }
 
 NAN_METHOD(DeviceINQ::ListPairedDevices) {
-    Nan::HandleScope scope;
-
     const char *usage = "usage: listPairedDevices(callback)";
     if (info.Length() != 1) {
         Nan::ThrowError(usage);

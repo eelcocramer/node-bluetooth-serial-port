@@ -182,8 +182,7 @@ void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
 }
 
 void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
-    Nan::HandleScope sc;
-    Nan::EscapableHandleScope scope;
+    Nan::HandleScope scope;
 
     read_baton_t *baton = static_cast<read_baton_t *>(req->data);
 
@@ -201,12 +200,8 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
         Local<Object> resultBuffer = bufferConstructor->NewInstance(1, constructorArgs);
         memcpy(Buffer::Data(resultBuffer), baton->result, baton->size);
 
-        /* XXX workaround bad handle returned by Nan::Undefined()
-         * see issue #74 for detailed traces
-         * https://github.com/eelcocramer/node-bluetooth-serial-port/issues/74
-         */
-        argv[0] = Nan::New(false);
-        argv[1] = scope.Escape(resultBuffer);
+        argv[0] = Nan::Undefined();
+        argv[1] = resultBuffer;
     }
 
     baton->cb->Call(2, argv);
@@ -247,8 +242,6 @@ BTSerialPortBinding::~BTSerialPortBinding() {
 }
 
 NAN_METHOD(BTSerialPortBinding::New) {
-    Nan::HandleScope scope;
-
     uv_mutex_init(&write_queue_mutex);
     ngx_queue_init(&write_queue);
 
@@ -291,8 +284,6 @@ NAN_METHOD(BTSerialPortBinding::New) {
 }
 
 NAN_METHOD(BTSerialPortBinding::Write) {
-    Nan::HandleScope scope;
-
     // usage
     if (info.Length() != 3) {
         Nan::ThrowError("usage: write(buf, address, callback)");
@@ -347,8 +338,6 @@ NAN_METHOD(BTSerialPortBinding::Write) {
 }
 
 NAN_METHOD(BTSerialPortBinding::Close) {
-    Nan::HandleScope scope;
-
     const char *usage = "usage: close(address)";
     if (info.Length() != 1) {
         Nan::ThrowError(usage);
@@ -373,8 +362,6 @@ NAN_METHOD(BTSerialPortBinding::Close) {
 }
 
 NAN_METHOD(BTSerialPortBinding::Read) {
-    Nan::HandleScope scope;
-
     const char *usage = "usage: read(callback)";
     if (info.Length() != 1) {
         Nan::ThrowError(usage);
