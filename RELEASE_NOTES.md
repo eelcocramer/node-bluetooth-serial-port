@@ -1,5 +1,10 @@
 ## RELEASE NOTES
 
+### 1.2.6
+
+* Fixes a critical [runtime error](https://github.com/eelcocramer/node-bluetooth-serial-port/issues/83) on all platforms.
+* Improves travis build.
+
 ### 1.2.5
 
 * Compatible to NodeJS 4.x

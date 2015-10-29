@@ -9,8 +9,8 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 ## New in this release
 
-* Compatible to NodeJS 4.x
-* Dockerfile to test build Linux from OSX or Win
+* Fixes a critical [runtime error](https://github.com/eelcocramer/node-bluetooth-serial-port/issues/83) on all platforms.
+* Improves travis build.
 
 ## Pre-requests on Linux
 
