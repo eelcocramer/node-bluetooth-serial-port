@@ -34,7 +34,7 @@
     , "npm": ">= 1.1.x"
     }
 , "scripts":
-    { "install": "node-gyp configure build --debug"
+    { "install": "node-gyp configure build"
     }
 , "license": "BSD-2-Clause"
 , "contributors":
