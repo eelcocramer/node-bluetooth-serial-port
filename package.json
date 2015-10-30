@@ -35,6 +35,7 @@
     }
 , "scripts":
     { "install": "node-gyp configure build"
+    , "install-debug": "node-gyp configure build --debug"
     }
 , "license": "BSD-2-Clause"
 , "contributors":
