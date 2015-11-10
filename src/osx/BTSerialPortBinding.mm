@@ -161,7 +161,7 @@ void BTSerialPortBinding::EIO_Read(uv_work_t *req) {
         size = pipe_pop_eager(baton->rfcomm->consumer, buf, sizeof(buf));
     }
 
-    if (size == 0) {
+    if (size == 0 && baton->rfcomm->consumer != NULL) {
         pipe_consumer_free(baton->rfcomm->consumer);
         baton->rfcomm->consumer = NULL;
     }
