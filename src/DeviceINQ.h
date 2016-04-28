@@ -16,6 +16,16 @@
 #include <uv.h>
 #include <nan.h>
 
+struct bt_list {
+    char addr[19];
+    char name[248];
+};
+
+struct bt_inquiry {
+    int num_rsp;
+    bt_list *devices;
+};
+
 class DeviceINQ : public Nan::ObjectWrap {
     private:
 #ifdef _WINDOWS_
@@ -30,11 +40,12 @@ class DeviceINQ : public Nan::ObjectWrap {
 #ifdef _WINDOWS_
         __declspec(property(get = GetInitializedProperty)) bool Initialized;
 #endif
-
+        
         static void Init(v8::Handle<v8::Object> exports);
         static void EIO_SdpSearch(uv_work_t *req);
         static void EIO_AfterSdpSearch(uv_work_t *req);
-
+        static bt_inquiry doInquire();
+        
     private:
         struct sdp_baton_t {
             DeviceINQ *inquire;
@@ -49,8 +60,10 @@ class DeviceINQ : public Nan::ObjectWrap {
 
         static NAN_METHOD(New);
         static NAN_METHOD(Inquire);
+        static NAN_METHOD(InquireSync);
         static NAN_METHOD(SdpSearch);
         static NAN_METHOD(ListPairedDevices);
+
 };
 
 #endif
