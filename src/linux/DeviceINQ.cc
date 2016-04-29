@@ -213,8 +213,6 @@ bt_inquiry DeviceINQ::doInquire() {
   return inquiryResult;
 }
 
-
-
 DeviceINQ::DeviceINQ() {
 
 }
