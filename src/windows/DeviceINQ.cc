@@ -129,6 +129,101 @@ void DeviceINQ::Init(Handle<Object> target) {
     target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
 }
 
+bt_inquiry DeviceINQ::doInquire() {
+    
+    // Construct windows socket bluetooth variables
+    DWORD flags = LUP_CONTAINERS | LUP_FLUSHCACHE | LUP_RETURN_NAME | LUP_RETURN_ADDR;
+    DWORD querySetSize = sizeof(WSAQUERYSET);
+    WSAQUERYSET *querySet = (WSAQUERYSET *)malloc(querySetSize);
+    if (querySet == nullptr) {
+        Nan::ThrowError("Out of memory: Unable to allocate memory resource for inquiry");
+    }
+
+    ZeroMemory(querySet, querySetSize);
+    querySet->dwSize = querySetSize;
+    querySet->dwNameSpace = NS_BTH;
+
+    // Initiate client device inquiry
+    HANDLE lookupServiceHandle;
+    int lookupServiceError = WSALookupServiceBegin(querySet, flags, &lookupServiceHandle);
+    if (lookupServiceError != SOCKET_ERROR) {
+        // Iterate over each found bluetooth service
+        bool inquiryComplete;
+        bt_inquiry inquiryResult; 
+        bt_list max_bt_device_list;
+        int max_rsp, num_rsp;
+    
+        max_rsp = 255;
+        max_bt_device_list = (bt_list*)malloc(max_rsp * sizeof(bt_list));
+
+        num_rsp = 0;
+        inquiryComplete = false;
+        while (!inquiryComplete) {
+            // For each bluetooth service retrieve its corresponding details
+            lookupServiceError = WSALookupServiceNext(lookupServiceHandle, flags, &querySetSize, querySet);
+            if (lookupServiceError != SOCKET_ERROR) {
+                char address[40] = { 0 };
+                DWORD addressLength = _countof(address);
+                SOCKADDR_BTH *bluetoothSocketAddress = (SOCKADDR_BTH *)querySet->lpcsaBuffer->RemoteAddr.lpSockaddr;
+                BTH_ADDR bluetoothAddress = bluetoothSocketAddress->btAddr;
+
+                // Emit the corresponding event if we were able to retrieve the address
+                int addressToStringError = WSAAddressToString(querySet->lpcsaBuffer->RemoteAddr.lpSockaddr,
+                                                              sizeof(SOCKADDR_BTH),
+                                                              nullptr,
+                                                              address,
+                                                              &addressLength);
+                if (addressToStringError != SOCKET_ERROR) {
+                    // Strip any leading and trailing parentheses is encountered
+                    char strippedAddress[19] = { 0 };
+                    auto addressString = sscanf_s(address, "(" "%18[^)]" ")", strippedAddress) == 1
+                                         ? strippedAddress
+                                         : address;
+
+                    max_bt_device_list[num_rsp].addr = addressString;
+                    max_bt_device_list[name].name = querySet->lpszServiceInstanceName;  
+                    num_rsp++;
+                }
+            } else {
+                int lookupServiceErrorNumber = WSAGetLastError();
+                if (lookupServiceErrorNumber == WSAEFAULT) {
+                    free(querySet);
+                    querySet = (WSAQUERYSET *)malloc(querySetSize);
+                    if (querySet == nullptr) {
+                        WSALookupServiceEnd(lookupServiceHandle);
+                        Nan::ThrowError("Out of memory: Unable to allocate memory resource for inquiry");
+                    }
+                } else if (lookupServiceErrorNumber == WSA_E_NO_MORE) {
+                    // No more services where found
+                    inquiryComplete = true;
+                } else {
+                    // Unhandled error
+                    inquiryComplete = true;
+                }
+            }
+        }
+        inquiryResult.num_rsp = num_rsp;
+        inquiryResult.devices = (bt_list*)malloc(num_rsp * sizeof(bt_list));
+
+        for (i = 0; i < num_rsp; i++) {
+            strcpy(inquiryResult.devices[i].addr, max_bt_device_list.addr);
+            strcpy(inquiryResult.devices[i].name, max_bt_device_list.name);
+        }
+        free(max_bt_device_list);
+
+    } else {
+        int lookupServiceErrorNumber = WSAGetLastError();
+        if (lookupServiceErrorNumber != WSASERVICE_NOT_FOUND) {
+            free(querySet);
+            Nan::ThrowError("Unable to initiate client device inquiry");
+        }
+    }
+
+    free(querySet);
+    WSALookupServiceEnd(lookupServiceHandle);
+
+}
+
 DeviceINQ::DeviceINQ() {
     initialized = BluetoothHelpers::Initialize();
 }
@@ -151,6 +246,78 @@ NAN_METHOD(DeviceINQ::New) {
 
     inquire->Wrap(info.This());
     info.GetReturnValue().Set(info.This());
+}
+
+NAN_METHOD(DeviceINQ::InquireSync) {
+    const char *usage = "usage: inquireSync(found, callback)";
+    if (info.Length() != 2) {
+        Nan::ThrowError(usage);
+    }
+
+    Nan::Callback *found = new Nan::Callback(info[0].As<Function>());
+    Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
+
+    bt_inquiry inquiryResult = DeviceINQ::doInquire();
+    for (int i = 0; i < inquiryResult.num_rsp; i++) {
+      Local<Value> argv[] = {
+        Nan::New(inquiryResult.devices[i].addr).ToLocalChecked(),  
+        Nan::New(inquiryResult.devices[i].name).ToLocalChecked()
+      };
+      found->Call(2, argv);
+    }
+
+    Local<Value> argv[] = {};
+    callback->Call(0, argv);
+    return;
+}
+
+class InquireWorker : public Nan::AsyncWorker {
+ public:
+  InquireWorker(Nan::Callback* found, Nan::Callback *callback) 
+    : Nan::AsyncWorker(callback), found(found) {}
+  ~InquireWorker() {}
+
+  // Executed inside the worker-thread.
+  // It is not safe to access V8, or V8 data structures
+  // here, so everything we need for input and output
+  // should go on `this`.
+  void Execute () {
+    inquiryResult = DeviceINQ::doInquire();
+  }
+
+  // Executed when the async work is complete
+  // this function will be run inside the main event loop
+  // so it is safe to use V8 again
+  void HandleOKCallback () {
+    Nan::HandleScope scope;
+
+    for (int i = 0; i < inquiryResult.num_rsp; i++) {
+      Local<Value> argv[] = {
+        Nan::New(inquiryResult.devices[i].addr).ToLocalChecked(),  
+        Nan::New(inquiryResult.devices[i].name).ToLocalChecked()
+      };
+      found->Call(2, argv);
+    }
+
+    Local<Value> argv[] = {};
+    callback->Call(0, argv);
+  }
+
+  private:
+    bt_inquiry inquiryResult;
+    Nan::Callback* found;
+};
+
+// Asynchronous access to the `Inquire()` function
+NAN_METHOD(DeviceINQ::Inquire) {
+  const char *usage = "usage: inquire(found, callback)";
+  if (info.Length() != 2) {
+      Nan::ThrowError(usage);
+  }
+  Nan::Callback *found = new Nan::Callback(info[0].As<Function>());
+  Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
+
+  Nan::AsyncQueueWorker(new InquireWorker(found, callback));
 }
 
 NAN_METHOD(DeviceINQ::Inquire) {
