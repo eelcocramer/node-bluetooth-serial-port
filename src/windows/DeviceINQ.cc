@@ -121,16 +121,19 @@ void DeviceINQ::Init(Handle<Object> target) {
     t->InstanceTemplate()->SetInternalFieldCount(1);
     t->SetClassName(Nan::New("DeviceINQ").ToLocalChecked());
 
+    Nan::SetPrototypeMethod(t, "inquireSync", InquireSync);
     Nan::SetPrototypeMethod(t, "inquire", Inquire);
     Nan::SetPrototypeMethod(t, "findSerialPortChannel", SdpSearch);
     Nan::SetPrototypeMethod(t, "listPairedDevices", ListPairedDevices);
     target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
     target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
     target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
+    target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
 }
 
 bt_inquiry DeviceINQ::doInquire() {
-    
+    bt_inquiry inquiryResult;
+
     // Construct windows socket bluetooth variables
     DWORD flags = LUP_CONTAINERS | LUP_FLUSHCACHE | LUP_RETURN_NAME | LUP_RETURN_ADDR;
     DWORD querySetSize = sizeof(WSAQUERYSET);
@@ -148,13 +151,11 @@ bt_inquiry DeviceINQ::doInquire() {
     int lookupServiceError = WSALookupServiceBegin(querySet, flags, &lookupServiceHandle);
     if (lookupServiceError != SOCKET_ERROR) {
         // Iterate over each found bluetooth service
-        bool inquiryComplete;
-        bt_inquiry inquiryResult; 
-        bt_list max_bt_device_list;
+        bool inquiryComplete; 
         int max_rsp, num_rsp;
     
         max_rsp = 255;
-        max_bt_device_list = (bt_list*)malloc(max_rsp * sizeof(bt_list));
+        bt_list * max_bt_device_list = (bt_list*)malloc(max_rsp * sizeof(bt_list));
 
         num_rsp = 0;
         inquiryComplete = false;
@@ -180,8 +181,8 @@ bt_inquiry DeviceINQ::doInquire() {
                                          ? strippedAddress
                                          : address;
 
-                    max_bt_device_list[num_rsp].addr = addressString;
-                    max_bt_device_list[name].name = querySet->lpszServiceInstanceName;  
+                    strcpy(max_bt_device_list[num_rsp].addr, addressString);
+                    strcpy(max_bt_device_list[num_rsp].name, querySet->lpszServiceInstanceName); 
                     num_rsp++;
                 }
             } else {
@@ -205,9 +206,9 @@ bt_inquiry DeviceINQ::doInquire() {
         inquiryResult.num_rsp = num_rsp;
         inquiryResult.devices = (bt_list*)malloc(num_rsp * sizeof(bt_list));
 
-        for (i = 0; i < num_rsp; i++) {
-            strcpy(inquiryResult.devices[i].addr, max_bt_device_list.addr);
-            strcpy(inquiryResult.devices[i].name, max_bt_device_list.name);
+        for (int i = 0; i < num_rsp; i++) {
+            strcpy(inquiryResult.devices[i].addr, max_bt_device_list[i].addr);
+            strcpy(inquiryResult.devices[i].name, max_bt_device_list[i].name);
         }
         free(max_bt_device_list);
 
@@ -221,7 +222,7 @@ bt_inquiry DeviceINQ::doInquire() {
 
     free(querySet);
     WSALookupServiceEnd(lookupServiceHandle);
-
+    return inquiryResult;
 }
 
 DeviceINQ::DeviceINQ() {
@@ -259,15 +260,14 @@ NAN_METHOD(DeviceINQ::InquireSync) {
 
     bt_inquiry inquiryResult = DeviceINQ::doInquire();
     for (int i = 0; i < inquiryResult.num_rsp; i++) {
-      Local<Value> argv[] = {
+      Local<Value> argv[2] = {
         Nan::New(inquiryResult.devices[i].addr).ToLocalChecked(),  
         Nan::New(inquiryResult.devices[i].name).ToLocalChecked()
       };
       found->Call(2, argv);
     }
 
-    Local<Value> argv[] = {};
-    callback->Call(0, argv);
+    callback->Call(0, 0);
     return;
 }
 
@@ -292,15 +292,14 @@ class InquireWorker : public Nan::AsyncWorker {
     Nan::HandleScope scope;
 
     for (int i = 0; i < inquiryResult.num_rsp; i++) {
-      Local<Value> argv[] = {
+      Local<Value> argv[2] = {
         Nan::New(inquiryResult.devices[i].addr).ToLocalChecked(),  
         Nan::New(inquiryResult.devices[i].name).ToLocalChecked()
       };
       found->Call(2, argv);
     }
 
-    Local<Value> argv[] = {};
-    callback->Call(0, argv);
+    callback->Call(0, 0);
   }
 
   private:
@@ -318,97 +317,6 @@ NAN_METHOD(DeviceINQ::Inquire) {
   Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
 
   Nan::AsyncQueueWorker(new InquireWorker(found, callback));
-}
-
-NAN_METHOD(DeviceINQ::Inquire) {
-    if (info.Length() != 0) {
-        Nan::ThrowError("usage: inquire()");
-    }
-
-    // Construct windows socket bluetooth variables
-    DWORD flags = LUP_CONTAINERS | LUP_FLUSHCACHE | LUP_RETURN_NAME | LUP_RETURN_ADDR;
-    DWORD querySetSize = sizeof(WSAQUERYSET);
-    WSAQUERYSET *querySet = (WSAQUERYSET *)malloc(querySetSize);
-    if (querySet == nullptr) {
-        Nan::ThrowError("Out of memory: Unable to allocate memory resource for inquiry");
-    }
-
-    ZeroMemory(querySet, querySetSize);
-    querySet->dwSize = querySetSize;
-    querySet->dwNameSpace = NS_BTH;
-
-    // Initiate client device inquiry
-    HANDLE lookupServiceHandle;
-    int lookupServiceError = WSALookupServiceBegin(querySet, flags, &lookupServiceHandle);
-    if (lookupServiceError != SOCKET_ERROR) {
-        // Iterate over each found bluetooth service
-        bool inquiryComplete = false;
-        while (!inquiryComplete) {
-            // For each bluetooth service retrieve its corresponding details
-            lookupServiceError = WSALookupServiceNext(lookupServiceHandle, flags, &querySetSize, querySet);
-            if (lookupServiceError != SOCKET_ERROR) {
-                char address[40] = { 0 };
-                DWORD addressLength = _countof(address);
-                SOCKADDR_BTH *bluetoothSocketAddress = (SOCKADDR_BTH *)querySet->lpcsaBuffer->RemoteAddr.lpSockaddr;
-                BTH_ADDR bluetoothAddress = bluetoothSocketAddress->btAddr;
-
-                // Emit the corresponding event if we were able to retrieve the address
-                int addressToStringError = WSAAddressToString(querySet->lpcsaBuffer->RemoteAddr.lpSockaddr,
-                                                              sizeof(SOCKADDR_BTH),
-                                                              nullptr,
-                                                              address,
-                                                              &addressLength);
-                if (addressToStringError != SOCKET_ERROR) {
-                    // Strip any leading and trailing parentheses is encountered
-                    char strippedAddress[19] = { 0 };
-                    auto addressString = sscanf_s(address, "(" "%18[^)]" ")", strippedAddress) == 1
-                                         ? Nan::New(strippedAddress)
-                                         : Nan::New(address);
-
-                    Local<Value> argv[3] = {
-                        Nan::New("found").ToLocalChecked(),
-                        addressString.ToLocalChecked(),
-                        Nan::New(querySet->lpszServiceInstanceName).ToLocalChecked()
-                    };
-
-                    Nan::MakeCallback(info.This(), "emit", 3, argv);
-                }
-            } else {
-                int lookupServiceErrorNumber = WSAGetLastError();
-                if (lookupServiceErrorNumber == WSAEFAULT) {
-                    free(querySet);
-                    querySet = (WSAQUERYSET *)malloc(querySetSize);
-                    if (querySet == nullptr) {
-                        WSALookupServiceEnd(lookupServiceHandle);
-                        Nan::ThrowError("Out of memory: Unable to allocate memory resource for inquiry");
-                    }
-                } else if (lookupServiceErrorNumber == WSA_E_NO_MORE) {
-                    // No more services where found
-                    inquiryComplete = true;
-                } else {
-                    // Unhandled error
-                    inquiryComplete = true;
-                }
-            }
-        }
-    } else {
-        int lookupServiceErrorNumber = WSAGetLastError();
-        if (lookupServiceErrorNumber != WSASERVICE_NOT_FOUND) {
-            free(querySet);
-            Nan::ThrowError("Unable to initiate client device inquiry");
-        }
-    }
-
-    free(querySet);
-    WSALookupServiceEnd(lookupServiceHandle);
-
-    Local<Value> argv[1] = {
-        Nan::New("finished").ToLocalChecked()
-    };
-
-    Nan::MakeCallback(info.This(), "emit", 1, argv);
-
-    return;
 }
 
 NAN_METHOD(DeviceINQ::SdpSearch) {
