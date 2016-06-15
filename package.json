@@ -27,7 +27,7 @@
     ]
 , "dependencies":
     { "bindings": "1.1.x"
-    , "nan": "^2.0.9"
+    , "nan": "latest"
     }
 , "engines":
     { "node": ">= 0.8.x"
