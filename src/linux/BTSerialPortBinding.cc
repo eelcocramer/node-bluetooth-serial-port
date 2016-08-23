@@ -45,8 +45,8 @@ using namespace std;
 using namespace node;
 using namespace v8;
 
-uv_mutex_t write_queue_mutex;
-ngx_queue_t write_queue;
+static uv_mutex_t write_queue_mutex;
+static ngx_queue_t write_queue;
 
 void BTSerialPortBinding::EIO_Connect(uv_work_t *req) {
     connect_baton_t *baton = static_cast<connect_baton_t *>(req->data);
