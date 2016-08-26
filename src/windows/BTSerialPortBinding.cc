@@ -168,7 +168,7 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
 
     read_baton_t *baton = static_cast<read_baton_t *>(req->data);
 
-    TryCatch try_catch;
+    Nan::TryCatch try_catch;
 
     Local<Value> argv[2];
 
@@ -189,7 +189,7 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
     baton->cb->Call(2, argv);
 
     if (try_catch.HasCaught()) {
-        FatalException(try_catch);
+        Nan::FatalException(try_catch);
     }
 
     baton->rfcomm->Unref();
@@ -234,7 +234,7 @@ NAN_METHOD(BTSerialPortBinding::New) {
 
     String::Utf8Value address(info[0]);
     int channelID = info[1]->Int32Value();
-    if (channelID <= 0) { 
+    if (channelID <= 0) {
         Nan::ThrowTypeError("ChannelID should be a positive int value");
     }
 
