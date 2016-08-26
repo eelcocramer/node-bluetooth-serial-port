@@ -90,12 +90,15 @@ void BTSerialPortBinding::EIO_Write(uv_work_t *req) {
     write_baton_t *data = static_cast<write_baton_t*>(queuedWrite->baton);
 
     BTSerialPortBinding *rfcomm = data->rfcomm;
+    int bytesToSend = data->bufferLength;
+    int bytesSent = 0;
 
     if (rfcomm->s != INVALID_SOCKET) {
-        data->result = send(rfcomm->s, (const char *)data->bufferData, data->bufferLength, 0);
-        if (data->result != data->bufferLength) {
-            sprintf_s(data->errorString, "Writing attempt was unsuccessful");
-        }
+        do{
+            data->result = send(rfcomm->s, (const char *)((char*)data->bufferData+bytesSent), bytesToSend, 0);
+            if(data->result != SOCKET_ERROR)
+            {
+            }
     } else {
         sprintf_s(data->errorString, "Attempting to write to a closed connection");
     }
