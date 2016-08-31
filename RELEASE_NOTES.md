@@ -1,5 +1,9 @@
 ## RELEASE NOTES
 
+### 1.2.7-SNAPSHOT
+
+* Fixes compilation problem on Windows.
+
 ### 1.2.6
 
 * Fixes a critical [runtime error](https://github.com/eelcocramer/node-bluetooth-serial-port/issues/83) on all platforms.
