@@ -25,8 +25,19 @@
           'libraries': [ '-lkernel32.lib', '-luser32.lib', '-lWs2_32.lib' ]
         }],
       ]
+    },
+    {
+     # Needed declarations for the target
+     'target_name': 'BluetoothSerialPortServer',
+     'conditions': [
+        [ 'OS=="freebsd" or OS=="openbsd" or OS=="solaris" or (OS=="linux")', {
+          'sources': [ 'src/linux/BluetoothSerialPortServer.cc', 'src/linux/BTSerialPortBindingServer.cc'],
+          'include_dirs' : [ "<!(node -e \"require('nan')\")", 'src' ],
+          'libraries': ['-lbluetooth'],
+          'cflags':['-std=gnu++0x']
+        }],
+      ]
     }
-
   ] # end targets
 }
 
