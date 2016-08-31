@@ -10,6 +10,7 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 ## New in this release
 
 * Fixes compilation problem on Windows
+* Adds experimental RFCOMM server socket (Linux only)
 
 ## Pre-requests on Linux
 

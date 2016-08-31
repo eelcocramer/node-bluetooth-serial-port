@@ -3,6 +3,7 @@
 ### 1.2.7-SNAPSHOT
 
 * Fixes compilation problem on Windows.
+* Adds experimental RFCOMM server socket (Linux only)
 
 ### 1.2.6
 
