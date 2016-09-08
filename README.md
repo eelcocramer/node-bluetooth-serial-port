@@ -37,7 +37,7 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 # Documentation
 
-## Basic usage
+## Basic client usage
 
 ```javascript
 
@@ -67,6 +67,41 @@ btSerial.on('found', function(address, name) {
 });
 
 btSerial.inquire();
+
+```
+
+## Basic server usage
+
+```javascript
+var server = new(require('bluetooth-serial-port')).BluetoothSerialPortServer();
+
+var PORT = 1;
+var UUID = '38e851bc-7144-44b4-9cd8-80549c6f2912';
+
+server.listen(UUID, PORT, function (clientAddress) {
+    console.log("Client: " + clientAddress + " connected!");
+    server.on('data' function(buffer) {
+        console.log('Received data from client: " + buffer);
+
+        // ...
+
+        console.log('Sending data to the client');
+        server.write(new Buffer('...'), function (err, bytesWritten) {
+            if (error) {
+                console.log('Error!');
+            } else {
+                console.log('Send ' + bytesWritten + ' to the client!');
+            }
+        });
+    });
+});
+
+server.advertise(UUID, function(err) {
+    if (err) {
+        console.log('Cannot advertise the server');
+    }
+});
+
 ```
 
 ## API
@@ -110,9 +145,6 @@ Checks if a device has a serial port service running and if it is found it passe
 
 * callback(channel) - called when finished looking for a serial port on the device.
 * errorCallback - called the search finished but no serial port channel was found on the device.
-
-#### BluetoothSerialPort.connect(bluetoothAddress, channel[, successCallback, errorCallback])
-
 Connects to a remote bluetooth device.
 
 * bluetoothAddress - the address of the remote Bluetooth device.
@@ -142,6 +174,55 @@ __ONLY ON OSX__
 Lists the devices that are currently paired with the host.
 
 * callback(pairedDevices) - is called when the paired devices object has been populated. See the [pull request](https://github.com/eelcocramer/node-bluetooth-serial-port/pull/30) for more information on the `pairedDevices` object.
+
+### BluetoothSerialPortServer
+
+#### BluetoothSerialPortServer.listen(uuid, port, callback[, errCallback])
+
+Listens for an incoming bluetooth connection.
+
+* uuid - the UUID of the server
+* port - the port the server is listening on
+* callback(address) - is called when a new client is connecting.
+* errorCallback(err) - is called when an error occurs.
+
+#### BluetoothSerialPortServer.advertise(uuid, cb)
+
+Advertises the server.
+
+* uuid - the UUID to advertise
+* cb(err) - is called when the advertisement is done. `err` is set when an error occurred.
+
+#### BluetoothSerialPortServer.write(buffer, callback)
+
+Writes data from a buffer to a connection.
+
+* buffer - the buffer to send over the connection.
+* callback(err, len) - called when the data is send or an error did occur. `error` contains the error is appropriated. `len` has the number of bytes that were written to the connection.
+
+#### BluetoothSerialPortServer.close()
+
+Stops the server
+
+#### BluetoothSerialPortServer.isOpen()
+
+Checks is a server is listening or not.
+
+#### Event: ('data', buffer)
+
+Emitted when data is read from the serial port connection.
+
+* buffer - the data that was read into a [Buffer](http://nodejs.org/api/buffer.html) object.
+
+### Event: ('closed')
+
+Emitted when a connection was closed either by the user (i.e. calling `close` or remotely).
+
+#### Event: ('failure', err)
+
+Emitted when reading from the serial port connection results in an error. The connection is closed.
+
+* err - an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object) describing the failure.
 
 ## LICENSE
 
