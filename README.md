@@ -79,9 +79,9 @@ var PORT = 1;
 var UUID = '38e851bc-7144-44b4-9cd8-80549c6f2912';
 
 server.listen(UUID, PORT, function (clientAddress) {
-    console.log("Client: " + clientAddress + " connected!");
+    console.log('Client: ' + clientAddress + ' connected!');
     server.on('data' function(buffer) {
-        console.log('Received data from client: " + buffer);
+        console.log('Received data from client: ' + buffer);
 
         // ...
 
