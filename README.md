@@ -177,21 +177,14 @@ Lists the devices that are currently paired with the host.
 
 ### BluetoothSerialPortServer
 
-#### BluetoothSerialPortServer.listen(uuid, port, callback[, errCallback])
+#### BluetoothSerialPortServer.listen(uuid, channel, callback[, errorCallback])
 
-Listens for an incoming bluetooth connection.
+Listens for an incoming bluetooth connection. It will automatically advertise the server via SDP
 
 * uuid - the UUID of the server
-* port - the port the server is listening on
+* channel - the RFCOMM channel the server is listening on, in the range of 1-30.
 * callback(address) - is called when a new client is connecting.
 * errorCallback(err) - is called when an error occurs.
-
-#### BluetoothSerialPortServer.advertise(uuid, cb)
-
-Advertises the server.
-
-* uuid - the UUID to advertise
-* cb(err) - is called when the advertisement is done. `err` is set when an error occurred.
 
 #### BluetoothSerialPortServer.write(buffer, callback)
 
