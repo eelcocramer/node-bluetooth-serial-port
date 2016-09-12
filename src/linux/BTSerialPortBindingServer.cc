@@ -153,7 +153,7 @@ void BTSerialPortBindingServer::EIO_Listen(uv_work_t *req) {
         return;
     }
 
-    // Now, let's registar the service via SDP daemon
+    // Now, let's register the service via SDP daemon
     Advertise(baton);
 
 }
@@ -161,7 +161,6 @@ void BTSerialPortBindingServer::EIO_Listen(uv_work_t *req) {
 void BTSerialPortBindingServer::EIO_AfterListen(uv_work_t *req) {
     Nan::HandleScope scope;
 
-    //std::unique_ptr<listen_baton_t> baton(static_cast<listen_baton_t *>(req->data));
     listen_baton_t * baton = static_cast<listen_baton_t *>(req->data);
 
     Nan::TryCatch try_catch;
@@ -220,7 +219,6 @@ void BTSerialPortBindingServer::EIO_AfterWrite(uv_work_t *req) {
     ngx_queue_remove(&queuedWrite->queue);
 
     if (!ngx_queue_empty(&write_queue)) {
-        // Always pull the next work item from the head of the queue
         ngx_queue_t* head = ngx_queue_head(&write_queue);
         queued_write_t* nextQueuedWrite = ngx_queue_data(head, queued_write_t, queue);
         uv_queue_work(uv_default_loop(), &nextQueuedWrite->req, EIO_Write, (uv_after_work_cb)EIO_AfterWrite);
