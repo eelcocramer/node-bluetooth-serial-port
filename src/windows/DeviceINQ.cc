@@ -3,10 +3,10 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * 
+ *
  * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -290,7 +290,93 @@ NAN_METHOD(DeviceINQ::ListPairedDevices) {
     Local<Function> cb = info[0].As<Function>();
     Local<Array> resultArray = Local<Array>(Nan::New<Array>());
 
-    // TODO: build an array of objects representing a paired device:
+
+    // Construct windows socket bluetooth variables
+    DWORD flags = LUP_CONTAINERS | LUP_RETURN_NAME | LUP_RETURN_ADDR;
+    DWORD querySetSize = sizeof(WSAQUERYSET);
+    WSAQUERYSET *querySet = (WSAQUERYSET *)malloc(querySetSize);
+    if (querySet == nullptr) {
+        Nan::ThrowError("Out of memory: Unable to allocate memory resource for inquiry");
+    }
+
+    ZeroMemory(querySet, querySetSize);
+    querySet->dwSize = querySetSize;
+    querySet->dwNameSpace = NS_BTH;
+
+    int i = 0;
+
+    // Initiate client device inquiry
+    HANDLE lookupServiceHandle;
+    int lookupServiceError = WSALookupServiceBegin(querySet, flags, &lookupServiceHandle);
+    if (lookupServiceError != SOCKET_ERROR) {
+        // Iterate over each found bluetooth service
+        bool inquiryComplete = false;
+        while (!inquiryComplete) {
+            // For each bluetooth service retrieve its corresponding details
+            lookupServiceError = WSALookupServiceNext(lookupServiceHandle, flags, &querySetSize, querySet);
+            if (lookupServiceError != SOCKET_ERROR) {
+                char address[40] = { 0 };
+                DWORD addressLength = _countof(address);
+                SOCKADDR_BTH *bluetoothSocketAddress = (SOCKADDR_BTH *)querySet->lpcsaBuffer->RemoteAddr.lpSockaddr;
+                BTH_ADDR bluetoothAddress = bluetoothSocketAddress->btAddr;
+
+                // Emit the corresponding event if we were able to retrieve the address
+                int addressToStringError = WSAAddressToString(querySet->lpcsaBuffer->RemoteAddr.lpSockaddr,
+                                                              sizeof(SOCKADDR_BTH),
+                                                              nullptr,
+                                                              address,
+                                                              &addressLength);
+                if (addressToStringError != SOCKET_ERROR) {
+                    // Strip any leading and trailing parentheses is encountered
+                    char strippedAddress[19] = { 0 };
+                    auto addressString = sscanf_s(address, "(" "%18[^)]" ")", strippedAddress) == 1
+                                         ? Nan::New(strippedAddress)
+                                         : Nan::New(address);
+                    Local<Object> deviceObj = Nan::New<v8::Object>();
+                    deviceObj->Set(Nan::New("name").ToLocalChecked(), Nan::New(querySet->lpszServiceInstanceName).ToLocalChecked());
+                    deviceObj->Set(Nan::New("address").ToLocalChecked(), addressString.ToLocalChecked());
+
+                    Local<Array> servicesArray = Nan::New<v8::Array>((int)1);
+                    Local<Object> serviceObj = Nan::New<v8::Object>();
+
+                    serviceObj->Set(Nan::New("channel").ToLocalChecked(), Nan::New((int)1));
+                    serviceObj->Set(Nan::New("name").ToLocalChecked(), Nan::New("SPP").ToLocalChecked());
+                    servicesArray->Set(0, serviceObj);
+
+                    deviceObj->Set(Nan::New("services").ToLocalChecked(), servicesArray);
+                    resultArray->Set(i, deviceObj);
+                    i = i+1;
+                }
+            } else {
+                int lookupServiceErrorNumber = WSAGetLastError();
+                if (lookupServiceErrorNumber == WSAEFAULT) {
+                    free(querySet);
+                    querySet = (WSAQUERYSET *)malloc(querySetSize);
+                    if (querySet == nullptr) {
+                        WSALookupServiceEnd(lookupServiceHandle);
+                        Nan::ThrowError("Out of memory: Unable to allocate memory resource for inquiry");
+                    }
+                } else if (lookupServiceErrorNumber == WSA_E_NO_MORE) {
+                    // No more services where found
+                    inquiryComplete = true;
+                } else {
+                    // Unhandled error
+                    inquiryComplete = true;
+                }
+            }
+        }
+    } else {
+        int lookupServiceErrorNumber = WSAGetLastError();
+        if (lookupServiceErrorNumber != WSASERVICE_NOT_FOUND) {
+            free(querySet);
+            Nan::ThrowError("Unable to initiate client device inquiry");
+        }
+    }
+
+    free(querySet);
+    WSALookupServiceEnd(lookupServiceHandle);
+
+    //build an array of objects representing a paired device:
     // ex: {
     //   name: 'MyBluetoothDeviceName',
     //   address: '12-34-56-78-90',
@@ -299,7 +385,6 @@ NAN_METHOD(DeviceINQ::ListPairedDevices) {
     //     { name: 'iAP', channel: 2 }
     //   ]
     // }
-
     Local<Value> argv[1] = {
         resultArray
     };

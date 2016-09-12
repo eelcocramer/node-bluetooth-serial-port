@@ -1,5 +1,10 @@
 ## RELEASE NOTES
 
+### 1.3.0
+
+* Fixes compilation problem on Windows.
+* Adds experimental RFCOMM server socket (Linux only)
+
 ### 1.2.6
 
 * Fixes a critical [runtime error](https://github.com/eelcocramer/node-bluetooth-serial-port/issues/83) on all platforms.

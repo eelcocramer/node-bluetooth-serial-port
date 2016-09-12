@@ -24,6 +24,7 @@ install:
   - ps: Install-Product node $env:nodejs_version $env:Platform
   # install modules
   - node --version
+  - npm -g install npm@latest
   - npm --version
   - node -e "console.log(process.arch);"
   - if "%PLATFORM%" == "x64" SET PATH=C:\Python27-x64;%PATH%

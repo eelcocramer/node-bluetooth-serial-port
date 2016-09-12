@@ -1,5 +1,5 @@
 { "name" : "bluetooth-serial-port"
-, "version" : "1.2.6"
+, "version" : "1.3.0"
 , "description" : "Bluetooth serial port communication for Node.js"
 , "author": "Eelco Cramer <eelco@hailendal.org>"
 , "keywords":
@@ -27,7 +27,7 @@
     ]
 , "dependencies":
     { "bindings": "1.1.x"
-    , "nan": "^2.0.9"
+    , "nan": "latest"
     }
 , "engines":
     { "node": ">= 0.8.x"
@@ -47,5 +47,7 @@
     , "Max Metral"
     , "Thomas Wickham"
     , "Adrián Estrada"
+    , "Juan Gomez"
+    , "Eric Lundby"
   ]
 }
