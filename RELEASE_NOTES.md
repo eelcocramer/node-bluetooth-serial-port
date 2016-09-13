@@ -1,6 +1,6 @@
 ## RELEASE NOTES
 
-### 1.3.0
+### 1.3.1
 
 * Fixes compilation problem on Windows.
 * Adds experimental RFCOMM server socket (Linux only)
