@@ -18,6 +18,26 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 `apt-get install build-essential libbluetooth-dev`
 
+### Note on RFCOMM Server Sockets
+As the initial implementation of the RFCOMM server sockets is based on BlueZ4, in order to work with SDP we need to change the bluetoothd service configuration file by modifing the systemd unit file: bluetooth.service:
+
+(Debian based distro)
+
+`sudo vim /lib/systemd/system/bluetooth.service`
+
+(RedHat based distro)
+
+`sudo vim /usr/lib/systemd/system/bluetooth.service`
+
+and adding the --compat flag to the ExecStart value:
+
+`ExecStart=/usr/lib/bluetooth/bluetoothd `**`--compat`**
+
+Finally, restart the service:
+
+`systemctl daemon-reload
+systemctl restart bluetooth`
+
 ## Pre-request on OS X
 
 * Needs XCode and XCode command line tools installed.
@@ -95,13 +115,6 @@ server.listen(UUID, PORT, function (clientAddress) {
         });
     });
 });
-
-server.advertise(UUID, function(err) {
-    if (err) {
-        console.log('Cannot advertise the server');
-    }
-});
-
 ```
 
 ## API
