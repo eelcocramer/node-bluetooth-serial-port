@@ -95,10 +95,10 @@ btSerial.inquire();
 ```javascript
 var server = new(require('bluetooth-serial-port')).BluetoothSerialPortServer();
 
-var PORT = 1;
-var UUID = '38e851bc-7144-44b4-9cd8-80549c6f2912';
+var CHANNEL = 10; // My service channel. Defaults to 1 if omitted.
+var UUID = '38e851bc-7144-44b4-9cd8-80549c6f2912'; // My own service UUID. Defaults to '1101' if omitted
 
-server.listen(UUID, PORT, function (clientAddress) {
+server.listen(function (clientAddress) {
     console.log('Client: ' + clientAddress + ' connected!');
     server.on('data' function(buffer) {
         console.log('Received data from client: ' + buffer);
@@ -114,7 +114,9 @@ server.listen(UUID, PORT, function (clientAddress) {
             }
         });
     });
-});
+}, function(error){
+	console.error("Something wrong happened!:" + error);
+}, {uuid: UUID, channel: PORT} );
 ```
 
 ## API
@@ -190,14 +192,21 @@ Lists the devices that are currently paired with the host.
 
 ### BluetoothSerialPortServer
 
-#### BluetoothSerialPortServer.listen(uuid, channel, callback[, errorCallback])
+#### BluetoothSerialPortServer.listen(callback[, errorCallback, options])
 
 Listens for an incoming bluetooth connection. It will automatically advertise the server via SDP
 
-* uuid - the UUID of the server
-* channel - the RFCOMM channel the server is listening on, in the range of 1-30.
 * callback(address) - is called when a new client is connecting.
 * errorCallback(err) - is called when an error occurs.
+* options - An object with these properties:
+  * uuid - [String] The UUID of the server. If omitted the default value will be 1101 (corresponding to Serial Port Profile UUID). Can be a 16 bit or 32 bit UUID.
+  * channel - [Number] The RFCOMM channel the server is listening on, in the range of 1-30. If omitted the default value will be 1.
+
+    Example:
+    `var options = {
+	    uuid: 'ffffffff-ffff-ffff-ffff-fffffffffff1',
+	    channel: 10
+     }`
 
 #### BluetoothSerialPortServer.write(buffer, callback)
 
