@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <memory>
 #include <iostream>
+#include <map>
 #include "BTSerialPortBindingServer.h"
 
 extern "C"{
@@ -43,6 +44,8 @@ extern "C"{
     #include <bluetooth/rfcomm.h>
 }
 
+static const uint16_t _SPP_UUID = 0x1101; // Serial Port Profile UUID
+
 using namespace std;
 using namespace node;
 using namespace v8;
@@ -50,7 +53,7 @@ using namespace v8;
 static uv_mutex_t write_queue_mutex;
 static ngx_queue_t write_queue;
 
-// BDADDR_ANY is defined as (&(bdaddr_t) {{0, 0, 0, 0, 0, 0}}) and 
+// BDADDR_ANY is defined as (&(bdaddr_t) {{0, 0, 0, 0, 0, 0}}) and
 // BDADDR_LOCAL is defined as (&(bdaddr_t) {{0, 0, 0, 0xff, 0xff, 0xff}}) which
 // is the address of temporary thus not allowed in C++
 static const bdaddr_t _BDADDR_ANY = {0, 0, 0, 0, 0, 0};
@@ -60,62 +63,62 @@ static const bdaddr_t _BDADDR_LOCAL = {0, 0, 0, 0xff, 0xff, 0xff};
 BTSerialPortBindingServer::listen_baton_t* BTSerialPortBindingServer::mListenBaton = nullptr;
 // SDP connection is going to be closed once a client is connected
 sdp_session_t * BTSerialPortBindingServer::mSdpSession = nullptr;
- 
-static int str2uuid( const char *uuid_str, uuid_t *uuid ) 
+
+static int str2uuid(const char *uuid_str, uuid_t *uuid)
 {
     uint32_t uuid_int[4];
     char *endptr;
 
-    if( strlen( uuid_str ) == 36 ) {
+    if(strlen(uuid_str) == 36) {
         // Parse uuid128 standard format: 12345678-9012-3456-7890-123456789012
         char buf[9] = { 0 };
 
-        if( uuid_str[8] != '-' && uuid_str[13] != '-' &&
-            uuid_str[18] != '-'  && uuid_str[23] != '-' ) {
+        if(uuid_str[8] != '-' && uuid_str[13] != '-' &&
+            uuid_str[18] != '-'  && uuid_str[23] != '-') {
             return 0;
         }
         // first 8-bytes
         strncpy(buf, uuid_str, 8);
-        uuid_int[0] = htonl( strtoul( buf, &endptr, 16 ) );
-        if( endptr != buf + 8 ) 
+        uuid_int[0] = htonl(strtoul(buf, &endptr, 16));
+        if(endptr != buf + 8)
             return 0;
 
         // second 8-bytes
         strncpy(buf, uuid_str+9, 4);
         strncpy(buf+4, uuid_str+14, 4);
-        uuid_int[1] = htonl( strtoul( buf, &endptr, 16 ) );
-        if( endptr != buf + 8 ) 
+        uuid_int[1] = htonl(strtoul(buf, &endptr, 16));
+        if(endptr != buf + 8)
             return 0;
 
         // third 8-bytes
         strncpy(buf, uuid_str+19, 4);
         strncpy(buf+4, uuid_str+24, 4);
-        uuid_int[2] = htonl( strtoul( buf, &endptr, 16 ) );
-        if( endptr != buf + 8 ) 
+        uuid_int[2] = htonl(strtoul(buf, &endptr, 16));
+        if(endptr != buf + 8)
             return 0;
 
         // fourth 8-bytes
         strncpy(buf, uuid_str+28, 8);
-        uuid_int[3] = htonl( strtoul( buf, &endptr, 16 ) );
-        if( endptr != buf + 8 ) 
+        uuid_int[3] = htonl(strtoul(buf, &endptr, 16));
+        if(endptr != buf + 8)
             return 0;
 
-        if( uuid != NULL ) 
-            sdp_uuid128_create( uuid, uuid_int );
-    } else if ( strlen( uuid_str ) == 8 ) {
+        if(uuid != NULL)
+            sdp_uuid128_create(uuid, uuid_int);
+    } else if (strlen(uuid_str) == 8) {
         // 32-bit reserved UUID
-        uint32_t i = strtoul( uuid_str, &endptr, 16 );
-        if( endptr != uuid_str + 8 ) 
+        uint32_t i = strtoul(uuid_str, &endptr, 16);
+        if(endptr != uuid_str + 8)
             return 0;
-        if( uuid != NULL ) 
-            sdp_uuid32_create( uuid, i );
-    } else if( strlen( uuid_str ) == 4 ) {
+        if(uuid != NULL)
+            sdp_uuid32_create(uuid, i);
+    } else if(strlen(uuid_str) == 4) {
         // 16-bit reserved UUID
-        int i = strtol( uuid_str, &endptr, 16 );
-        if( endptr != uuid_str + 4 ) 
+        int i = strtol(uuid_str, &endptr, 16);
+        if(endptr != uuid_str + 4)
             return 0;
-        if( uuid != NULL ) 
-            sdp_uuid16_create( uuid, i );
+        if(uuid != NULL)
+            sdp_uuid16_create(uuid, i);
     } else {
         return 0;
     }
@@ -191,7 +194,7 @@ void BTSerialPortBindingServer::EIO_Write(uv_work_t *req) {
         sprintf(data->errorString, "Attempting to write to a closed connection");
     }
 
-    data->result = write(rfcomm->mClientSocket, data->bufferData, data->bufferLength);    
+    data->result = write(rfcomm->mClientSocket, data->bufferData, data->bufferLength);
 
     if (data->result != data->bufferLength) {
         sprintf(data->errorString, "Writing attempt was unsuccessful");
@@ -326,24 +329,24 @@ NAN_METHOD(BTSerialPortBindingServer::New) {
     uv_mutex_init(&write_queue_mutex);
     ngx_queue_init(&write_queue);
 
-    if(info.Length() != 4){
-        Nan::ThrowError("usage: BTSerialPortBindingServer(uuid: value, channel: value, successCallback, errorCallback)");
-    }
-
-    // String
-    if(!info[0]->IsString()) {
-        Nan::ThrowTypeError("First argument must be a string representing a UUID");
+    if(info.Length() != 3){
+        Nan::ThrowError("usage: BTSerialPortBindingServer(successCallback, errorCallback, options)");
     }
 
     // callback
-    if(!info[2]->IsFunction()) {
+    if(!info[0]->IsFunction()) {
+        Nan::ThrowTypeError("First argument must be a function");
+    }
+
+
+    // callback
+    if(!info[1]->IsFunction()) {
         Nan::ThrowTypeError("Second argument must be a function");
     }
 
-
-    // callback
-    if(!info[3]->IsFunction()) {
-        Nan::ThrowTypeError("Third argument must be a function");
+    // Object {}
+    if(!info[2]->IsObject()) {
+        Nan::ThrowTypeError("Third argument must be an object with this properties: uuid, channel");
     }
 
 
@@ -354,8 +357,21 @@ NAN_METHOD(BTSerialPortBindingServer::New) {
     listen_baton_t * baton = new listen_baton_t();
     // I will release the memory in Close()
     mListenBaton = baton;
-    String::Utf8Value uuid(info[0]);
-    if(!str2uuid(*uuid, &baton->uuid)){
+
+    Handle<Object> jsOptions = Handle<Object>::Cast(info[2]);
+    Handle<Array> properties = jsOptions->GetPropertyNames();
+    int n = properties->Length();
+    std::map<std::string, std::string> options;
+
+    for (int i = 0; i < n ; i++) {
+        Handle<Value>  property = properties->Get(Nan::New<Integer>(i));
+        string propertyName = std::string(*String::Utf8Value(property));
+        Handle<Value> optionValue = jsOptions->Get(property);
+        options[propertyName] = std::string(*String::Utf8Value(optionValue));
+    }
+
+
+    if(!str2uuid(options["uuid"].c_str(), &baton->uuid)){
         Nan::ThrowError("The UUID is invalid");
     }
 
@@ -369,9 +385,9 @@ NAN_METHOD(BTSerialPortBindingServer::New) {
     int flags = fcntl(baton->rfcomm->rep[0], F_GETFL, 0);
     fcntl(baton->rfcomm->rep[0], F_SETFL, flags | O_NONBLOCK);
 
-    baton->cb = new Nan::Callback(info[2].As<Function>());
-    baton->ecb = new Nan::Callback(info[3].As<Function>());
-    baton->listeningChannelID = info[1]->Int32Value();
+    baton->cb = new Nan::Callback(info[0].As<Function>());
+    baton->ecb = new Nan::Callback(info[1].As<Function>());
+    baton->listeningChannelID = std::stoi(options["channel"]);
     baton->request.data = baton;
     baton->rfcomm->Ref();
 
@@ -385,15 +401,15 @@ void BTSerialPortBindingServer::Advertise(listen_baton_t * baton) {
 
     uint8_t rfcomm_channel = (uint8_t) baton->listeningChannelID;
 
-    const char *service_name = "RFCOMM Server socket";
-    const char *service_dsc = "A RFCOMM listening socket";
-    const char *service_prov = "Service Provider";
+    std::string service_name = "RFCOMM custom service";
+    const char *service_dsc = "An RFCOMM listening socket";
 
     uuid_t root_uuid, l2cap_uuid, rfcomm_uuid;
-    sdp_list_t *l2cap_list = 0, 
+    sdp_list_t *l2cap_list = 0,
                *rfcomm_list = 0,
                *root_list = 0,
-               *proto_list = 0, 
+               *proto_list = 0,
+               *service_class_list = 0,
                *access_proto_list = 0;
     sdp_data_t *channel = 0;
 
@@ -401,49 +417,59 @@ void BTSerialPortBindingServer::Advertise(listen_baton_t * baton) {
 
     sdp_set_service_id(record, baton->uuid);
 
+    service_class_list = sdp_list_append(0, &baton->uuid);
+    sdp_set_service_classes(record, service_class_list);
+
+
     sdp_uuid16_create(&root_uuid, PUBLIC_BROWSE_GROUP);
     root_list = sdp_list_append(0, &root_uuid);
-    sdp_set_browse_groups( record, root_list );
+    sdp_set_browse_groups(record, root_list);
 
     sdp_uuid16_create(&l2cap_uuid, L2CAP_UUID);
-    l2cap_list = sdp_list_append( 0, &l2cap_uuid );
-    proto_list = sdp_list_append( 0, l2cap_list );
+    l2cap_list = sdp_list_append(0, &l2cap_uuid);
+    proto_list = sdp_list_append(0, l2cap_list);
 
     sdp_uuid16_create(&rfcomm_uuid, RFCOMM_UUID);
     channel = sdp_data_alloc(SDP_UINT8, &rfcomm_channel);
-    rfcomm_list = sdp_list_append( 0, &rfcomm_uuid );
-    sdp_list_append( rfcomm_list, channel );
-    sdp_list_append( proto_list, rfcomm_list );
+    rfcomm_list = sdp_list_append(0, &rfcomm_uuid);
+    sdp_list_append(rfcomm_list, channel);
+    sdp_list_append(proto_list, rfcomm_list);
 
     // Attach protocol information to service record
-    access_proto_list = sdp_list_append( 0, proto_list );
-    sdp_set_access_protos( record, access_proto_list );
+    access_proto_list = sdp_list_append(0, proto_list);
+    sdp_set_access_protos(record, access_proto_list);
 
-    // Set the name, provider, and description
-    sdp_set_info_attr(record, service_name, service_prov, service_dsc);
+    // Set the service name. If the UUID of the service
+    // is the one from Serial Port profile
+    if(baton->uuid.value.uuid16 == _SPP_UUID){
+        service_name = "Serial Port";
+    }
+
+    sdp_set_info_attr(record, service_name.c_str(), NULL, service_dsc);
 
     // Connect to the local SDP server
     mSdpSession = sdp_connect(&_BDADDR_ANY, &_BDADDR_LOCAL, SDP_RETRY_IF_BUSY);
     if(mSdpSession == NULL){
         baton->status = -1;
         sprintf(baton->errorString, "Cannot connect to SDP Daemon. errno: %d", errno);
-        return;
+        goto cleanup;
     }
 
     // Register the service record.
     if(sdp_record_register(mSdpSession, record, 0) == -1){
         baton->status = -1;
         sprintf(baton->errorString, "Cannot register SDP record. errno: %d", errno);
-        return;
+        goto cleanup;
     }
 
+cleanup:
     // cleanup
-    sdp_data_free( channel );
-    sdp_list_free( l2cap_list, 0 );
-    sdp_list_free( rfcomm_list, 0 );
-    sdp_list_free( root_list, 0 );
-    sdp_list_free( access_proto_list, 0 );
-
+    sdp_data_free(channel);
+    sdp_list_free(l2cap_list, 0);
+    sdp_list_free(rfcomm_list, 0);
+    sdp_list_free(service_class_list, 0);
+    sdp_list_free(root_list, 0);
+    sdp_list_free(access_proto_list, 0);
 }
 
 NAN_METHOD(BTSerialPortBindingServer::Write) {
@@ -509,7 +535,7 @@ NAN_METHOD(BTSerialPortBindingServer::Close) {
         }
 
         rfcomm->s = 0;
-    }    
+    }
 
     // closing pipes
     close(rfcomm->rep[0]);
@@ -553,7 +579,7 @@ NAN_METHOD(BTSerialPortBindingServer::Read) {
     return;
 }
 
-BTSerialPortBindingServer::ClientWorker::ClientWorker(Nan::Callback * cb, listen_baton_t * baton) : 
+BTSerialPortBindingServer::ClientWorker::ClientWorker(Nan::Callback * cb, listen_baton_t * baton) :
     Nan::AsyncWorker(cb),
     mBaton(baton)
 {}
@@ -572,7 +598,7 @@ void BTSerialPortBindingServer::ClientWorker::Execute(){
         { { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } },
         0x00
     };
-    socklen_t clientAddrLen = sizeof(clientAddress);   
+    socklen_t clientAddrLen = sizeof(clientAddress);
     mBaton->rfcomm->mClientSocket = accept(mBaton->rfcomm->s, (struct sockaddr *)&clientAddress, &clientAddrLen);
     ba2str(&clientAddress.rc_bdaddr, mBaton->clientAddress);
 }
