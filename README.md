@@ -9,8 +9,8 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 ## New in this release
 
-* Fixes compilation problem on Windows
-* Adds experimental RFCOMM server socket (Linux only)
+* Improvements and API changes of the experimental RFCOMM server socket (Linux only)
+* No changes in the client
 
 ## Pre-requests on Linux
 

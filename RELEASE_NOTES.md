@@ -1,5 +1,10 @@
 ## RELEASE NOTES
 
+### 2.0.0
+
+* Improvements and API changes of the experimental RFCOMM server socket (Linux only)
+* No changes in the client
+
 ### 1.3.1
 
 * Fixes compilation problem on Windows.
