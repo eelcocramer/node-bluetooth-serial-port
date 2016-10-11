@@ -176,7 +176,7 @@ bt_inquiry DeviceINQ::doInquire() {
   char addr[19] = { 0 };
   char name[248] = { 0 };
 
-  bt_inquiry inquiryResult; 
+  bt_inquiry inquiryResult;
 
   dev_id = hci_get_route(NULL);
   sock = hci_open_dev( dev_id );
@@ -194,7 +194,7 @@ bt_inquiry DeviceINQ::doInquire() {
   //     return ThrowException(Exception::Error(String::New("hci inquiry")));
   // }
   inquiryResult.num_rsp = num_rsp;
-  inquiryResult.devices = (bt_list*)malloc(num_rsp * sizeof(bt_list));
+  inquiryResult.devices = (bt_device*)malloc(num_rsp * sizeof(bt_device));
 
   for (i = 0; i < num_rsp; i++) {
     ba2str(&(ii+i)->bdaddr, addr);
@@ -204,7 +204,7 @@ bt_inquiry DeviceINQ::doInquire() {
       strcpy(name, addr);
 
     //fprintf(stderr, "%s [%s]\n", addr, name);
-    strcpy(inquiryResult.devices[i].addr, addr);
+    strcpy(inquiryResult.devices[i].address, addr);
     strcpy(inquiryResult.devices[i].name, name);
   }
 
@@ -245,7 +245,7 @@ NAN_METHOD(DeviceINQ::InquireSync) {
     bt_inquiry inquiryResult = DeviceINQ::doInquire();
     for (int i = 0; i < inquiryResult.num_rsp; i++) {
       Local<Value> argv[] = {
-        Nan::New(inquiryResult.devices[i].addr).ToLocalChecked(),  
+        Nan::New(inquiryResult.devices[i].address).ToLocalChecked(),  
         Nan::New(inquiryResult.devices[i].name).ToLocalChecked()
       };
       found->Call(2, argv);
@@ -278,7 +278,7 @@ class InquireWorker : public Nan::AsyncWorker {
 
     for (int i = 0; i < inquiryResult.num_rsp; i++) {
       Local<Value> argv[] = {
-        Nan::New(inquiryResult.devices[i].addr).ToLocalChecked(),  
+        Nan::New(inquiryResult.devices[i].address).ToLocalChecked(),  
         Nan::New(inquiryResult.devices[i].name).ToLocalChecked()
       };
       found->Call(2, argv);

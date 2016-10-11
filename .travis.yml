@@ -14,8 +14,9 @@ env:
     - export NODE_VERSION="iojs-v1"
     - export NODE_VERSION="iojs-v2"
     - export NODE_VERSION="iojs-v3"
-    - export NODE_VERSION="4.0"
-    - export NODE_VERSION="5.0"
+    - export NODE_VERSION="4"
+    - export NODE_VERSION="5"
+    - export NODE_VERSION="6"
 
 matrix:
   fast-finish: true
@@ -43,6 +44,8 @@ before_install:
     fi
   - gcc --version
   - g++ --version
+  - npm --version
+  - node --version
 
 script:
   - npm install

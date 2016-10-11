@@ -153,9 +153,9 @@ bt_inquiry DeviceINQ::doInquire() {
         // Iterate over each found bluetooth service
         bool inquiryComplete; 
         int max_rsp, num_rsp;
-    
+
         max_rsp = 255;
-        bt_list * max_bt_device_list = (bt_list*)malloc(max_rsp * sizeof(bt_list));
+        bt_device * max_bt_device_list = (bt_device*)malloc(max_rsp * sizeof(bt_device));
 
         num_rsp = 0;
         inquiryComplete = false;
@@ -181,7 +181,7 @@ bt_inquiry DeviceINQ::doInquire() {
                                          ? strippedAddress
                                          : address;
 
-                    strcpy(max_bt_device_list[num_rsp].addr, addressString);
+                    strcpy(max_bt_device_list[num_rsp].address, addressString);
                     strcpy(max_bt_device_list[num_rsp].name, querySet->lpszServiceInstanceName); 
                     num_rsp++;
                 }
@@ -204,10 +204,10 @@ bt_inquiry DeviceINQ::doInquire() {
             }
         }
         inquiryResult.num_rsp = num_rsp;
-        inquiryResult.devices = (bt_list*)malloc(num_rsp * sizeof(bt_list));
+        inquiryResult.devices = (bt_device*)malloc(num_rsp * sizeof(bt_device));
 
         for (int i = 0; i < num_rsp; i++) {
-            strcpy(inquiryResult.devices[i].addr, max_bt_device_list[i].addr);
+            strcpy(inquiryResult.devices[i].address, max_bt_device_list[i].address);
             strcpy(inquiryResult.devices[i].name, max_bt_device_list[i].name);
         }
         free(max_bt_device_list);
@@ -261,7 +261,7 @@ NAN_METHOD(DeviceINQ::InquireSync) {
     bt_inquiry inquiryResult = DeviceINQ::doInquire();
     for (int i = 0; i < inquiryResult.num_rsp; i++) {
       Local<Value> argv[2] = {
-        Nan::New(inquiryResult.devices[i].addr).ToLocalChecked(),  
+        Nan::New(inquiryResult.devices[i].address).ToLocalChecked(),  
         Nan::New(inquiryResult.devices[i].name).ToLocalChecked()
       };
       found->Call(2, argv);
@@ -293,7 +293,7 @@ class InquireWorker : public Nan::AsyncWorker {
 
     for (int i = 0; i < inquiryResult.num_rsp; i++) {
       Local<Value> argv[2] = {
-        Nan::New(inquiryResult.devices[i].addr).ToLocalChecked(),  
+        Nan::New(inquiryResult.devices[i].address).ToLocalChecked(),  
         Nan::New(inquiryResult.devices[i].name).ToLocalChecked()
       };
       found->Call(2, argv);

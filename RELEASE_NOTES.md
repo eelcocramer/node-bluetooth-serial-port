@@ -1,5 +1,11 @@
 ## RELEASE NOTES
 
+### 2.1.0
+
+* Adds asynchronous searching for devices
+* Asynchronous searching replaces the old synchronous `inquire` function so without touching your code you will be using the asynchronous search function.
+* Moves synchronous searching for devices to a new `inquireSync` function
+
 ### 2.0.0
 
 * Improvements and API changes of the experimental RFCOMM server socket (Linux only)

@@ -9,8 +9,9 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 ## New in this release
 
-* Improvements and API changes of the experimental RFCOMM server socket (Linux only)
-* No changes in the client
+* Adds asynchronous searching for devices
+* Asynchronous searching replaces the old synchronous `inquire` function so without touching your code you will be using the asynchronous search function.
+* Moves synchronous searching for devices to a new `inquireSync` function
 
 ## Pre-requests on Linux
 
@@ -153,6 +154,10 @@ Emitted when the device inquiry execution did finish.
 #### BluetoothSerialPort.inquire()
 
 Starts searching for bluetooth devices. When a device is found a 'found' event will be emitted.
+
+#### BluetoothSerialPort.inquireSync()
+
+Starts searching synchronously for bluetooth devices. When a device is found a 'found' event will be emitted.
 
 #### BluetoothSerialPort.findSerialPortChannel(address, callback[, errorCallback])
 

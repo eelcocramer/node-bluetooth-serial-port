@@ -26,7 +26,7 @@
 
 class BTSerialPortBinding : public Nan::ObjectWrap {
     private:
-#ifdef _WINDOWS_
+#ifdef _WIN32
         bool initialized;
 
         bool GetInitializedProperty() {
@@ -35,7 +35,7 @@ class BTSerialPortBinding : public Nan::ObjectWrap {
 #endif
 
     public:
-#ifdef _WINDOWS_
+#ifdef _WIN32
         __declspec(property(get = GetInitializedProperty)) bool Initialized;
 #endif
 
@@ -86,7 +86,7 @@ class BTSerialPortBinding : public Nan::ObjectWrap {
 #ifdef __APPLE__
         pipe_consumer_t *consumer;
 #else
-#ifdef _WINDOWS_
+#ifdef _WIN32
         SOCKET s;
 #else
         int s;
