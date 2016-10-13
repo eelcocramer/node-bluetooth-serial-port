@@ -43,6 +43,47 @@ extern "C"{
 using namespace node;
 using namespace v8;
 
+class InquireWorker : public Nan::AsyncWorker {
+ public:
+  InquireWorker(Nan::Callback* found, Nan::Callback *callback)
+    : Nan::AsyncWorker(callback), found(found) {}
+  ~InquireWorker() {}
+
+  // Executed inside the worker-thread.
+  // It is not safe to access V8, or V8 data structures
+  // here, so everything we need for input and output
+  // should go on `this`.
+  void Execute () {
+    inquiryResult = DeviceINQ::doInquire();
+  }
+
+  // Executed when the async work is complete
+  // this function will be run inside the main event loop
+  // so it is safe to use V8 again
+  void HandleOKCallback () {
+    Nan::HandleScope scope;
+    struct bt_device device;
+    NSValue *boxedDevice;
+
+    NSEnumerator *enumerator = [inquiryResult objectEnumerator];
+    while (boxedDevice = [enumerator nextObject]) {
+        [boxedDevice getValue:&device];
+        Local<Value> argv[] = {
+            Nan::New(device.address).ToLocalChecked(),
+            Nan::New(device.name).ToLocalChecked()
+        };
+        found->Call(2, argv);
+    }
+
+    callback->Call(0, 0);
+    [inquiryResult release];
+  }
+
+  private:
+    NSArray *inquiryResult;
+    Nan::Callback* found;
+};
+
 void DeviceINQ::EIO_SdpSearch(uv_work_t *req) {
     sdp_baton_t *baton = static_cast<sdp_baton_t *>(req->data);
 
@@ -85,12 +126,50 @@ void DeviceINQ::Init(Handle<Object> target) {
     t->InstanceTemplate()->SetInternalFieldCount(1);
     t->SetClassName(Nan::New("DeviceINQ").ToLocalChecked());
 
+    Nan::SetPrototypeMethod(t, "inquireSync", InquireSync);
     Nan::SetPrototypeMethod(t, "inquire", Inquire);
     Nan::SetPrototypeMethod(t, "findSerialPortChannel", SdpSearch);
     Nan::SetPrototypeMethod(t, "listPairedDevices", ListPairedDevices);
     target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
     target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
     target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
+    target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
+
+}
+
+NSArray *DeviceINQ::doInquire() {
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+    BluetoothWorker *worker = [BluetoothWorker getInstance:nil];
+    NSMutableArray *devices = [[NSMutableArray alloc] init];
+
+    // create pipe to communicate with delegate
+    pipe_t *pipe = pipe_new(sizeof(device_info_t), 0);
+    [worker inquireWithPipe: pipe];
+    pipe_consumer_t *c = pipe_consumer_new(pipe);
+    pipe_free(pipe);
+
+    device_info_t *infod = new device_info_t;
+    size_t result;
+
+    do {
+        result = pipe_pop_eager(c, infod, 1);
+
+        if (result != 0) {
+            bt_device device;
+            strcpy(device.name, infod->name);
+            strcpy(device.address, infod->address);
+
+            NSValue *boxedDevice = [NSValue valueWithBytes:&device objCType:@encode(struct bt_device)];
+            [devices addObject:boxedDevice];
+        }
+    } while (result != 0);
+
+    delete infod;
+    pipe_consumer_free(c);
+
+    [pool release];
+
+    return devices;
 }
 
 DeviceINQ::DeviceINQ() {
@@ -113,49 +192,45 @@ NAN_METHOD(DeviceINQ::New) {
     info.GetReturnValue().Set(info.This());
 }
 
+// Asynchronous access to the `Inquire()` function
 NAN_METHOD(DeviceINQ::Inquire) {
-    const char *usage = "usage: inquire()";
-    if (info.Length() != 0) {
+  const char *usage = "usage: inquire(found, callback)";
+  if (info.Length() != 2) {
+      Nan::ThrowError(usage);
+  }
+  Nan::Callback *found = new Nan::Callback(info[0].As<Function>());
+  Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
+
+  Nan::AsyncQueueWorker(new InquireWorker(found, callback));
+}
+
+NAN_METHOD(DeviceINQ::InquireSync) {
+    const char *usage = "usage: inquireSync(found, callback)";
+    if (info.Length() != 2) {
         Nan::ThrowError(usage);
     }
 
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+    Nan::Callback *found = new Nan::Callback(info[0].As<Function>());
+    Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
 
-    BluetoothWorker *worker = [BluetoothWorker getInstance:nil];
+    NSValue *boxedDevice;
+    NSArray *inquiryResult = doInquire();
+    NSEnumerator *enumerator = [inquiryResult objectEnumerator];
+    while (boxedDevice = [enumerator nextObject]) {
+        struct bt_device device;
 
-    // create pipe to communicate with delegate
-    pipe_t *pipe = pipe_new(sizeof(device_info_t), 0);
-    [worker inquireWithPipe: pipe];
-    pipe_consumer_t *c = pipe_consumer_new(pipe);
-    pipe_free(pipe);
+        [boxedDevice getValue:&device];
+        Local<Value> argv[] = {
+            Nan::New(device.address).ToLocalChecked(),
+            Nan::New(device.name).ToLocalChecked()
+        };
 
-    device_info_t *infod = new device_info_t;
-    size_t result;
+        found->Call(2, argv);
+    }
 
-    do {
-        result = pipe_pop_eager(c, infod, 1);
+    callback->Call(0, 0);
+    [inquiryResult release];
 
-        if (result != 0) {
-            Local<Value> argv[3] = {
-                Nan::New("found").ToLocalChecked(),
-                Nan::New(infod->address).ToLocalChecked(),
-                Nan::New(infod->name).ToLocalChecked()
-            };
-
-            Nan::MakeCallback(info.This(), "emit", 3, argv);
-        }
-    } while (result != 0);
-
-    delete infod;
-    pipe_consumer_free(c);
-
-    Local<Value> argv[1] = {
-        Nan::New("finished").ToLocalChecked()
-    };
-
-    Nan::MakeCallback(info.This(), "emit", 1, argv);
-
-    [pool release];
     return;
 }
 
@@ -251,3 +326,5 @@ NAN_METHOD(DeviceINQ::ListPairedDevices) {
 
     return;
 }
+
+

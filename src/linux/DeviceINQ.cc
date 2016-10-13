@@ -156,12 +156,61 @@ void DeviceINQ::Init(Handle<Object> target) {
     t->InstanceTemplate()->SetInternalFieldCount(1);
     t->SetClassName(Nan::New("DeviceINQ").ToLocalChecked());
 
+    Nan::SetPrototypeMethod(t, "inquireSync", InquireSync);
     Nan::SetPrototypeMethod(t, "inquire", Inquire);
     Nan::SetPrototypeMethod(t, "findSerialPortChannel", SdpSearch);
     Nan::SetPrototypeMethod(t, "listPairedDevices", ListPairedDevices);
     target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
     target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
     target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
+    target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
+}
+
+bt_inquiry DeviceINQ::doInquire() {
+
+  // do the bluetooth magic
+  inquiry_info *ii = NULL;
+  int max_rsp, num_rsp;
+  int dev_id, sock, len, flags;
+  int i;
+  char addr[19] = { 0 };
+  char name[248] = { 0 };
+
+  bt_inquiry inquiryResult;
+
+  dev_id = hci_get_route(NULL);
+  sock = hci_open_dev( dev_id );
+  if (dev_id < 0 || sock < 0) {
+    Nan::ThrowError("opening socket");
+  }
+
+  len  = 8;
+  max_rsp = 255;
+  flags = IREQ_CACHE_FLUSH;
+  ii = (inquiry_info*)malloc(max_rsp * sizeof(inquiry_info));
+
+  num_rsp = hci_inquiry(dev_id, len, max_rsp, NULL, &ii, flags);
+  // if( num_rsp < 0 ) {
+  //     return ThrowException(Exception::Error(String::New("hci inquiry")));
+  // }
+  inquiryResult.num_rsp = num_rsp;
+  inquiryResult.devices = (bt_device*)malloc(num_rsp * sizeof(bt_device));
+
+  for (i = 0; i < num_rsp; i++) {
+    ba2str(&(ii+i)->bdaddr, addr);
+    memset(name, 0, sizeof(name));
+    if (hci_read_remote_name(sock, &(ii+i)->bdaddr, sizeof(name),
+        name, 0) < 0)
+      strcpy(name, addr);
+
+    //fprintf(stderr, "%s [%s]\n", addr, name);
+    strcpy(inquiryResult.devices[i].address, addr);
+    strcpy(inquiryResult.devices[i].name, name);
+  }
+
+  free( ii );
+  close( sock );
+  return inquiryResult;
 }
 
 DeviceINQ::DeviceINQ() {
@@ -184,64 +233,76 @@ NAN_METHOD(DeviceINQ::New) {
     info.GetReturnValue().Set(info.This());
 }
 
-NAN_METHOD(DeviceINQ::Inquire) {
-    const char *usage = "usage: inquire()";
-    if (info.Length() != 0) {
+NAN_METHOD(DeviceINQ::InquireSync) {
+    const char *usage = "usage: inquireSync(found, callback)";
+    if (info.Length() != 2) {
         Nan::ThrowError(usage);
     }
 
-    // do the bluetooth magic
-    inquiry_info *ii = NULL;
-    int max_rsp, num_rsp;
-    int dev_id, sock, len, flags;
-    int i;
-    char addr[19] = { 0 };
-    char name[248] = { 0 };
+    Nan::Callback *found = new Nan::Callback(info[0].As<Function>());
+    Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
 
-    dev_id = hci_get_route(NULL);
-    sock = hci_open_dev( dev_id );
-    if (dev_id < 0 || sock < 0) {
-        Nan::ThrowError("opening socket");
-    }
-
-    len  = 8;
-    max_rsp = 255;
-    flags = IREQ_CACHE_FLUSH;
-    ii = (inquiry_info*)malloc(max_rsp * sizeof(inquiry_info));
-
-    num_rsp = hci_inquiry(dev_id, len, max_rsp, NULL, &ii, flags);
-    // if( num_rsp < 0 ) {
-    //     return ThrowException(Exception::Error(String::New("hci inquiry")));
-    // }
-
-    for (i = 0; i < num_rsp; i++) {
-      ba2str(&(ii+i)->bdaddr, addr);
-      memset(name, 0, sizeof(name));
-      if (hci_read_remote_name(sock, &(ii+i)->bdaddr, sizeof(name),
-          name, 0) < 0)
-        strcpy(name, addr);
-
-      // fprintf(stderr, "%s [%s]\n", addr, name);
-
-      Local<Value> argv[3] = {
-          Nan::New("found").ToLocalChecked(),
-          Nan::New(addr).ToLocalChecked(),
-          Nan::New(name).ToLocalChecked()
+    bt_inquiry inquiryResult = DeviceINQ::doInquire();
+    for (int i = 0; i < inquiryResult.num_rsp; i++) {
+      Local<Value> argv[] = {
+        Nan::New(inquiryResult.devices[i].address).ToLocalChecked(),  
+        Nan::New(inquiryResult.devices[i].name).ToLocalChecked()
       };
-
-      Nan::MakeCallback(info.This(), "emit", 3, argv);
+      found->Call(2, argv);
     }
 
-    free( ii );
-    close( sock );
-
-    Local<Value> argv[1] = {
-        Nan::New("finished").ToLocalChecked()
-    };
-
-    Nan::MakeCallback(info.This(), "emit", 1, argv);
-
+    Local<Value> argv[] = {};
+    callback->Call(0, argv);
     return;
+}
+
+class InquireWorker : public Nan::AsyncWorker {
+ public:
+  InquireWorker(Nan::Callback* found, Nan::Callback *callback) 
+    : Nan::AsyncWorker(callback), found(found) {}
+  ~InquireWorker() {}
+
+  // Executed inside the worker-thread.
+  // It is not safe to access V8, or V8 data structures
+  // here, so everything we need for input and output
+  // should go on `this`.
+  void Execute () {
+    inquiryResult = DeviceINQ::doInquire();
+  }
+
+  // Executed when the async work is complete
+  // this function will be run inside the main event loop
+  // so it is safe to use V8 again
+  void HandleOKCallback () {
+    Nan::HandleScope scope;
+
+    for (int i = 0; i < inquiryResult.num_rsp; i++) {
+      Local<Value> argv[] = {
+        Nan::New(inquiryResult.devices[i].address).ToLocalChecked(),  
+        Nan::New(inquiryResult.devices[i].name).ToLocalChecked()
+      };
+      found->Call(2, argv);
+    }
+
+    Local<Value> argv[] = {};
+    callback->Call(0, argv);
+  }
+
+  private:
+    bt_inquiry inquiryResult;
+    Nan::Callback* found;
+};
+
+// Asynchronous access to the `Inquire()` function
+NAN_METHOD(DeviceINQ::Inquire) {
+  const char *usage = "usage: inquire(found, callback)";
+  if (info.Length() != 2) {
+      Nan::ThrowError(usage);
+  }
+  Nan::Callback *found = new Nan::Callback(info[0].As<Function>());
+  Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
+
+  Nan::AsyncQueueWorker(new InquireWorker(found, callback));
 }
 
 NAN_METHOD(DeviceINQ::SdpSearch) {

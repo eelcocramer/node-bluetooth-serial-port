@@ -1,6 +1,6 @@
 {
   "name": "bluetooth-serial-port",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Bluetooth serial port communication for Node.js",
   "author": "Eelco Cramer <eelco@hailendal.org>",
   "keywords": [
@@ -49,6 +49,7 @@
     "Thomas Wickham",
     "Adrián Estrada",
     "Juan Gomez",
-    "Eric Lundby"
+    "Eric Lundby",
+    "Kevin Clarens"
   ]
 }
