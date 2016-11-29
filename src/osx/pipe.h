@@ -187,7 +187,7 @@ void NO_NULL_POINTERS pipe_push(pipe_producer_t*, const void* elems, size_t coun
  * the pipe.
  *
  * Disabled unless someone tells me they want it. Enabling this function voids
- * your warrant.
+ * your warranty.
  */
 /*
 void NO_NULL_POINTERS pipe_push_clobber(pipe_producer_t*,
