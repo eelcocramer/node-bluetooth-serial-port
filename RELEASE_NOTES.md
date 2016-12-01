@@ -1,5 +1,9 @@
 ## RELEASE NOTES
 
+### 2.1.1
+
+* Fixes a segmentation fault that can occur on OSX
+
 ### 2.1.0
 
 * Adds asynchronous searching for devices

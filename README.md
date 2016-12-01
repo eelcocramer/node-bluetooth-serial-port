@@ -9,9 +9,7 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 ## New in this release
 
-* Adds asynchronous searching for devices
-* Asynchronous searching replaces the old synchronous `inquire` function so without touching your code you will be using the asynchronous search function.
-* Moves synchronous searching for devices to a new `inquireSync` function
+* Fixes a segmentation fault that can occur on OSX
 
 ## Pre-requests on Linux
 
