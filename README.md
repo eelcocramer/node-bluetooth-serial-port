@@ -89,7 +89,7 @@ btSerial.inquire();
 
 ```
 
-## Basic server usage
+## Basic server usage (only on Linux)
 
 ```javascript
 var server = new(require('bluetooth-serial-port')).BluetoothSerialPortServer();
