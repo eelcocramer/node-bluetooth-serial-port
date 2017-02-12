@@ -115,7 +115,7 @@ server.listen(function (clientAddress) {
     });
 }, function(error){
 	console.error("Something wrong happened!:" + error);
-}, {uuid: UUID, channel: PORT} );
+}, {uuid: UUID, channel: CHANNEL} );
 ```
 
 ## API
