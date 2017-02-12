@@ -99,7 +99,7 @@ var UUID = '38e851bc-7144-44b4-9cd8-80549c6f2912'; // My own service UUID. Defau
 
 server.listen(function (clientAddress) {
     console.log('Client: ' + clientAddress + ' connected!');
-    server.on('data' function(buffer) {
+    server.on('data', function(buffer) {
         console.log('Received data from client: ' + buffer);
 
         // ...
@@ -115,7 +115,7 @@ server.listen(function (clientAddress) {
     });
 }, function(error){
 	console.error("Something wrong happened!:" + error);
-}, {uuid: UUID, channel: PORT} );
+}, {uuid: UUID, channel: CHANNEL} );
 ```
 
 ## API
