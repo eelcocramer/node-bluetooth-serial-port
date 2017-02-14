@@ -89,7 +89,7 @@ btSerial.inquire();
 
 ```
 
-## Basic server usage
+## Basic server usage (only on Linux)
 
 ```javascript
 var server = new(require('bluetooth-serial-port')).BluetoothSerialPortServer();
@@ -99,14 +99,14 @@ var UUID = '38e851bc-7144-44b4-9cd8-80549c6f2912'; // My own service UUID. Defau
 
 server.listen(function (clientAddress) {
     console.log('Client: ' + clientAddress + ' connected!');
-    server.on('data' function(buffer) {
+    server.on('data', function(buffer) {
         console.log('Received data from client: ' + buffer);
 
         // ...
 
         console.log('Sending data to the client');
         server.write(new Buffer('...'), function (err, bytesWritten) {
-            if (error) {
+            if (err) {
                 console.log('Error!');
             } else {
                 console.log('Send ' + bytesWritten + ' to the client!');
@@ -115,7 +115,7 @@ server.listen(function (clientAddress) {
     });
 }, function(error){
 	console.error("Something wrong happened!:" + error);
-}, {uuid: UUID, channel: PORT} );
+}, {uuid: UUID, channel: CHANNEL} );
 ```
 
 ## API
