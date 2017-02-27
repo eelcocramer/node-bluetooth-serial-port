@@ -44,6 +44,8 @@ extern "C"{
     #include <bluetooth/rfcomm.h>
 }
 
+#define CLIENT_CLOSED_CONNECTION "Connection closed by the client"
+
 static const uint16_t _SPP_UUID = 0x1101; // Serial Port Profile UUID
 
 using namespace std;
@@ -180,9 +182,23 @@ void BTSerialPortBindingServer::EIO_AfterListen(uv_work_t *req) {
         Nan::FatalException(try_catch);
     }
 
-    AsyncQueueWorker(new ClientWorker(baton->cb, baton));
+    Nan::Callback *callback = new Nan::Callback(baton->cb->GetFunction());
+    AsyncQueueWorker(new ClientWorker(callback, baton));
 }
 
+void BTSerialPortBindingServer::ListenAgain(){
+  listen_baton_t * baton = mListenBaton;
+  Advertise(baton);
+  if (baton->status != 0) {
+      Local<Value> argv[] = {
+          Nan::Error(baton->errorString)
+      };
+      baton->ecb->Call(1, argv);
+      return;
+  }
+  Nan::Callback *callback = new Nan::Callback(baton->cb->GetFunction());
+  AsyncQueueWorker(new ClientWorker(callback, baton));
+}
 
 void BTSerialPortBindingServer::EIO_Write(uv_work_t *req) {
     queued_write_t *queuedWrite = static_cast<queued_write_t*>(req->data);
@@ -252,14 +268,16 @@ void BTSerialPortBindingServer::EIO_Read(uv_work_t *req) {
     if (pselect(nfds + 1, &set, NULL, NULL, NULL, NULL) >= 0) {
         if (FD_ISSET(baton->rfcomm->mClientSocket, &set)) {
             baton->size = read(baton->rfcomm->mClientSocket, buf, sizeof(buf));
+            if(baton->size < 0){
+                baton->errorno = errno;
+            }
+            // determine if we read anything that we can copy.
+            if (baton->size > 0) {
+                memcpy(baton->result, buf, baton->size);
+            }
         } else {
             // when no data is read from rfcomm the connection has been closed.
             baton->size = 0;
-        }
-
-        // determine if we read anything that we can copy.
-        if (baton->size > 0) {
-            memcpy(baton->result, buf, baton->size);
         }
     }
 }
@@ -274,8 +292,14 @@ void BTSerialPortBindingServer::EIO_AfterRead(uv_work_t *req) {
     Local<Value> argv[2];
 
     if (baton->size < 0) {
-        argv[0] = Nan::Error("Error reading from connection");
+        char msg[512];
+        sprintf(msg, "Error reading from connection: errno: %d", baton->errorno);
+        argv[0] = Nan::Error(msg);
         argv[1] = Nan::Undefined();
+        if(baton->errorno == ECONNRESET){
+            argv[0] = Nan::Error(CLIENT_CLOSED_CONNECTION);
+            ListenAgain();
+        }
     } else {
         Local<Object> globalObj = Nan::GetCurrentContext()->Global();
         Local<Function> bufferConstructor = Local<Function>::Cast(globalObj->Get(Nan::New("Buffer").ToLocalChecked()));
@@ -296,8 +320,6 @@ void BTSerialPortBindingServer::EIO_AfterRead(uv_work_t *req) {
     baton->rfcomm->Unref();
     delete baton->cb;
     delete baton;
-
-    baton = NULL;
 }
 
 void BTSerialPortBindingServer::Init(Handle<Object> target) {
@@ -470,6 +492,7 @@ cleanup:
     sdp_list_free(service_class_list, 0);
     sdp_list_free(root_list, 0);
     sdp_list_free(access_proto_list, 0);
+    sdp_record_free(record);
 }
 
 NAN_METHOD(BTSerialPortBindingServer::Write) {
@@ -541,6 +564,8 @@ NAN_METHOD(BTSerialPortBindingServer::Close) {
     close(rfcomm->rep[0]);
     close(rfcomm->rep[1]);
 
+    mListenBaton->ecb->Reset();
+    mListenBaton->cb->Reset();
     mListenBaton->rfcomm->Unref();
     delete mListenBaton;
 
@@ -561,7 +586,7 @@ NAN_METHOD(BTSerialPortBindingServer::Read) {
     if (rfcomm->mClientSocket == 0) {
         Local<Value> argv[2];
 
-        argv[0] = Nan::Error("The connection has been closed");
+        argv[0] = Nan::Error(CLIENT_CLOSED_CONNECTION);
         argv[1] = Nan::Undefined();
 
         Nan::Callback *nc = new Nan::Callback(cb);
@@ -625,9 +650,4 @@ void BTSerialPortBindingServer::ClientWorker::HandleOKCallback(){
         };
         callback->Call(1, argv);
     }
-
-    // We can remove the callbacks, but not the entire baton. We will do it later, when the connection is closed.
-    mBaton->ecb->Reset();
-    mBaton->cb->Reset();
 }
-
