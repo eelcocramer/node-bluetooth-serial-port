@@ -22,7 +22,6 @@
 
 class BTSerialPortBindingServer : public Nan::ObjectWrap {
     public:
-        //static Nan::Persistent<v8::FunctionTemplate> s_ct;
         static void Init(v8::Handle<v8::Object> exports);
         static NAN_METHOD(Write);
         static NAN_METHOD(Close);
@@ -87,18 +86,19 @@ class BTSerialPortBindingServer : public Nan::ObjectWrap {
         static void EIO_Read(uv_work_t *req);
         static void EIO_AfterRead(uv_work_t *req);
 
-        static void Advertise(listen_baton_t * baton);
-        static void ListenAgain();
+        static void Advertise(listen_baton_t *baton);
+        static void TryListenAgain();
 
 
         class ClientWorker : public Nan::AsyncWorker {
             public:
-                ClientWorker(Nan::Callback *cb, listen_baton_t * baton);
+                ClientWorker(Nan::Callback *cb, listen_baton_t *baton);
                 ~ClientWorker();
                 void Execute() override;
                 void HandleOKCallback() override;
             private:
                 listen_baton_t * mBaton;
+
         };
 };
 
