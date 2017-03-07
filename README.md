@@ -9,7 +9,11 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 ## New in this release
 
-* Fixes a segmentation fault that can occur on OSX
+* `listen()` method will not exit until there's an explicit call to `close()`.
+* If a client disconnects, `listen()` can still handle new connections.
+* Calling `listen()` more than once is not allowed.
+* Better error handling in the server part.
+* New server and client test in the experiments folder
 
 ## Pre-requests on Linux
 
