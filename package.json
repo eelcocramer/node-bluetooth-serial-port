@@ -27,7 +27,7 @@
     "win32"
   ],
   "dependencies": {
-    "bindings": "1.1.x",
+    "bindings": "1.2.x",
     "nan": "latest"
   },
   "engines": {

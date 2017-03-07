@@ -34,8 +34,6 @@ extern "C"{
     #include <sys/socket.h>
     #include <sys/types.h>
     #include <assert.h>
-
-
     #include <bluetooth/bluetooth.h>
     #include <bluetooth/hci.h>
     #include <bluetooth/hci_lib.h>
@@ -43,6 +41,8 @@ extern "C"{
     #include <bluetooth/sdp_lib.h>
     #include <bluetooth/rfcomm.h>
 }
+
+#define CLIENT_CLOSED_CONNECTION "Connection closed by the client"
 
 static const uint16_t _SPP_UUID = 0x1101; // Serial Port Profile UUID
 
@@ -174,15 +174,35 @@ void BTSerialPortBindingServer::EIO_AfterListen(uv_work_t *req) {
         };
 
         baton->ecb->Call(1, argv);
+        return;
     }
 
     if (try_catch.HasCaught()) {
         Nan::FatalException(try_catch);
     }
 
-    AsyncQueueWorker(new ClientWorker(baton->cb, baton));
+    auto callback = new Nan::Callback(baton->cb->GetFunction());
+    AsyncQueueWorker(new ClientWorker(callback, baton));
 }
 
+void BTSerialPortBindingServer::TryListenAgain(){
+  // Check if the server has been closed
+  if(mListenBaton == nullptr)
+    return;
+
+  listen_baton_t * baton = mListenBaton;
+  Advertise(baton);
+  if (baton->status != 0) {
+      Local<Value> argv[] = {
+          Nan::Error(baton->errorString)
+      };
+      baton->ecb->Call(1, argv);
+      return;
+  }
+
+  auto callback = new Nan::Callback(baton->cb->GetFunction());
+  AsyncQueueWorker(new ClientWorker(callback, baton));
+}
 
 void BTSerialPortBindingServer::EIO_Write(uv_work_t *req) {
     queued_write_t *queuedWrite = static_cast<queued_write_t*>(req->data);
@@ -194,7 +214,7 @@ void BTSerialPortBindingServer::EIO_Write(uv_work_t *req) {
         sprintf(data->errorString, "Attempting to write to a closed connection");
     }
 
-    data->result = write(rfcomm->mClientSocket, data->bufferData, data->bufferLength);
+    data->result = ::write(rfcomm->mClientSocket, data->bufferData, data->bufferLength);
 
     if (data->result != data->bufferLength) {
         sprintf(data->errorString, "Writing attempt was unsuccessful");
@@ -251,15 +271,23 @@ void BTSerialPortBindingServer::EIO_Read(uv_work_t *req) {
 
     if (pselect(nfds + 1, &set, NULL, NULL, NULL, NULL) >= 0) {
         if (FD_ISSET(baton->rfcomm->mClientSocket, &set)) {
-            baton->size = read(baton->rfcomm->mClientSocket, buf, sizeof(buf));
-        } else {
-            // when no data is read from rfcomm the connection has been closed.
-            baton->size = 0;
-        }
-
-        // determine if we read anything that we can copy.
-        if (baton->size > 0) {
-            memcpy(baton->result, buf, baton->size);
+            baton->size = ::read(baton->rfcomm->mClientSocket, buf, sizeof(buf));
+            if(baton->size < 0){
+                baton->errorno = errno;
+            }else if (baton->size > 0) {
+                memcpy(baton->result, buf, baton->size);
+            }
+        }else if(FD_ISSET(baton->rfcomm->rep[0], &set)) {
+          int size = ::read(baton->rfcomm->rep[0], buf, sizeof(buf));
+          if(size<0){
+            baton->errorno = errno;
+          }
+          buf[size] = '\0';
+          std::string strBuffer(reinterpret_cast<const char *>(buf));
+          if(strBuffer == "close")
+              baton->size = 0;
+        }else{
+          baton->size = 0;
         }
     }
 }
@@ -273,19 +301,27 @@ void BTSerialPortBindingServer::EIO_AfterRead(uv_work_t *req) {
 
     Local<Value> argv[2];
 
-    if (baton->size < 0) {
-        argv[0] = Nan::Error("Error reading from connection");
+    if (baton->size <= 0) {
+        char msg[512];
+        sprintf(msg, "Error reading from connection: errno: %d", baton->errorno);
+        argv[0] = Nan::Error(msg);
         argv[1] = Nan::Undefined();
-    } else {
-        Local<Object> globalObj = Nan::GetCurrentContext()->Global();
-        Local<Function> bufferConstructor = Local<Function>::Cast(globalObj->Get(Nan::New("Buffer").ToLocalChecked()));
-        Handle<Value> constructorArgs[1] = { Nan::New<v8::Integer>(baton->size) };
-        Local<Object> resultBuffer = bufferConstructor->NewInstance(1, constructorArgs);
-        memcpy(Buffer::Data(resultBuffer), baton->result, baton->size);
-
-        argv[0] = Nan::Undefined();
-        argv[1] = resultBuffer;
+        if(baton->errorno == ECONNRESET || baton->size == 0){
+            argv[0] = Nan::Error(CLIENT_CLOSED_CONNECTION);
+            baton->cb->Call(2, argv);
+            TryListenAgain();
+        }
+        return;
     }
+
+    Local<Object> globalObj = Nan::GetCurrentContext()->Global();
+    Local<Function> bufferConstructor = Local<Function>::Cast(globalObj->Get(Nan::New("Buffer").ToLocalChecked()));
+    Handle<Value> constructorArgs[1] = { Nan::New<v8::Integer>(baton->size) };
+    Local<Object> resultBuffer = bufferConstructor->NewInstance(1, constructorArgs);
+    memcpy(Buffer::Data(resultBuffer), baton->result, baton->size);
+
+    argv[0] = Nan::Undefined();
+    argv[1] = resultBuffer;
 
     baton->cb->Call(2, argv);
 
@@ -296,8 +332,6 @@ void BTSerialPortBindingServer::EIO_AfterRead(uv_work_t *req) {
     baton->rfcomm->Unref();
     delete baton->cb;
     delete baton;
-
-    baton = NULL;
 }
 
 void BTSerialPortBindingServer::Init(Handle<Object> target) {
@@ -326,31 +360,37 @@ BTSerialPortBindingServer::~BTSerialPortBindingServer() {
 }
 
 NAN_METHOD(BTSerialPortBindingServer::New) {
+
+
+    if(mListenBaton != nullptr){
+        return Nan::ThrowError("Cannot call listen() more than once!");
+    }
+
     uv_mutex_init(&write_queue_mutex);
     ngx_queue_init(&write_queue);
 
     if(info.Length() != 3){
-        Nan::ThrowError("usage: BTSerialPortBindingServer(successCallback, errorCallback, options)");
+        return Nan::ThrowError("usage: BTSerialPortBindingServer(successCallback, errorCallback, options)");
     }
 
     // callback
     if(!info[0]->IsFunction()) {
-        Nan::ThrowTypeError("First argument must be a function");
+        return Nan::ThrowTypeError("First argument must be a function");
     }
 
 
     // callback
     if(!info[1]->IsFunction()) {
-        Nan::ThrowTypeError("Second argument must be a function");
+        return Nan::ThrowTypeError("Second argument must be a function");
     }
 
     // Object {}
     if(!info[2]->IsObject()) {
-        Nan::ThrowTypeError("Third argument must be an object with this properties: uuid, channel");
+        return Nan::ThrowTypeError("Third argument must be an object with this properties: uuid, channel");
     }
 
 
-    BTSerialPortBindingServer* rfcomm = new BTSerialPortBindingServer();
+    BTSerialPortBindingServer *rfcomm = new BTSerialPortBindingServer();
     rfcomm->Wrap(info.This());
 
 
@@ -372,14 +412,14 @@ NAN_METHOD(BTSerialPortBindingServer::New) {
 
 
     if(!str2uuid(options["uuid"].c_str(), &baton->uuid)){
-        Nan::ThrowError("The UUID is invalid");
+        return Nan::ThrowError("The UUID is invalid");
     }
 
     baton->rfcomm = Nan::ObjectWrap::Unwrap<BTSerialPortBindingServer>(info.This());
 
     // allocate an error pipe
     if (pipe(baton->rfcomm->rep) == -1) {
-        Nan::ThrowError("Cannot create pipe for reading.");
+        return Nan::ThrowError("Cannot create pipe for reading.");
     }
 
     int flags = fcntl(baton->rfcomm->rep[0], F_GETFL, 0);
@@ -419,7 +459,6 @@ void BTSerialPortBindingServer::Advertise(listen_baton_t * baton) {
 
     service_class_list = sdp_list_append(0, &baton->uuid);
     sdp_set_service_classes(record, service_class_list);
-
 
     sdp_uuid16_create(&root_uuid, PUBLIC_BROWSE_GROUP);
     root_list = sdp_list_append(0, &root_uuid);
@@ -470,17 +509,18 @@ cleanup:
     sdp_list_free(service_class_list, 0);
     sdp_list_free(root_list, 0);
     sdp_list_free(access_proto_list, 0);
+    sdp_record_free(record);
 }
 
 NAN_METHOD(BTSerialPortBindingServer::Write) {
     // usage
     if (info.Length() != 2) {
-        Nan::ThrowError("usage: write(buf, callback)");
+        return Nan::ThrowError("usage: write(buf, callback)");
     }
 
     // buffer
     if(!info[0]->IsObject() || !Buffer::HasInstance(info[0])) {
-        Nan::ThrowTypeError("First argument must be a buffer");
+        return Nan::ThrowTypeError("First argument must be a buffer");
     }
 
     Local<Object> bufferObject = info[0].As<Object>();
@@ -489,7 +529,7 @@ NAN_METHOD(BTSerialPortBindingServer::Write) {
 
     // callback
     if(!info[1]->IsFunction()) {
-        Nan::ThrowTypeError("Second argument must be a function");
+        return Nan::ThrowTypeError("Second argument must be a function");
     }
 
     write_baton_t *baton = new write_baton_t();
@@ -529,20 +569,30 @@ NAN_METHOD(BTSerialPortBindingServer::Close) {
 
     if (rfcomm->s != 0) {
         close(rfcomm->s);
-        int len = write(rfcomm->rep[1], "close", (strlen("close")+1));
-        if(len < 0 && errno != EWOULDBLOCK){
-            Nan::ThrowError("Cannot write to pipe!");
+        if(rfcomm->rep[1]){
+          int len = ::write(rfcomm->rep[1], "close", (strlen("close")+1));
+          if(len < 0 && errno != EWOULDBLOCK){
+            return Nan::ThrowError("Cannot write to pipe!");
+          }
+          rfcomm->s = 0;
         }
-
-        rfcomm->s = 0;
     }
 
     // closing pipes
-    close(rfcomm->rep[0]);
-    close(rfcomm->rep[1]);
+    if(rfcomm->rep[0] != 0)
+      close(rfcomm->rep[0]);
+    if(rfcomm->rep[1] != 0)
+      close(rfcomm->rep[1]);
 
-    mListenBaton->rfcomm->Unref();
-    delete mListenBaton;
+    rfcomm->rep[0] = rfcomm->rep[1] = 0;
+
+    if(mListenBaton){
+      mListenBaton->ecb->Reset();
+      mListenBaton->cb->Reset();
+      mListenBaton->rfcomm->Unref();
+      delete mListenBaton;
+      mListenBaton = nullptr;
+    }
 
     return;
 }
@@ -550,7 +600,7 @@ NAN_METHOD(BTSerialPortBindingServer::Close) {
 NAN_METHOD(BTSerialPortBindingServer::Read) {
     const char *usage = "usage: read(callback)";
     if (info.Length() != 1) {
-        Nan::ThrowError(usage);
+        return Nan::ThrowError(usage);
     }
 
     Local<Function> cb = info[0].As<Function>();
@@ -561,28 +611,26 @@ NAN_METHOD(BTSerialPortBindingServer::Read) {
     if (rfcomm->mClientSocket == 0) {
         Local<Value> argv[2];
 
-        argv[0] = Nan::Error("The connection has been closed");
+        argv[0] = Nan::Error(CLIENT_CLOSED_CONNECTION);
         argv[1] = Nan::Undefined();
 
-        Nan::Callback *nc = new Nan::Callback(cb);
+        std::unique_ptr<Nan::Callback> nc(new Nan::Callback(cb));
         nc->Call(2, argv);
-    } else {
-        read_baton_t *baton = new read_baton_t();
-        baton->rfcomm = rfcomm;
-        baton->cb = new Nan::Callback(cb);
-        baton->request.data = baton;
-        baton->rfcomm->Ref();
-
-        uv_queue_work(uv_default_loop(), &baton->request, EIO_Read, (uv_after_work_cb)EIO_AfterRead);
+        return;
     }
-
-    return;
+    read_baton_t *baton = new read_baton_t();
+    baton->rfcomm = rfcomm;
+    baton->cb = new Nan::Callback(cb);
+    baton->request.data = baton;
+    baton->rfcomm->Ref();
+    uv_queue_work(uv_default_loop(), &baton->request, EIO_Read, (uv_after_work_cb)EIO_AfterRead);
 }
 
 BTSerialPortBindingServer::ClientWorker::ClientWorker(Nan::Callback * cb, listen_baton_t * baton) :
-    Nan::AsyncWorker(cb),
+    AsyncWorker(cb),
     mBaton(baton)
-{}
+{
+}
 
 BTSerialPortBindingServer::ClientWorker::~ClientWorker()
 {}
@@ -590,7 +638,7 @@ BTSerialPortBindingServer::ClientWorker::~ClientWorker()
 
 void BTSerialPortBindingServer::ClientWorker::Execute(){
     if(mBaton == nullptr){
-        Nan::ThrowError("listen_baton_t is null!");
+        return Nan::ThrowError("listen_baton_t is null!");
     }
 
     struct sockaddr_rc clientAddress = {
@@ -615,19 +663,12 @@ void BTSerialPortBindingServer::ClientWorker::HandleOKCallback(){
     if(mBaton->rfcomm->mClientSocket == -1){
         mBaton->status = -1;
         sprintf(mBaton->errorString, "accept() failed!. errno: %d", errno);
-        Local<Value> argv[] = {
-            Nan::Error(mBaton->errorString)
-        };
-        mBaton->ecb->Call(1,argv);
-    }else{
-        Local<Value> argv[] = {
-            Nan::New<v8::String>((mBaton->clientAddress)).ToLocalChecked()
-        };
-        callback->Call(1, argv);
+        return;
     }
 
-    // We can remove the callbacks, but not the entire baton. We will do it later, when the connection is closed.
-    mBaton->ecb->Reset();
-    mBaton->cb->Reset();
-}
+    Local<Value> argv[] = {
+        Nan::New<v8::String>((mBaton->clientAddress)).ToLocalChecked()
+    };
+    callback->Call(1, argv);
 
+}
