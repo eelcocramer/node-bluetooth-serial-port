@@ -1,6 +1,6 @@
 ## RELEASE NOTES
 
-### next-release
+### 2.1.2
 
 * `listen()` method will not exit until there's an explicit call to `close()`.
 * If a client disconnects, `listen()` can still handle new connections.
