@@ -1,5 +1,13 @@
 ## RELEASE NOTES
 
+### 2.1.2
+
+* `listen()` method will not exit until there's an explicit call to `close()`.
+* If a client disconnects, `listen()` can still handle new connections.
+* Calling `listen()` more than once is not allowed.
+* Better error handling in the server part.
+* New server and client test in the experiments folder
+
 ### 2.1.1
 
 * Fixes a segmentation fault that can occur on OSX
