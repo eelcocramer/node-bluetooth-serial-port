@@ -248,7 +248,7 @@ Emitted when reading from the serial port connection results in an error. The co
 
 ## Typescript support
 Declaration file is bundled with code so you can use it without npm install @types/bluetooth-serial-port
-
+```typescript
 import btSerial = require("bluetooth-serial-port");
 
 btSerial.findSerialPortChannel(address: string, (channel: number) => {
@@ -267,7 +267,7 @@ btSerial.findSerialPortChannel(address: string, (channel: number) => {
 }, () => {
 	console.error("Cannot find channel!");
 });
-
+```
 ## LICENSE
 
 This module is available under a [FreeBSD license](http://opensource.org/licenses/BSD-2-Clause), see the [LICENSE file](https://github.com/eelcocramer/node-bluetooth-serial-port/blob/master/LICENSE.md) for details.
