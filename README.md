@@ -252,20 +252,20 @@ Declaration file is bundled with code so you can use it without npm install @typ
 import btSerial = require("bluetooth-serial-port");
 
 btSerial.findSerialPortChannel(address: string, (channel: number) => {
-	btSerial.connect(address: string, channel: number, () => {
-		btSerial.write(new Buffer("yes"), (err) => {
-			if (err) {
-				console.error(err);
-			}
-		});
-	}, (err?: Error) => {
-		if (err) {
-			console.error(err);
-		}
-	});
-	btSerial.on("data", (buffer: Buffer) => console.log(buffer.toString("ascii")));
+    btSerial.connect(address: string, channel: number, () => {
+        btSerial.write(new Buffer("yes"), (err) => {
+	    if (err) {
+                console.error(err);
+            }
+        });
+    }, (err?: Error) => {
+            if (err) {
+                console.error(err);
+            }
+        });
+        btSerial.on("data", (buffer: Buffer) => console.log(buffer.toString("ascii")));
 }, () => {
-	console.error("Cannot find channel!");
+        console.error("Cannot find channel!");
 });
 ```
 ## LICENSE
