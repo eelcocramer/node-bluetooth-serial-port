@@ -246,6 +246,28 @@ Emitted when reading from the serial port connection results in an error. The co
 
 * err - an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object) describing the failure.
 
+## Typescript support
+Declaration file is bundled with code so you can use it without npm install @types/bluetooth-serial-port
+```typescript
+import btSerial = require("bluetooth-serial-port");
+
+btSerial.findSerialPortChannel(address: string, (channel: number) => {
+    btSerial.connect(address: string, channel: number, () => {
+        btSerial.write(new Buffer("yes"), (err) => {
+	    if (err) {
+                console.error(err);
+            }
+        });
+    }, (err?: Error) => {
+            if (err) {
+                console.error(err);
+            }
+        });
+        btSerial.on("data", (buffer: Buffer) => console.log(buffer.toString("ascii")));
+}, () => {
+        console.error("Cannot find channel!");
+});
+```
 ## LICENSE
 
 This module is available under a [FreeBSD license](http://opensource.org/licenses/BSD-2-Clause), see the [LICENSE file](https://github.com/eelcocramer/node-bluetooth-serial-port/blob/master/LICENSE.md) for details.

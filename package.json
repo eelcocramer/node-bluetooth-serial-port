@@ -21,6 +21,7 @@
     "lib": "./lib"
   },
   "main": "./lib/bluetooth-serial-port.js",
+  "types": "./lib/bluetooth-serial-port.d.ts",
   "os": [
     "darwin",
     "linux",
@@ -29,6 +30,9 @@
   "dependencies": {
     "bindings": "1.2.x",
     "nan": "latest"
+  },
+  "optionalDependencies": {
+    "@types/node": "^7.0.10"
   },
   "engines": {
     "node": ">= 0.8.x",
