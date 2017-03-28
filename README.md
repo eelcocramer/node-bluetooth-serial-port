@@ -9,7 +9,8 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 ## New in this release
 
-* Adds support for type script
+* Fixes a memory leak that occurs when trying to reconnect to a device repeatedly
+* Adds support for TypeScript
 * Removes support for node v0.10
 * Adds support for node v7
 
