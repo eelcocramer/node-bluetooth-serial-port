@@ -5,8 +5,9 @@
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
 /// <reference types="node" />
-
 import EventEmitter = require("events");
+
+/// <reference types="bluebird" />
 import Bluebird = require("bluebird")
 
 declare module BluetoothSerialPort {
