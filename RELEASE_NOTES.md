@@ -1,5 +1,12 @@
 ## RELEASE NOTES
 
+### Next release
+
+* Fixes a memory leak that occurs when trying to reconnect to a device repeatedly
+* Adds support for TypeScript
+* Removes support for node v0.10
+* Adds support for node v7
+
 ### 2.1.2
 
 * `listen()` method will not exit until there's an explicit call to `close()`.
