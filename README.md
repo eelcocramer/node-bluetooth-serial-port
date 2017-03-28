@@ -250,7 +250,8 @@ Emitted when reading from the serial port connection results in an error. The co
 The type script declaration file is bundled with this module so you can use it without needing to `npm install @types/bluetooth-serial-port`
 
 ```typescript
-import btSerial = require("bluetooth-serial-port");
+import BluetoothSerialPort = require("bluetooth-serial-port");
+const btSerial = new BluetoothSerialPort();
 
 btSerial.findSerialPortChannel(address: string, (channel: number) => {
     btSerial.connect(address: string, channel: number, () => {
@@ -270,6 +271,47 @@ btSerial.findSerialPortChannel(address: string, (channel: number) => {
 });
 ```
 
+## Promise syntax sugar
+
+Add new ES6 feature: Promise, use the fastest promise library Bluebird. This feature also has Typescript support.
+
+# Javascript:
+
+```javascript
+var btSerial = new (require('bluetooth-serial-port')).BluetoothSerialPort();
+
+btSerial.findSerialPortChannelAsync(address).then(function (channel) {
+    return btSerial.connectAsync(address, channel); // must have return
+}).then(function() {
+    btSerial.on("data", function (buffer) {
+        console.log(buffer.toString("utf8"));
+    });
+}).catch(function(err){
+    console.error(err);
+});
+
+```
+# Typescript
+
+This example is written with async/await function:
+
+``` typescript
+import BluetoothSerialPort = require("bluetooth-serial-port");
+const btSerial = new BluetoothSerialPort();
+
+btSerial.on("found", async(address: string, name: string) => {
+    try {
+        const channel = await btSerial.findSerialPortChannelAsync(address);
+        await btSerial.connectAsync(address, channel);
+        btSerial.on("data", (buffer) => {
+            console.log(buffer.toString("ascii"));
+        });
+    } catch (e) {
+        console.error(e);
+    }    
+});
+
+```
 ## LICENSE
 
 This module is available under a [FreeBSD license](http://opensource.org/licenses/BSD-2-Clause), see the [LICENSE file](https://github.com/eelcocramer/node-bluetooth-serial-port/blob/master/LICENSE.md) for details.
