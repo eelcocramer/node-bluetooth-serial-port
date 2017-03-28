@@ -6,7 +6,8 @@
 
 /// <reference types="node" />
 
-import EventEmitter = require('events');
+import EventEmitter = require("events");
+import Bluebird = require("bluebird")
 
 declare module BluetoothSerialPort {
   class BluetoothSerialPort extends EventEmitter {
@@ -23,6 +24,8 @@ declare module BluetoothSerialPort {
     close(): void;
     isOpen(): boolean;
     listPairedDevices(): void;
+    findSerialPortChannelAsync(address: string): Bluebird<number>;
+    connectAsync(address: string, channel: number): Bluebird<void>; 
   }
   class BluetoothSerialPortServer {
     constructor();
