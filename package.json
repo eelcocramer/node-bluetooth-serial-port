@@ -31,9 +31,6 @@
     "bindings": "1.2.x",
     "nan": "latest"
   },
-  "optionalDependencies": {
-    "@types/node": "^7.0.10"
-  },
   "engines": {
     "node": ">= 0.12.x",
     "npm": ">= 1.1.x"
@@ -55,8 +52,5 @@
     "Juan Gomez",
     "Eric Lundby",
     "Kevin Clarens"
-  ],
-  "devDependencies": {
-    "typescript": "^2.2.2"
-  }
+  ]
 }
