@@ -29,11 +29,9 @@
   ],
   "dependencies": {
     "bindings": "1.2.x",
-    "bluebird": "^3.5.0",
     "nan": "latest"
   },
   "optionalDependencies": {
-    "@types/bluebird": "^3.5.2",
     "@types/node": "^7.0.10"
   },
   "engines": {
@@ -57,5 +55,8 @@
     "Juan Gomez",
     "Eric Lundby",
     "Kevin Clarens"
-  ]
+  ],
+  "devDependencies": {
+    "typescript": "^2.2.2"
+  }
 }
