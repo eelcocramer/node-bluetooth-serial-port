@@ -40,9 +40,9 @@ Finally, restart the service:
 `systemctl daemon-reload
 systemctl restart bluetooth`
 
-## Pre-request on OS X
+## Pre-request on macOS
 
-* Needs XCode and XCode command line tools installed.
+* Needs Xcode and Xcode command line tools installed.
 
 ## Pre-request on Windows
 
