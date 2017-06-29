@@ -190,7 +190,7 @@ Writes a [Buffer](http://nodejs.org/api/buffer.html) to the serial port connecti
 
 #### BluetoothSerialPort.listPairedDevices(callback)
 
-__ONLY ON OSX__
+__NOT AVAILABLE ON LINUX__
 
 Lists the devices that are currently paired with the host.
 
