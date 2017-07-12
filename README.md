@@ -9,11 +9,11 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 ## New in this release
 
-* `listen()` method will not exit until there's an explicit call to `close()`.
-* If a client disconnects, `listen()` can still handle new connections.
-* Calling `listen()` more than once is not allowed.
-* Better error handling in the server part.
-* New server and client test in the experiments folder
+* Implements `listPairedDevices` on Windows
+* Fixes a memory leak that occurs when trying to reconnect to a device repeatedly
+* Adds support for TypeScript
+* Removes support for node v0.10, v0.12 and iojs
+* Adds support for node v7
 
 ## Pre-requests on Linux
 
@@ -41,9 +41,9 @@ Finally, restart the service:
 `systemctl daemon-reload
 systemctl restart bluetooth`
 
-## Pre-request on OS X
+## Pre-request on macOS
 
-* Needs XCode and XCode command line tools installed.
+* Needs Xcode and Xcode command line tools installed.
 
 ## Pre-request on Windows
 
@@ -191,7 +191,7 @@ Writes a [Buffer](http://nodejs.org/api/buffer.html) to the serial port connecti
 
 #### BluetoothSerialPort.listPairedDevices(callback)
 
-__ONLY ON OSX__
+__NOT AVAILABLE ON LINUX__
 
 Lists the devices that are currently paired with the host.
 
@@ -245,6 +245,31 @@ Emitted when a connection was closed either by the user (i.e. calling `close` or
 Emitted when reading from the serial port connection results in an error. The connection is closed.
 
 * err - an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object) describing the failure.
+
+## Typescript support
+
+The type script declaration file is bundled with this module so you can use it without needing to `npm install @types/bluetooth-serial-port`
+
+```typescript
+import btSerial = require("bluetooth-serial-port");
+
+btSerial.findSerialPortChannel(address: string, (channel: number) => {
+    btSerial.connect(address: string, channel: number, () => {
+        btSerial.write(new Buffer("yes"), (err) => {
+	    if (err) {
+                console.error(err);
+            }
+        });
+    }, (err?: Error) => {
+            if (err) {
+                console.error(err);
+            }
+        });
+        btSerial.on("data", (buffer: Buffer) => console.log(buffer.toString("ascii")));
+}, () => {
+        console.error("Cannot find channel!");
+});
+```
 
 ## LICENSE
 
