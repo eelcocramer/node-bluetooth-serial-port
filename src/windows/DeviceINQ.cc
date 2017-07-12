@@ -416,7 +416,6 @@ NAN_METHOD(DeviceINQ::ListPairedDevices) {
 
                     Local<Array> servicesArray = Local<Array>(Nan::New<Array>());
                     {
-                        printf("enum service\n");
                         DWORD querySetSize2 = sizeof(WSAQUERYSET);
                         WSAQUERYSET *querySet2 = (WSAQUERYSET *)malloc(querySetSize2);
                         if (querySet2 == nullptr) {
