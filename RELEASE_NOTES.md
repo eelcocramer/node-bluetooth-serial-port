@@ -1,5 +1,10 @@
 ## RELEASE NOTES
 
+### 2.1.4
+
+* Removes erroneous print statement
+* Adds `on` to the TypeScript declaration file
+
 ### 2.1.3
 
 * Implements `listPairedDevices` on Windows
