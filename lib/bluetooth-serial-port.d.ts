@@ -30,6 +30,7 @@ declare module BluetoothSerialPort {
         successCallback: (clientAddress: string) => void,
         errorCallback?: (err: any) => void,
         options?: {uuid?: string; channel: number;}): void;
+    on(event: string, callback: (arg1:any, arg2:any) => void): void;
     write(buffer: Buffer, callback: (err?: Error) => void): void;
     close(): void;
     isOpen(): boolean;
