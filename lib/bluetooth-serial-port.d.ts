@@ -4,12 +4,10 @@
 // <https://github.com/DefinitelyTyped/DefinitelyTyped>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
-/// <reference types="node" />
-
-import events = require('events');
+import { EventEmitter } from "events";
 
 declare module BluetoothSerialPort {
-  class BluetoothSerialPort extends events.EventEmitter {
+  class BluetoothSerialPort extends EventEmitter {
     constructor();
     inquire(): void;
     inquireSync(): void;
