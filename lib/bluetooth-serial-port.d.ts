@@ -6,10 +6,10 @@
 
 /// <reference types="node" />
 
-import EventEmitter = require('events');
+import events = require('events');
 
 declare module BluetoothSerialPort {
-  class BluetoothSerialPort extends EventEmitter {
+  class BluetoothSerialPort extends events.EventEmitter {
     constructor();
     inquire(): void;
     inquireSync(): void;
