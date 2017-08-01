@@ -376,9 +376,9 @@ NAN_METHOD(BTSerialPortBinding::Close) {
         int err = closesocket(rfcomm->s);
 
         if (err != 0)
-            fprintf(stderr, "Closing the BT connection failed: %d", err);
+            fprintf(stderr, "**** closing the BT connection failed: %d", err);
         else
-            fprintf(stderr, "Close the BT connection was successful");
+            fprintf(stderr, "**** close the BT connection was successful");
 
         rfcomm->s = INVALID_SOCKET;
     }
