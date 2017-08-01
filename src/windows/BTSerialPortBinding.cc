@@ -373,7 +373,13 @@ NAN_METHOD(BTSerialPortBinding::Close) {
     BTSerialPortBinding *rfcomm = Nan::ObjectWrap::Unwrap<BTSerialPortBinding>(info.This());
 
     if (rfcomm->s != INVALID_SOCKET) {
-        closesocket(rfcomm->s);
+        int err = closesocket(rfcomm->s);
+
+        if (err != 0)
+            fprintf(stderr, "Closing the BT connection failed: %d", err);
+        else
+            fprintf(stderr, "Close the BT connection was successful");
+
         rfcomm->s = INVALID_SOCKET;
     }
 
