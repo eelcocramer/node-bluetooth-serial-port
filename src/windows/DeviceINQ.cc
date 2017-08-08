@@ -389,14 +389,13 @@ NAN_METHOD(DeviceINQ::ListPairedDevices) {
         while (!inquiryComplete) {
             // For each bluetooth service retrieve its corresponding details
             lookupServiceError = WSALookupServiceNext(lookupServiceHandle, flags, &querySetSize, querySet);
-            if (lookupServiceError != SOCKET_ERROR) {
+
+            // only list devices that are authenticated, paired or bonded
+            if (lookupServiceError != SOCKET_ERROR && (querySet->dwOutputFlags & BTHNS_RESULT_DEVICE_AUTHENTICATED)) {
                 char address[40] = { 0 };
                 DWORD addressLength = _countof(address);
                 SOCKADDR_BTH *bluetoothSocketAddress = (SOCKADDR_BTH *)querySet->lpcsaBuffer->RemoteAddr.lpSockaddr;
                 BTH_ADDR bluetoothAddress = bluetoothSocketAddress->btAddr;
-
-                // only list devices that are authenticated, paired or bonded
-                if (querySet->dwOutputFlags & BTHNS_RESULT_DEVICE_AUTHENTICATED == 0) break;
 
                 // Emit the corresponding event if we were able to retrieve the address
                 int addressToStringError = WSAAddressToString(querySet->lpcsaBuffer->RemoteAddr.lpSockaddr,
