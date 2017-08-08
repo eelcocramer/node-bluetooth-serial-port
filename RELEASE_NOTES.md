@@ -1,5 +1,9 @@
 ## RELEASE NOTES
 
+### Next-release
+
+* Fixes an issue in the typescript definitions.
+
 ### 2.1.4
 
 * Removes erroneous print statement

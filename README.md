@@ -9,16 +9,7 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 ## New in this release
 
-* Removes erroneous print statement
-* Adds `on` to the TypeScript declaration file
-
-## New in 2.1.3
-
-* Implements `listPairedDevices` on Windows
-* Fixes a memory leak that occurs when trying to reconnect to a device repeatedly
-* Adds support for TypeScript
-* Removes support for node v0.10, v0.12 and iojs
-* Adds support for node v7
+* Fixes an issue in the typescript definitions.
 
 ## Pre-requests on Linux
 
