@@ -170,16 +170,16 @@ bt_inquiry DeviceINQ::doInquire() {
 
                 // Emit the corresponding event if we were able to retrieve the address
                 int addressToStringError = WSAAddressToString(querySet->lpcsaBuffer->RemoteAddr.lpSockaddr,
-                                                              sizeof(SOCKADDR_BTH),
-                                                              nullptr,
-                                                              address,
-                                                              &addressLength);
+                        sizeof(SOCKADDR_BTH),
+                        nullptr,
+                        address,
+                        &addressLength);
                 if (addressToStringError != SOCKET_ERROR) {
                     // Strip any leading and trailing parentheses is encountered
                     char strippedAddress[19] = { 0 };
                     auto addressString = sscanf_s(address, "(" "%18[^)]" ")", strippedAddress) == 1
-                                         ? strippedAddress
-                                         : address;
+                        ? strippedAddress
+                        : address;
 
                     strcpy(max_bt_device_list[num_rsp].address, addressString);
                     strcpy(max_bt_device_list[num_rsp].name, querySet->lpszServiceInstanceName);
@@ -260,11 +260,11 @@ NAN_METHOD(DeviceINQ::InquireSync) {
 
     bt_inquiry inquiryResult = DeviceINQ::doInquire();
     for (int i = 0; i < inquiryResult.num_rsp; i++) {
-      Local<Value> argv[2] = {
-        Nan::New(inquiryResult.devices[i].address).ToLocalChecked(),
-        Nan::New(inquiryResult.devices[i].name).ToLocalChecked()
-      };
-      found->Call(2, argv);
+        Local<Value> argv[2] = {
+            Nan::New(inquiryResult.devices[i].address).ToLocalChecked(),
+            Nan::New(inquiryResult.devices[i].name).ToLocalChecked()
+        };
+        found->Call(2, argv);
     }
 
     callback->Call(0, 0);
@@ -272,51 +272,51 @@ NAN_METHOD(DeviceINQ::InquireSync) {
 }
 
 class InquireWorker : public Nan::AsyncWorker {
- public:
-  InquireWorker(Nan::Callback* found, Nan::Callback *callback)
-    : Nan::AsyncWorker(callback), found(found) {}
-  ~InquireWorker() {}
+    public:
+        InquireWorker(Nan::Callback* found, Nan::Callback *callback)
+            : Nan::AsyncWorker(callback), found(found) {}
+        ~InquireWorker() {}
 
-  // Executed inside the worker-thread.
-  // It is not safe to access V8, or V8 data structures
-  // here, so everything we need for input and output
-  // should go on `this`.
-  void Execute () {
-    inquiryResult = DeviceINQ::doInquire();
-  }
+        // Executed inside the worker-thread.
+        // It is not safe to access V8, or V8 data structures
+        // here, so everything we need for input and output
+        // should go on `this`.
+        void Execute () {
+            inquiryResult = DeviceINQ::doInquire();
+        }
 
-  // Executed when the async work is complete
-  // this function will be run inside the main event loop
-  // so it is safe to use V8 again
-  void HandleOKCallback () {
-    Nan::HandleScope scope;
+        // Executed when the async work is complete
+        // this function will be run inside the main event loop
+        // so it is safe to use V8 again
+        void HandleOKCallback () {
+            Nan::HandleScope scope;
 
-    for (int i = 0; i < inquiryResult.num_rsp; i++) {
-      Local<Value> argv[2] = {
-        Nan::New(inquiryResult.devices[i].address).ToLocalChecked(),
-        Nan::New(inquiryResult.devices[i].name).ToLocalChecked()
-      };
-      found->Call(2, argv);
-    }
+            for (int i = 0; i < inquiryResult.num_rsp; i++) {
+                Local<Value> argv[2] = {
+                    Nan::New(inquiryResult.devices[i].address).ToLocalChecked(),
+                    Nan::New(inquiryResult.devices[i].name).ToLocalChecked()
+                };
+                found->Call(2, argv);
+            }
 
-    callback->Call(0, 0);
-  }
+            callback->Call(0, 0);
+        }
 
-  private:
-    bt_inquiry inquiryResult;
-    Nan::Callback* found;
+    private:
+        bt_inquiry inquiryResult;
+        Nan::Callback* found;
 };
 
 // Asynchronous access to the `Inquire()` function
 NAN_METHOD(DeviceINQ::Inquire) {
-  const char *usage = "usage: inquire(found, callback)";
-  if (info.Length() != 2) {
-      Nan::ThrowError(usage);
-  }
-  Nan::Callback *found = new Nan::Callback(info[0].As<Function>());
-  Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
+    const char *usage = "usage: inquire(found, callback)";
+    if (info.Length() != 2) {
+        Nan::ThrowError(usage);
+    }
+    Nan::Callback *found = new Nan::Callback(info[0].As<Function>());
+    Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
 
-  Nan::AsyncQueueWorker(new InquireWorker(found, callback));
+    Nan::AsyncQueueWorker(new InquireWorker(found, callback));
 }
 
 NAN_METHOD(DeviceINQ::SdpSearch) {
@@ -395,20 +395,23 @@ NAN_METHOD(DeviceINQ::ListPairedDevices) {
                 SOCKADDR_BTH *bluetoothSocketAddress = (SOCKADDR_BTH *)querySet->lpcsaBuffer->RemoteAddr.lpSockaddr;
                 BTH_ADDR bluetoothAddress = bluetoothSocketAddress->btAddr;
 
+                // only list devices that are authenticated, paired or bonded
+                if (querySet->dwOutputFlags & BTHNS_RESULT_DEVICE_AUTHENTICATED == 0) break;
+
                 // Emit the corresponding event if we were able to retrieve the address
                 int addressToStringError = WSAAddressToString(querySet->lpcsaBuffer->RemoteAddr.lpSockaddr,
-                                                              sizeof(SOCKADDR_BTH),
-                                                              nullptr,
-                                                              address,
-                                                              &addressLength);
+                        sizeof(SOCKADDR_BTH),
+                        nullptr,
+                        address,
+                        &addressLength);
                 if (addressToStringError != SOCKET_ERROR) {
                     // Strip any leading and trailing parentheses is encountered
                     char strippedAddress[19] = { 0 };
 
                     sscanf_s(address, "(" "%18[^)]" ")", strippedAddress);
                     auto addressString = sscanf_s(address, "(" "%18[^)]" ")", strippedAddress) == 1
-                                         ? Nan::New(strippedAddress)
-                                         : Nan::New(address);
+                        ? Nan::New(strippedAddress)
+                        : Nan::New(address);
 
                     Local<Object> deviceObj = Nan::New<v8::Object>();
                     deviceObj->Set(Nan::New("name").ToLocalChecked(), Nan::New(querySet->lpszServiceInstanceName).ToLocalChecked());
@@ -444,9 +447,8 @@ NAN_METHOD(DeviceINQ::ListPairedDevices) {
                                     serviceObj->Set(Nan::New("channel").ToLocalChecked(), Nan::New(port));
                                     serviceObj->Set(Nan::New("name").ToLocalChecked(), Nan::New(querySet2->lpszServiceInstanceName).ToLocalChecked());
                                     servicesArray->Set(place++, serviceObj);
-                                }
-                                else {
-                                     int lookupServiceErrorNumber = WSAGetLastError();
+                                } else {
+                                    int lookupServiceErrorNumber = WSAGetLastError();
                                     if (lookupServiceErrorNumber == WSAEFAULT) {
                                         free(querySet2);
                                         querySet2 = (WSAQUERYSET *)malloc(querySetSize2);
