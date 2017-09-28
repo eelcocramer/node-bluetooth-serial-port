@@ -12,7 +12,7 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 * Fixes an issue in the typescript definitions.
 * Fixes an issue where, on Windows, `listPairedDevices` is showing unpaired devices.
 
-Check the [release notes](RELEASE_NODES.md) for an overview of the change history.
+Check the [release notes](RELEASE_NOTES.md) for an overview of the change history.
 
 ## Pre-requests on Linux
 
