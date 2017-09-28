@@ -7,9 +7,12 @@ This node module lets you communicate over Bluetooth serial port with devices us
 
 If you have any problems make sure to [checkout the FAQ](https://github.com/eelcocramer/node-bluetooth-serial-port/issues?q=label%3AFAQ).
 
-## New in this release
+## New in the last release
 
 * Fixes an issue in the typescript definitions.
+* Fixes an issue where, on Windows, `listPairedDevices` is showing unpaired devices.
+
+Check the [release notes](RELEASE_NODES.md) for an overview of the change history.
 
 ## Pre-requests on Linux
 
