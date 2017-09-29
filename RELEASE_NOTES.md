@@ -1,5 +1,10 @@
 ## RELEASE NOTES
 
+### 2.1.5
+
+* Fixes an issue in the typescript definitions.
+* Fixes an issue where, on Windows, `listPairedDevices` is showing unpaired devices.
+
 ### 2.1.4
 
 * Removes erroneous print statement
