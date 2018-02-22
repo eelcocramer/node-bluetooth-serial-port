@@ -37,8 +37,10 @@ and adding the --compat flag to the ExecStart value:
 
 Finally, restart the service:
 
-`systemctl daemon-reload
-systemctl restart bluetooth`
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart bluetooth
+```
 
 ## Pre-request on macOS
 
