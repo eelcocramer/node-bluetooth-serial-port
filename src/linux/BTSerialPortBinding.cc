@@ -349,6 +349,7 @@ NAN_METHOD(BTSerialPortBinding::Close) {
     BTSerialPortBinding* rfcomm = Nan::ObjectWrap::Unwrap<BTSerialPortBinding>(info.This());
 
     if (rfcomm->s != 0) {
+        shutdown(rfcomm->s, SHUT_RDWR);
         close(rfcomm->s);
         write(rfcomm->rep[1], "close", (strlen("close")+1));
         rfcomm->s = 0;
