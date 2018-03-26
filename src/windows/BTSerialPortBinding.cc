@@ -373,6 +373,7 @@ NAN_METHOD(BTSerialPortBinding::Close) {
     BTSerialPortBinding *rfcomm = Nan::ObjectWrap::Unwrap<BTSerialPortBinding>(info.This());
 
     if (rfcomm->s != INVALID_SOCKET) {
+        shutdown(rfcomm->s, SD_BOTH);
         closesocket(rfcomm->s);
         rfcomm->s = INVALID_SOCKET;
     }
