@@ -1,5 +1,10 @@
 ## RELEASE NOTES
 
+### 2.1.6
+
+* Fixes an issue on Windows and Linux where `close` would not terminate a connection properly.
+* Improves the README.
+
 ### 2.1.5
 
 * Fixes an issue in the typescript definitions.
