@@ -42,7 +42,7 @@
     "install": "node-gyp configure build",
     "install-debug": "node-gyp configure build --debug"
   },
-  "license": "BSD-2-Clause",
+  "license": "MIT",
   "contributors": [
     "Eric Smekens",
     "Juho Vepsäläinen",
