@@ -9,7 +9,7 @@
           'sources': [ 'src/linux/BluetoothSerialPort.cc', 'src/linux/DeviceINQ.cc', 'src/linux/BTSerialPortBinding.cc' ],
           'include_dirs' : [ "<!(node -e \"require('nan')\")", 'src' ],
           'libraries': ['-lbluetooth'],
-          'cflags':['-std=gnu++0x']
+          'cflags':['-std=c++11']
         }],
         [ 'OS=="mac"', {
           'sources': ['src/osx/DeviceINQ.mm', 'src/osx/BluetoothWorker.mm', 'src/osx/pipe.c', 'src/osx/BluetoothDeviceResources.mm', 'src/osx/BluetoothSerialPort.mm', 'src/osx/BTSerialPortBinding.mm'],
