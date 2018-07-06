@@ -1,5 +1,9 @@
 ## RELEASE NOTES
 
+### 2.1.7
+
+* Adds support for node v10
+
 ### 2.1.6
 
 * Fixes an issue on Windows and Linux where `close` would not terminate a connection properly.

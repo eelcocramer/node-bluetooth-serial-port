@@ -1,6 +1,6 @@
 {
   "name": "bluetooth-serial-port",
-  "version": "2.1.6",
+  "version": "2.1.7",
   "description": "Bluetooth serial port communication for Node.js",
   "author": "Eelco Cramer <eelco@hailendal.org>",
   "keywords": [
@@ -35,7 +35,7 @@
     "@types/node": "^7.0.10"
   },
   "engines": {
-    "node": ">= 0.12.x",
+    "node": ">= 6.x",
     "npm": ">= 1.1.x"
   },
   "scripts": {
