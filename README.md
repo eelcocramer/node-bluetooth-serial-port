@@ -9,8 +9,7 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 ## New in the last release
 
-* Fixes an issue in the typescript definitions.
-* Fixes an issue where, on Windows, `listPairedDevices` is showing unpaired devices.
+* Adds support for node v10
 
 Check the [release notes](RELEASE_NOTES.md) for an overview of the change history.
 
