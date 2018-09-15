@@ -116,7 +116,10 @@ void BTSerialPortBinding::EIO_AfterWrite(uv_work_t *req) {
     Local<Value> argv[2];
     if (data->errorString[0]) {
         argv[0] = Nan::Error(data->errorString);
-        argv[1] = Nan::Undefined();
+
+        // Still return the number of bytes written so that the caller can retry to
+        // write the rest. -1 if no bytes were successfully written
+        argv[1] = Nan::New<v8::Integer>(static_cast<int32_t>(data->result));
     } else {
         argv[0] = Nan::Undefined();
         argv[1] = Nan::New<v8::Integer>(static_cast<int32_t>(data->result));

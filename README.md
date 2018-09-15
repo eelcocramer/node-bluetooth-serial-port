@@ -188,7 +188,7 @@ Check whether the connection is open or not.
 Writes a [Buffer](http://nodejs.org/api/buffer.html) to the serial port connection.
 
 * buffer - the [Buffer](http://nodejs.org/api/buffer.html) to be written.
-* callback(err, bytesWritten) - is called when the write action has been completed. When the `err` parameter is set an error has occured, in that case `err` is an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object). When `err` is not set the write action was successful and `bytesWritten` contains the amount of bytes that is written to the connection.
+* callback(err, bytesWritten) - is called when the write action has been completed. When the `err` parameter is set an error has occured, in that case `err` is an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object). When `err` is not set the write action was successful (all bytes were written.) 'bytesWritten' is always the number of bytes successfully written (so that the caller may retry if not all bytes were sent) or -1 if no bytes were successfully written. 'err' is populated if the write was only partially successful, and 'bytes' is populated with the number of bytes written.
 
 #### BluetoothSerialPort.listPairedDevices(callback)
 
