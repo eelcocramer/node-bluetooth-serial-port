@@ -111,13 +111,10 @@ void BTSerialPortBinding::EIO_Write(uv_work_t *req) {
     }
 
     data->result = write(rfcomm->s, data->bufferData, data->bufferLength);
-
-    if (data-> result == -1) {
-        sprintf(data->errorString, "No bytes were successfully sent.");
+    
+    if (data->result != data->bufferLength) {
+        sprintf(data->errorString, "Writing attempt was not completely successful");
     }
-    else if (data->result != data->bufferLength) {
-        sprintf(data->errorString, "Writing attempt was partially successful.");
-    } 
 }
 
 void BTSerialPortBinding::EIO_AfterWrite(uv_work_t *req) {
