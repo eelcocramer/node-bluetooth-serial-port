@@ -113,18 +113,13 @@ void BTSerialPortBinding::EIO_AfterWrite(uv_work_t *req) {
     queued_write_t *queuedWrite = static_cast<queued_write_t*>(req->data);
     write_baton_t *data = static_cast<write_baton_t*>(queuedWrite->baton);
 
-    int32_t bytesWritten = (int32_t)data->result < 0 ? 0 : (int32_t)data->result;
-
     Local<Value> argv[2];
     if (data->errorString[0]) {
         argv[0] = Nan::Error(data->errorString);
-
-        // Still return the number of bytes written so that the caller can retry to
-        // write the rest. -1 if no bytes were successfully written
-        argv[1] = Nan::New<v8::Integer>(bytesWritten);
+        argv[1] = Nan::New<v8::Integer>((int32_t)data->result);
     } else {
         argv[0] = Nan::Undefined();
-        argv[1] = Nan::New<v8::Integer>(bytesWritten);
+        argv[1] = Nan::New<v8::Integer>((int32_t)data->result);
     }
 
     data->callback->Call(2, argv);

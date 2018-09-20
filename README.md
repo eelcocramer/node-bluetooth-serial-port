@@ -188,7 +188,9 @@ Check whether the connection is open or not.
 Writes a [Buffer](http://nodejs.org/api/buffer.html) to the serial port connection.
 
 * buffer - the [Buffer](http://nodejs.org/api/buffer.html) to be written.
-* callback(err, bytesWritten) - is called when the write action has been completed. When the `err` parameter is set an error has occured, in that case `err` is an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object). When `err` is not set some or all bytes were written. 'bytesWritten' is always the number of bytes successfully written (so that the caller may retry if not all bytes were sent) or 0 if no bytes were successfully written.
+* callback(err, result) - is called when the write action has been completed. When the `err` parameter is set an error has occured and the value of 'result' is less than 0 (e.g. -1). In that case `err` is an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object). 
+
+When `err` is not set some or all bytes were written and result is the number of bytes that were successfully written. The caller can check that the number of bytes written is equal to the number of bytes in the 'buffer' parameter (`buffer.length`), and if not, retry to send the rest.
 
 #### BluetoothSerialPort.listPairedDevices(callback)
 
@@ -221,7 +223,7 @@ Listens for an incoming bluetooth connection. It will automatically advertise th
 Writes data from a buffer to a connection.
 
 * buffer - the buffer to send over the connection.
-* callback(err, len) - called when the data is send or an error did occur. `error` contains the error is appropriated. `len` has the number of bytes that were written to the connection.
+* callback(err, result) - called when the data is send or an error did occur. `error` contains the error is appropriated. `result` has the number of bytes that were written to the connection if 'err' is not populated, otherwise it has a negative number as a value (e.g. -1).
 
 #### BluetoothSerialPortServer.close()
 
@@ -254,13 +256,29 @@ The type script declaration file is bundled with this module so you can use it w
 ```typescript
 import btSerial = require("bluetooth-serial-port");
 
+function write(buffer, retries) {
+
+    btSerial.write(buffer, (err, result) => {
+        if (err || result < 0) {
+            console.error(err);
+
+            if (retries > 0)
+                write(buffer, retries - 1);
+
+        } else if (result < buffer.length) {
+            let remainingBuffer = buffer.slice(result, buffer.length);
+            
+            if (retries > 0)
+                write(remainingBuffer, retries - 1);
+        }
+
+    });
+}
+
 btSerial.findSerialPortChannel(address: string, (channel: number) => {
     btSerial.connect(address: string, channel: number, () => {
-        btSerial.write(new Buffer("yes"), (err) => {
-	    if (err) {
-                console.error(err);
-            }
-        });
+        let buffer: Buffer = new Buffer("yes");
+        write(buffer, 10);
     }, (err?: Error) => {
             if (err) {
                 console.error(err);
