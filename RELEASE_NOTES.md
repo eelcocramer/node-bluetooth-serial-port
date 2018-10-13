@@ -1,5 +1,9 @@
 ## RELEASE NOTES
 
+### 2.1.8
+
+* Fixes issue #193 where, on Linux, not all bytes where written to the connection. In this fix the Linux implementation now mimics the other implementations.
+
 ### 2.1.7
 
 * Adds support for node v10

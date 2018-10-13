@@ -9,7 +9,7 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 ## New in the last release
 
-* Adds support for node v10
+* Fixes issue #193 where, on Linux, not all bytes where written to the connection. In this fix the Linux implementation now mimics the other implementations.
 
 Check the [release notes](RELEASE_NOTES.md) for an overview of the change history.
 
