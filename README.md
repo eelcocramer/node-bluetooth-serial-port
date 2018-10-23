@@ -9,7 +9,7 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 ## New in the last release
 
-* Adds support for node v10
+* Updates the examples to use `Buffer`
 
 Check the [release notes](RELEASE_NOTES.md) for an overview of the change history.
 
@@ -71,7 +71,7 @@ btSerial.on('found', function(address, name) {
 		btSerial.connect(address, channel, function() {
 			console.log('connected');
 
-			btSerial.write(new Buffer('my data', 'utf-8'), function(err, bytesWritten) {
+			btSerial.write(Buffer.from('my data', 'utf-8'), function(err, bytesWritten) {
 				if (err) console.log(err);
 			});
 
@@ -107,7 +107,7 @@ server.on('data', function(buffer) {
     // ...
 
     console.log('Sending data to the client');
-    server.write(new Buffer('...'), function (err, bytesWritten) {
+    server.write(Buffer.from('...'), function (err, bytesWritten) {
         if (err) {
             console.log('Error!');
         } else {
@@ -256,7 +256,7 @@ import btSerial = require("bluetooth-serial-port");
 
 btSerial.findSerialPortChannel(address: string, (channel: number) => {
     btSerial.connect(address: string, channel: number, () => {
-        btSerial.write(new Buffer("yes"), (err) => {
+        btSerial.write(Buffer.from("yes"), (err) => {
 	    if (err) {
                 console.error(err);
             }

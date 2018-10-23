@@ -43,7 +43,7 @@
 		keepScanning  = false;
     		let packetsSent = 0;
                 console.log('Connected. Sending data...');
-                let buf = new Buffer('PING');
+                let buf = Buffer.from('PING');
                 console.log('Size of buf = ' + buf.length);
 
 		serial.on('failure', function(err){
