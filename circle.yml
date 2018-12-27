@@ -1,0 +1,22 @@
+machine:
+  node:
+    version: 7.5.0
+  environment:
+    NODE_ENV: test
+
+dependencies:
+  pre:
+    - ./scripts/setupNpm.sh
+
+test:
+  pre:
+    - mkdir -p $CIRCLE_TEST_REPORTS/mocha
+  post:
+    - npm run coverage
+    - mv coverage $CIRCLE_TEST_REPORTS
+
+deployment:
+  all:
+    branch: /.*/
+    commands:
+      - ./scripts/release.sh
