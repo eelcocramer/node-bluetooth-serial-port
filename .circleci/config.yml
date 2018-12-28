@@ -25,12 +25,6 @@ jobs:
       - run:
           name: Test
           command: npm test
-      - run:
-          name: coverage
-          command: npm run coverage
-      - store_artifacts:
-          path: coverage
-          prefix: coverage
       - store_artifacts:
           path: reports/junit/
           prefix: reports/junit/
