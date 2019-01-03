@@ -267,7 +267,6 @@ void BTSerialPortBindingServer::EIO_Read(uv_work_t *req) {
             baton->size = 0;
           } else if (strBuffer == "disconnect") {
             baton->isDisconnect = true;
-            baton->rfcomm->CloseClientSocket();
           }
         }else{
           baton->size = 0;
@@ -284,21 +283,18 @@ void BTSerialPortBindingServer::EIO_AfterRead(uv_work_t *req) {
 
     Local<Value> argv[2];
 
-    if (baton->isDisconnect) {
-        // we were told to disconnect the client, so re-advertise
-        baton->rfcomm->AdvertiseAndAccept();
-        return;
-    } else if (baton->size <= 0) {
+    if (baton->size <= 0) {
         char msg[512];
         sprintf(msg, "Error reading from connection: errno: %d", baton->errorno);
         argv[0] = Nan::Error(msg);
         argv[1] = Nan::Undefined();
-        if(baton->errorno == ECONNRESET || baton->errorno == ETIMEDOUT || baton->size == 0){
-            argv[0] = Nan::Error(CLIENT_CLOSED_CONNECTION);
-            baton->cb->Call(2, argv);
+        if(baton->errorno == ECONNRESET || baton->errorno == ETIMEDOUT || baton->size == 0 || baton->isDisconnect){
+            baton->rfcomm->CloseClientSocket();
             if (!baton->isClose) {
                 baton->rfcomm->AdvertiseAndAccept();
             }
+            argv[0] = Nan::Error(CLIENT_CLOSED_CONNECTION);
+            baton->cb->Call(2, argv);
         }
         return;
     }
