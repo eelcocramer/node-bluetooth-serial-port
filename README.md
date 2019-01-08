@@ -225,7 +225,7 @@ Writes data from a buffer to a connection.
 
 #### BluetoothSerialPortServer.close()
 
-Stops the server
+Stops the server.
 
 #### BluetoothSerialPortServer.disconnectClient()
 
