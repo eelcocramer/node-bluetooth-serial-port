@@ -133,7 +133,7 @@ Emitted when data is read from the serial port connection.
 
 * buffer - the data that was read into a [Buffer](http://nodejs.org/api/buffer.html) object.
 
-### Event: ('closed')
+#### Event: ('closed')
 
 Emitted when a connection was closed either by the user (i.e. calling `close` or remotely).
 
@@ -227,6 +227,10 @@ Writes data from a buffer to a connection.
 
 Stops the server
 
+#### BluetoothSerialPortServer.disconnectClient()
+
+Disconnects the currently-connected client and re-listens and re-publishes to SDP.
+
 #### BluetoothSerialPortServer.isOpen()
 
 Checks is a server is listening or not.
@@ -237,9 +241,13 @@ Emitted when data is read from the serial port connection.
 
 * buffer - the data that was read into a [Buffer](http://nodejs.org/api/buffer.html) object.
 
-### Event: ('closed')
+#### Event: ('disconnected')
 
-Emitted when a connection was closed either by the user (i.e. calling `close` or remotely).
+Emitted when a connection was disconnected (i.e. from calling `disconnectClient` or if the bluetooth device disconnects (turned off or goes out of range)).
+
+#### Event: ('closed')
+
+Emitted when the server is closed (i.e. from calling `close` or as the result of a non-disconnect error).
 
 #### Event: ('failure', err)
 
