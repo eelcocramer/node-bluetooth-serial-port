@@ -1,3 +1,0 @@
-[submodule "ci_scripts"]
-	path = ci_scripts
-	url = https://github.com/6RiverSystems/ci_scripts.git

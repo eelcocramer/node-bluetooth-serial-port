@@ -1,5 +1,5 @@
 {
-  "name": "@sixriver/bluetooth-serial-port",
+  "name": "bluetooth-serial-port",
   "version": "2.1.7",
   "description": "Bluetooth serial port communication for Node.js",
   "author": "Eelco Cramer <eelco@hailendal.org>",
@@ -15,7 +15,7 @@
   "bugs": "https://github.com/eelcocramer/node-bluetooth-serial-port/issues",
   "repository": {
     "type": "git",
-    "url": "https://github.com/6RiverSystems/node-bluetooth-serial-port"
+    "url": "https://github.com/eelcocramer/node-bluetooth-serial-port"
   },
   "directories": {
     "lib": "./lib"
