@@ -13,6 +13,7 @@ env:
     - export NODE_VERSION="8"
     - export NODE_VERSION="9"
     - export NODE_VERSION="10"
+    - export NODE_VERSION="11"
 
 matrix:
   fast-finish: true
