@@ -1,5 +1,10 @@
 ## RELEASE NOTES
 
+### 2.2.0
+
+* Aligns write implementations [#193](https://github.com/eelcocramer/node-bluetooth-serial-port/pull/193)
+* Adds support for multiple serial port servers [#197](https://github.com/eelcocramer/node-bluetooth-serial-port/pull/197)
+
 ### 2.1.7
 
 * Adds support for node v10

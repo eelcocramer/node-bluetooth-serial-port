@@ -9,7 +9,8 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 ## New in the last release
 
-* Updates the examples to use `Buffer`
+* Aligns write implementations [#193](https://github.com/eelcocramer/node-bluetooth-serial-port/pull/193)
+* Adds support for multiple serial port servers [#197](https://github.com/eelcocramer/node-bluetooth-serial-port/pull/197)
 
 Check the [release notes](RELEASE_NOTES.md) for an overview of the change history.
 
