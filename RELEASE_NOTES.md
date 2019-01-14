@@ -2,8 +2,11 @@
 
 ### 2.2.0
 
-* Aligns write implementations [#193](https://github.com/eelcocramer/node-bluetooth-serial-port/pull/193)
 * Adds support for multiple serial port servers [#197](https://github.com/eelcocramer/node-bluetooth-serial-port/pull/197)
+
+### 2.1.8
+
+* Fixes issue #193 where, on Linux, not all bytes where written to the connection. In this fix the Linux implementation now mimics the other implementations.
 
 ### 2.1.7
 
