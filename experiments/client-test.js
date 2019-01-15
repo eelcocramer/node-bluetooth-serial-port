@@ -29,7 +29,7 @@
 
             serial.connect(address, channel, function() {
                 console.log('Connected. Sending data...');
-                var buf = new Buffer('10011010101s');
+                var buf = Buffer.from('10011010101s');
                 console.log('Size of buf = ' + buf.length);
 
                 serial.on('data', function(buffer) {

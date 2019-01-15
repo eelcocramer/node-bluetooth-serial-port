@@ -1,5 +1,9 @@
 ## RELEASE NOTES
 
+### 2.2.0
+
+* Adds support for multiple serial port servers [#197](https://github.com/eelcocramer/node-bluetooth-serial-port/pull/197)
+
 ### 2.1.8
 
 * Fixes issue #193 where, on Linux, not all bytes where written to the connection. In this fix the Linux implementation now mimics the other implementations.

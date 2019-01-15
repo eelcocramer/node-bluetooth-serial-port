@@ -31,6 +31,7 @@ declare module BluetoothSerialPort {
     on(event: string, callback: (arg1:any, arg2:any) => void): void;
     write(buffer: Buffer, callback: (err?: Error) => void): void;
     close(): void;
+    disconnectClient(): void;
     isOpen(): boolean;
   }
 }

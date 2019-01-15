@@ -26,6 +26,8 @@ class BTSerialPortBindingServer : public Nan::ObjectWrap {
         static NAN_METHOD(Write);
         static NAN_METHOD(Close);
         static NAN_METHOD(Read);
+        static NAN_METHOD(DisconnectClient);
+        static NAN_METHOD(IsOpen);
 
     private:
 
@@ -48,6 +50,8 @@ class BTSerialPortBindingServer : public Nan::ObjectWrap {
             unsigned char result[1024];
             int errorno;
             int size;
+            bool isDisconnect;
+            bool isClose;
         };
 
         struct write_baton_t {
@@ -69,10 +73,13 @@ class BTSerialPortBindingServer : public Nan::ObjectWrap {
 
         int s;
         int rep[2];
-        int mClientSocket;
+        int mClientSocket = 0;
 
-        static listen_baton_t * mListenBaton;
-        static sdp_session_t * mSdpSession;
+        listen_baton_t * mListenBaton = nullptr;
+        sdp_session_t * mSdpSession = nullptr;
+
+        uv_mutex_t mWriteQueueMutex;
+        ngx_queue_t mWriteQueue;
 
 
         BTSerialPortBindingServer();
@@ -86,8 +93,9 @@ class BTSerialPortBindingServer : public Nan::ObjectWrap {
         static void EIO_Read(uv_work_t *req);
         static void EIO_AfterRead(uv_work_t *req);
 
-        static void Advertise(listen_baton_t *baton);
-        static void TryListenAgain();
+        void AdvertiseAndAccept();
+        void Advertise();
+        void CloseClientSocket();
 
 
         class ClientWorker : public Nan::AsyncWorker {

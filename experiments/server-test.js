@@ -26,7 +26,7 @@
             return;
         }
 
-        var buf = new Buffer("PONG");
+        var buf = Buffer.from("PONG");
         console.log("Sending a PONG to the client...");
             server.write(buf, function(error, bytesWritten){
             if(error){
