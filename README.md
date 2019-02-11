@@ -9,7 +9,7 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 ## New in the last release
 
-* Adds support for multiple serial port servers [#197](https://github.com/eelcocramer/node-bluetooth-serial-port/pull/197)
+* Adds the status code to the error message when a connection fails
 
 Check the [release notes](RELEASE_NOTES.md) for an overview of the change history.
 

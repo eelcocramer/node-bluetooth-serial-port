@@ -78,8 +78,10 @@ void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
     if (baton->status == 0) {
         baton->cb->Call(0, NULL);
     } else {
+        char msg[80];
+        sprintf(msg, "Cannot connect: %d", baton->status);
         Local<Value> argv[] = {
-            Nan::Error("Cannot connect")
+            Nan::Error(msg)
         };
         baton->ecb->Call(1, argv);
     }
