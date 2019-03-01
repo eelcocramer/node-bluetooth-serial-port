@@ -257,10 +257,10 @@ Emitted when reading from the serial port connection results in an error. The co
 
 ## Typescript support
 
-The type script declaration file is bundled with this module so you can use it without needing to `npm install @types/bluetooth-serial-port`
+The type script declaration file is bundled with this module.
 
 ```typescript
-import btSerial = require("bluetooth-serial-port");
+import * as btSerial from "bluetooth-serial-port";
 
 btSerial.findSerialPortChannel(address: string, (channel: number) => {
     btSerial.connect(address: string, channel: number, () => {
