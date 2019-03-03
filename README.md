@@ -10,6 +10,7 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 ## New in the last release
 
 * Adds the status code to the error message when a connection fails
+* Fixes typescript example
 
 Check the [release notes](RELEASE_NOTES.md) for an overview of the change history.
 

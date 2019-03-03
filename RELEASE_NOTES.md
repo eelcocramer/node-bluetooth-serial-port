@@ -1,5 +1,14 @@
 ## RELEASE NOTES
 
+### 2.2.2
+
+* Adds the status code to the error message when a connection fails
+* Fixes typescript example
+
+### 2.2.1
+
+* Fixes regression
+
 ### 2.2.0
 
 * Adds support for multiple serial port servers [#197](https://github.com/eelcocramer/node-bluetooth-serial-port/pull/197)
