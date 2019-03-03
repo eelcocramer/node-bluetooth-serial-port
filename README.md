@@ -9,7 +9,8 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 ## New in the last release
 
-* Adds support for multiple serial port servers [#197](https://github.com/eelcocramer/node-bluetooth-serial-port/pull/197)
+* Adds the status code to the error message when a connection fails
+* Fixes typescript example
 
 Check the [release notes](RELEASE_NOTES.md) for an overview of the change history.
 
@@ -257,10 +258,10 @@ Emitted when reading from the serial port connection results in an error. The co
 
 ## Typescript support
 
-The type script declaration file is bundled with this module so you can use it without needing to `npm install @types/bluetooth-serial-port`
+The type script declaration file is bundled with this module.
 
 ```typescript
-import btSerial = require("bluetooth-serial-port");
+import * as btSerial from "bluetooth-serial-port";
 
 btSerial.findSerialPortChannel(address: string, (channel: number) => {
     btSerial.connect(address: string, channel: number, () => {

@@ -19,6 +19,7 @@
 #include <node_buffer.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "../BTSerialPortBinding.h"
 #include "BluetoothHelpers.h"
 
@@ -68,8 +69,10 @@ void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
             closesocket(baton->rfcomm->s);
         }
 
+        char msg[80];
+        sprintf(msg, "Cannot connect: %d", baton->status);
         Local<Value> argv[] = {
-            Nan::Error("Cannot connect")
+            Nan::Error(msg)
         };
         baton->ecb->Call(1, argv);
     }
