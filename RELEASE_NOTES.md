@@ -1,5 +1,9 @@
 ## RELEASE NOTES
 
+### 2.2.3
+
+* Fixes regression when closing a connection
+
 ### 2.2.2
 
 * Adds the status code to the error message when a connection fails
