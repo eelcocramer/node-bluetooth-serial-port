@@ -241,25 +241,25 @@ NAN_METHOD(BTSerialPortBinding::New) {
     ngx_queue_init(&write_queue);
 
     if (info.Length() != 4) {
-        Nan::ThrowError("usage: BTSerialPortBinding(address, channelID, callback, error)");
+        return Nan::ThrowError("usage: BTSerialPortBinding(address, channelID, callback, error)");
     }
 
     String::Utf8Value address(info[0]);
     int channelID = info[1]->Int32Value();
     if (channelID <= 0) {
-        Nan::ThrowTypeError("ChannelID should be a positive int value");
+        return Nan::ThrowTypeError("ChannelID should be a positive int value");
     }
 
     connect_baton_t *baton = new connect_baton_t();
     if (strcpy_s(baton->address, *address) != 0) {
         delete baton;
-        Nan::ThrowTypeError("Address (first argument) length is invalid");
+        return Nan::ThrowTypeError("Address (first argument) length is invalid");
     }
 
     BTSerialPortBinding *rfcomm = new BTSerialPortBinding();
     if (!rfcomm->Initialized) {
         delete baton;
-        Nan::ThrowTypeError("Unable to initialize socket library");
+        return Nan::ThrowTypeError("Unable to initialize socket library");
     }
 
     rfcomm->Wrap(info.This());
@@ -281,12 +281,12 @@ NAN_METHOD(BTSerialPortBinding::New) {
 NAN_METHOD(BTSerialPortBinding::Write) {
     // usage
     if (info.Length() != 3) {
-        Nan::ThrowError("usage: write(buf, address, callback)");
+        return Nan::ThrowError("usage: write(buf, address, callback)");
     }
 
     // buffer
     if(!info[0]->IsObject() || !Buffer::HasInstance(info[0])) {
-        Nan::ThrowTypeError("First argument must be a buffer");
+        return Nan::ThrowTypeError("First argument must be a buffer");
     }
 
     //NOTE: The address argument is currently only used in OSX.
@@ -294,19 +294,19 @@ NAN_METHOD(BTSerialPortBinding::Write) {
 
     // string
     if (!info[1]->IsString()) {
-        Nan::ThrowTypeError("Second argument must be a string");
+        return Nan::ThrowTypeError("Second argument must be a string");
     }
 
     // callback
     if(!info[2]->IsFunction()) {
-       Nan::ThrowTypeError("Third argument must be a function");
+       return Nan::ThrowTypeError("Third argument must be a function");
     }
 
     Local<Object> bufferObject = info[0].As<Object>();
     char *bufferData = Buffer::Data(bufferObject);
     size_t bufferLength = Buffer::Length(bufferObject);
     if (bufferLength > INT_MAX) {
-        Nan::ThrowTypeError("The size of the buffer is larger than supported");
+        return Nan::ThrowTypeError("The size of the buffer is larger than supported");
     }
 
     write_baton_t *baton = new write_baton_t();
@@ -339,7 +339,7 @@ NAN_METHOD(BTSerialPortBinding::Write) {
 
 NAN_METHOD(BTSerialPortBinding::Read) {
     if (info.Length() != 1) {
-        Nan::ThrowError("usage: read(callback)");
+        return Nan::ThrowError("usage: read(callback)");
     }
 
     Local<Function> cb = Local<Function>::Cast(info[0]);
@@ -373,7 +373,7 @@ NAN_METHOD(BTSerialPortBinding::Close) {
     //      On windows each connection is handled by a separate object.
 
     if (info.Length() != 1) {
-        Nan::ThrowError("usage: close(address)");
+        return Nan::ThrowError("usage: close(address)");
     }
 
     BTSerialPortBinding *rfcomm = Nan::ObjectWrap::Unwrap<BTSerialPortBinding>(info.This());

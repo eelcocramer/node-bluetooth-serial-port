@@ -29,7 +29,8 @@
   ],
   "dependencies": {
     "bindings": "1.2.x",
-    "nan": "latest"
+    "nan": "latest",
+    "stable": "^0.1.8"
   },
   "optionalDependencies": {
     "@types/node": "^7.0.10"
