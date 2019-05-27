@@ -237,16 +237,16 @@ NAN_METHOD(DeviceINQ::InquireSync) {
 NAN_METHOD(DeviceINQ::SdpSearch) {
     const char *usage = "usage: sdpSearchForRFCOMM(address, callback)";
     if (info.Length() != 2) {
-        Nan::ThrowError(usage);
+        return Nan::ThrowError(usage);
     }
 
     if (!info[0]->IsString()) {
-        Nan::ThrowTypeError("First argument should be a string value");
+        return Nan::ThrowTypeError("First argument should be a string value");
     }
     String::Utf8Value address(info[0]);
 
     if(!info[1]->IsFunction()) {
-        Nan::ThrowTypeError("Second argument must be a function");
+        return Nan::ThrowTypeError("Second argument must be a function");
     }
     Local<Function> cb = info[1].As<Function>();
 

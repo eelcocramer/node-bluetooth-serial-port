@@ -224,7 +224,7 @@ DeviceINQ::~DeviceINQ() {
 NAN_METHOD(DeviceINQ::New) {
     const char *usage = "usage: DeviceINQ()";
     if (info.Length() != 0) {
-        Nan::ThrowError(usage);
+        return Nan::ThrowError(usage);
     }
 
     DeviceINQ* inquire = new DeviceINQ();
@@ -236,7 +236,7 @@ NAN_METHOD(DeviceINQ::New) {
 NAN_METHOD(DeviceINQ::InquireSync) {
     const char *usage = "usage: inquireSync(found, callback)";
     if (info.Length() != 2) {
-        Nan::ThrowError(usage);
+        return Nan::ThrowError(usage);
     }
 
     Nan::Callback *found = new Nan::Callback(info[0].As<Function>());
@@ -297,7 +297,7 @@ class InquireWorker : public Nan::AsyncWorker {
 NAN_METHOD(DeviceINQ::Inquire) {
   const char *usage = "usage: inquire(found, callback)";
   if (info.Length() != 2) {
-      Nan::ThrowError(usage);
+      return Nan::ThrowError(usage);
   }
   Nan::Callback *found = new Nan::Callback(info[0].As<Function>());
   Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
@@ -308,16 +308,16 @@ NAN_METHOD(DeviceINQ::Inquire) {
 NAN_METHOD(DeviceINQ::SdpSearch) {
     const char *usage = "usage: findSerialPortChannel(address, callback)";
     if (info.Length() != 2) {
-        Nan::ThrowError(usage);
+        return Nan::ThrowError(usage);
     }
 
     if (!info[0]->IsString()) {
-        Nan::ThrowTypeError("First argument should be a string value");
+        return Nan::ThrowTypeError("First argument should be a string value");
     }
     String::Utf8Value address(info[0]);
 
     if(!info[1]->IsFunction()) {
-        Nan::ThrowTypeError("Second argument must be a function");
+        return Nan::ThrowTypeError("Second argument must be a function");
     }
 
     Local<Function> cb = info[1].As<Function>();
@@ -340,11 +340,11 @@ NAN_METHOD(DeviceINQ::SdpSearch) {
 NAN_METHOD(DeviceINQ::ListPairedDevices) {
     const char *usage = "usage: listPairedDevices(callback)";
     if (info.Length() != 1) {
-        Nan::ThrowError(usage);
+        return Nan::ThrowError(usage);
     }
 
     if(!info[0]->IsFunction()) {
-       Nan::ThrowTypeError("First argument must be a function");
+       return Nan::ThrowTypeError("First argument must be a function");
     }
     Local<Function> cb = info[0].As<Function>();
 

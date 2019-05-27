@@ -1,5 +1,9 @@
 ## RELEASE NOTES
 
+### 2.2.4
+
+* Fixes an error where the module would not return correctly when parameter assertion would fail.
+
 ### 2.2.3
 
 * Fixes regression when closing a connection
