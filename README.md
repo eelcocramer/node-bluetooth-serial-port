@@ -9,7 +9,7 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 ## New in the last release
 
-* Fixes regression when closing a connection
+* Fixes an error where the module would not return correctly when parameter assertion would fail.
 
 Check the [release notes](RELEASE_NOTES.md) for an overview of the change history.
 
