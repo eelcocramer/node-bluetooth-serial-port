@@ -140,7 +140,6 @@ bt_inquiry DeviceINQ::doInquire() {
     WSAQUERYSET *querySet = (WSAQUERYSET *)malloc(querySetSize);
     if (querySet == nullptr) {
         Nan::ThrowError("Out of memory: Unable to allocate memory resource for inquiry");
-        return;
     }
 
     ZeroMemory(querySet, querySetSize);

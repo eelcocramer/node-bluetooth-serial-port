@@ -182,7 +182,6 @@ bt_inquiry DeviceINQ::doInquire() {
   sock = hci_open_dev( dev_id );
   if (dev_id < 0 || sock < 0) {
     Nan::ThrowError("opening socket");
-    return;
   }
 
   len  = 8;
