@@ -13,7 +13,7 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 Check the [release notes](RELEASE_NOTES.md) for an overview of the change history.
 
-## Pre-requests on Linux
+## Prerequisites on Linux
 
 * Needs Bluetooth development packages to build
 
@@ -41,11 +41,11 @@ sudo systemctl daemon-reload
 sudo systemctl restart bluetooth
 ```
 
-## Pre-request on macOS
+## Prerequisites on macOS
 
 * Needs Xcode and Xcode command line tools installed.
 
-## Pre-request on Windows
+## Prerequisites on Windows
 
 * Needs Visual Studio (Visual C++) and its command line tools installed.
 * Needs Python 2.x installed and accessible from the command line path.
