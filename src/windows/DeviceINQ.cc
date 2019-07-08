@@ -237,12 +237,12 @@ DeviceINQ::~DeviceINQ() {
 
 NAN_METHOD(DeviceINQ::New) {
     if (info.Length() != 0) {
-        Nan::ThrowError("usage: DeviceINQ()");
+        return Nan::ThrowError("usage: DeviceINQ()");
     }
 
     DeviceINQ *inquire = new DeviceINQ();
     if (!inquire->Initialized) {
-        Nan::ThrowError("Unable to initialize socket library");
+        return Nan::ThrowError("Unable to initialize socket library");
     }
 
     inquire->Wrap(info.This());
@@ -252,7 +252,7 @@ NAN_METHOD(DeviceINQ::New) {
 NAN_METHOD(DeviceINQ::InquireSync) {
     const char *usage = "usage: inquireSync(found, callback)";
     if (info.Length() != 2) {
-        Nan::ThrowError(usage);
+        return Nan::ThrowError(usage);
     }
 
     Nan::Callback *found = new Nan::Callback(info[0].As<Function>());
@@ -311,7 +311,7 @@ class InquireWorker : public Nan::AsyncWorker {
 NAN_METHOD(DeviceINQ::Inquire) {
     const char *usage = "usage: inquire(found, callback)";
     if (info.Length() != 2) {
-        Nan::ThrowError(usage);
+        return Nan::ThrowError(usage);
     }
     Nan::Callback *found = new Nan::Callback(info[0].As<Function>());
     Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
@@ -321,22 +321,22 @@ NAN_METHOD(DeviceINQ::Inquire) {
 
 NAN_METHOD(DeviceINQ::SdpSearch) {
     if (info.Length() != 2) {
-        Nan::ThrowError("usage: findSerialPortChannel(address, callback)");
+        return Nan::ThrowError("usage: findSerialPortChannel(address, callback)");
     }
 
     if (!info[0]->IsString()) {
-        Nan::ThrowTypeError("First argument should be a string value");
+        return Nan::ThrowTypeError("First argument should be a string value");
     }
 
     if(!info[1]->IsFunction()) {
-        Nan::ThrowTypeError("Second argument must be a function");
+        return Nan::ThrowTypeError("Second argument must be a function");
     }
 
     sdp_baton_t *baton = new sdp_baton_t();
     String::Utf8Value address(info[0]);
     if (strcpy_s(baton->address, *address) != 0) {
         delete baton;
-        Nan::ThrowTypeError("Address (first argument) length is invalid");
+        return Nan::ThrowTypeError("Address (first argument) length is invalid");
     }
 
     Local<Function> cb = info[1].As<Function>();
@@ -356,11 +356,11 @@ NAN_METHOD(DeviceINQ::SdpSearch) {
 NAN_METHOD(DeviceINQ::ListPairedDevices) {
     const char *usage = "usage: listPairedDevices(callback)";
     if (info.Length() != 1) {
-        Nan::ThrowError(usage);
+        return Nan::ThrowError(usage);
     }
 
     if(!info[0]->IsFunction()) {
-        Nan::ThrowTypeError("First argument must be a function");
+        return Nan::ThrowTypeError("First argument must be a function");
     }
     Local<Function> cb = info[0].As<Function>();
     Local<Array> resultArray = Local<Array>(Nan::New<Array>());
