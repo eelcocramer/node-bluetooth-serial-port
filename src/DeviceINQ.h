@@ -46,7 +46,7 @@ class DeviceINQ : public Nan::ObjectWrap {
 #ifdef _WIN32
         __declspec(property(get = GetInitializedProperty)) bool Initialized;
 #endif
-        static void Init(v8::Handle<v8::Object> exports);
+        static void Init(v8::Local<v8::Object> exports);
         static void EIO_SdpSearch(uv_work_t *req);
         static void EIO_AfterSdpSearch(uv_work_t *req);
 #ifdef __APPLE__

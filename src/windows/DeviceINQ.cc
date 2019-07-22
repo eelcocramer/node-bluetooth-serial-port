@@ -113,7 +113,7 @@ void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
     baton = nullptr;
 }
 
-void DeviceINQ::Init(Handle<Object> target) {
+void DeviceINQ::Init(Local<Object> target) {
     Nan::HandleScope scope;
 
     Local<FunctionTemplate> t = Nan::New<FunctionTemplate>(New);
