@@ -121,14 +121,17 @@ void DeviceINQ::Init(Local<Object> target) {
     t->InstanceTemplate()->SetInternalFieldCount(1);
     t->SetClassName(Nan::New("DeviceINQ").ToLocalChecked());
 
+    Isolate *isolate = target->GetIsolate();
+    Local<Context> ctx = isolate->GetCurrentContext();
+
     Nan::SetPrototypeMethod(t, "inquireSync", InquireSync);
     Nan::SetPrototypeMethod(t, "inquire", Inquire);
     Nan::SetPrototypeMethod(t, "findSerialPortChannel", SdpSearch);
     Nan::SetPrototypeMethod(t, "listPairedDevices", ListPairedDevices);
-    target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
-    target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
-    target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
-    target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
+    target->Set(ctx, Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
+    target->Set(ctx, Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
+    target->Set(ctx, Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
+    target->Set(ctx, Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
 }
 
 bt_inquiry DeviceINQ::doInquire() {
@@ -333,13 +336,15 @@ NAN_METHOD(DeviceINQ::SdpSearch) {
     }
 
     sdp_baton_t *baton = new sdp_baton_t();
-    String::Utf8Value address(info[0]);
+
+    Local<Function> cb = info[1].As<Function>();
+    String::Utf8Value address(cb->GetIsolate(), info[0]);
     if (strcpy_s(baton->address, *address) != 0) {
         delete baton;
         return Nan::ThrowTypeError("Address (first argument) length is invalid");
     }
 
-    Local<Function> cb = info[1].As<Function>();
+
     DeviceINQ *inquire = Nan::ObjectWrap::Unwrap<DeviceINQ>(info.This());
 
     baton->inquire = inquire;
@@ -519,7 +524,7 @@ NAN_METHOD(DeviceINQ::ListPairedDevices) {
     Local<Value> argv[1] = {
         resultArray
     };
-    cb->Call(Nan::GetCurrentContext()->Global(), 1, argv);
+    cb->Call(Nan::GetCurrentContext(), Nan::GetCurrentContext()->Global(), 1, argv);
 
     return;
 }
