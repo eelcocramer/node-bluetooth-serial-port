@@ -208,7 +208,7 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
     baton = NULL;
 }
 
-void BTSerialPortBinding::Init(Handle<Object> target) {
+void BTSerialPortBinding::Init(Local<Object> target) {
     Nan::HandleScope scope;
 
     Local<FunctionTemplate> t = Nan::New<FunctionTemplate>(New);
@@ -216,12 +216,15 @@ void BTSerialPortBinding::Init(Handle<Object> target) {
     t->InstanceTemplate()->SetInternalFieldCount(1);
     t->SetClassName(Nan::New("BTSerialPortBinding").ToLocalChecked());
 
+    Isolate *isolate = target->GetIsolate();
+    Local<Context> ctx = isolate->GetCurrentContext();
+
     Nan::SetPrototypeMethod(t, "write", Write);
     Nan::SetPrototypeMethod(t, "read", Read);
     Nan::SetPrototypeMethod(t, "close", Close);
-    target->Set(Nan::New("BTSerialPortBinding").ToLocalChecked(), t->GetFunction());
-    target->Set(Nan::New("BTSerialPortBinding").ToLocalChecked(), t->GetFunction());
-    target->Set(Nan::New("BTSerialPortBinding").ToLocalChecked(), t->GetFunction());
+    target->Set(ctx, Nan::New("BTSerialPortBinding").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
+    target->Set(ctx, Nan::New("BTSerialPortBinding").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
+    target->Set(ctx, Nan::New("BTSerialPortBinding").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
 }
 
 BTSerialPortBinding::BTSerialPortBinding() :
@@ -240,9 +243,9 @@ NAN_METHOD(BTSerialPortBinding::New) {
         return Nan::ThrowError(usage);
     }
 
-    String::Utf8Value address(info[0]);
+    String::Utf8Value address(info.GetIsolate(), info[0]);
 
-    int channelID = info[1]->Int32Value();
+    int channelID = info[1]->Int32Value(Nan::GetCurrentContext()).ToChecked();
     if (channelID <= 0) {
         return Nan::ThrowTypeError("ChannelID should be a positive int value.");
     }
@@ -283,7 +286,11 @@ NAN_METHOD(BTSerialPortBinding::Write) {
     void* bufferData = Buffer::Data(bufferObject);
     size_t bufferLength = Buffer::Length(bufferObject);
 
-    String::Utf8Value addressParameter(info[1]);
+    // string
+    if (!info[1]->IsString()) {
+        Nan::ThrowTypeError("Second argument must be a string");
+    }
+    String::Utf8Value addressParameter(info.GetIsolate(), info[1]);
 
     // callback
     if(!info[2]->IsFunction()) {
@@ -328,7 +335,7 @@ NAN_METHOD(BTSerialPortBinding::Close) {
     }
 
     //TODO should be a better way to do this...
-    String::Utf8Value addressParameter(info[0]);
+    String::Utf8Value addressParameter(info.GetIsolate(), info[0]);
     char addressArray[32];
     strncpy(addressArray, *addressParameter, 32);
     NSString *address = [NSString stringWithCString:addressArray encoding:NSASCIIStringEncoding];
