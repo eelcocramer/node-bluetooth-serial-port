@@ -301,7 +301,7 @@ void BTSerialPortBindingServer::EIO_AfterRead(uv_work_t *req) {
 
     Local<Object> globalObj = Nan::GetCurrentContext()->Global();
     Local<Function> bufferConstructor = Local<Function>::Cast(globalObj->Get(Nan::New("Buffer").ToLocalChecked()));
-    Handle<Value> constructorArgs[1] = { Nan::New<v8::Integer>(baton->size) };
+    Local<Value> constructorArgs[1] = { Nan::New<v8::Integer>(baton->size) };
     Local<Object> resultBuffer = Nan::NewInstance(bufferConstructor, 1, constructorArgs).ToLocalChecked();
     memcpy(Buffer::Data(resultBuffer), baton->result, baton->size);
 
@@ -319,7 +319,7 @@ void BTSerialPortBindingServer::EIO_AfterRead(uv_work_t *req) {
     delete baton;
 }
 
-void BTSerialPortBindingServer::Init(Handle<Object> target) {
+void BTSerialPortBindingServer::Init(Local<Object> target) {
     Nan::HandleScope scope;
 
     Local<FunctionTemplate> t = Nan::New<FunctionTemplate>(New);
@@ -327,13 +327,16 @@ void BTSerialPortBindingServer::Init(Handle<Object> target) {
     t->InstanceTemplate()->SetInternalFieldCount(1);
     t->SetClassName(Nan::New("BTSerialPortBindingServer").ToLocalChecked());
 
+    Isolate *isolate = target->GetIsolate();
+    Local<Context> ctx = isolate->GetCurrentContext();
+
     Nan::SetPrototypeMethod(t, "write", Write);
     Nan::SetPrototypeMethod(t, "read", Read);
     Nan::SetPrototypeMethod(t, "close", Close);
     Nan::SetPrototypeMethod(t, "disconnectClient", DisconnectClient);
     Nan::SetPrototypeMethod(t, "isOpen", IsOpen);
 
-    target->Set(Nan::New("BTSerialPortBindingServer").ToLocalChecked(), t->GetFunction());
+    target->Set(Nan::New("BTSerialPortBindingServer").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
 }
 
 BTSerialPortBindingServer::BTSerialPortBindingServer() :
@@ -377,16 +380,19 @@ NAN_METHOD(BTSerialPortBindingServer::New) {
     listen_baton_t * baton = rfcomm->mListenBaton;
     rfcomm->Wrap(info.This());
 
-    Handle<Object> jsOptions = Handle<Object>::Cast(info[2]);
-    Handle<Array> properties = jsOptions->GetPropertyNames();
+    Local<Object> jsOptions = Local<Object>::Cast(info[2]);
+    Isolate *isolate = jsOptions->GetIsolate();
+    Local<Context> ctx = isolate->GetCurrentContext();
+
+    Local<Array> properties = jsOptions->GetPropertyNames(ctx).ToLocalChecked();
     int n = properties->Length();
     std::map<std::string, std::string> options;
 
     for (int i = 0; i < n ; i++) {
-        Handle<Value>  property = properties->Get(Nan::New<Integer>(i));
-        string propertyName = std::string(*String::Utf8Value(property));
-        Handle<Value> optionValue = jsOptions->Get(property);
-        options[propertyName] = std::string(*String::Utf8Value(optionValue));
+        Local<Value>  property = properties->Get(Nan::New<Integer>(i));
+        string propertyName = std::string(*String::Utf8Value(isolate, property));
+        Local<Value> optionValue = jsOptions->Get(property);
+        options[propertyName] = std::string(*String::Utf8Value(isolate, optionValue));
     }
 
     if(!str2uuid(options["uuid"].c_str(), &baton->uuid)){
