@@ -562,6 +562,12 @@ NAN_METHOD(BTSerialPortBindingServer::Close) {
 
     rfcomm->rep[0] = rfcomm->rep[1] = 0;
 
+    // Close the connection with the SDP server
+    if (rfcomm->mSdpSession){
+        sdp_close(rfcomm->mSdpSession);
+        rfcomm->mSdpSession = nullptr;
+    }
+
     // close client socket
     rfcomm->CloseClientSocket();
 
