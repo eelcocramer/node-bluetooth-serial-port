@@ -1,5 +1,9 @@
 ## RELEASE NOTES
 
+### 2.2.5
+
+* Fixes issue #97 where the server process does not exit correctly.
+
 ### 2.2.4
 
 * Fixes an error where the module would not return correctly when parameter assertion would fail.
