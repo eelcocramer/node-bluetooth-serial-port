@@ -164,9 +164,6 @@ void DeviceINQ::Init(Local<Object> target) {
     Nan::SetPrototypeMethod(t, "findSerialPortChannel", SdpSearch);
     Nan::SetPrototypeMethod(t, "listPairedDevices", ListPairedDevices);
     target->Set(ctx, Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
-    target->Set(ctx, Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
-    target->Set(ctx, Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
-    target->Set(ctx, Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
 }
 
 bt_inquiry DeviceINQ::doInquire() {

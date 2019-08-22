@@ -240,8 +240,6 @@ void BTSerialPortBinding::Init(Local<Object> target) {
     Nan::SetPrototypeMethod(t, "read", Read);
     Nan::SetPrototypeMethod(t, "close", Close);
     target->Set(Nan::New("BTSerialPortBinding").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
-    target->Set(Nan::New("BTSerialPortBinding").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
-    target->Set(Nan::New("BTSerialPortBinding").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
 }
 
 BTSerialPortBinding::BTSerialPortBinding() :
