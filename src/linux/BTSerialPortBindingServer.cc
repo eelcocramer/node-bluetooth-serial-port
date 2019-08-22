@@ -301,7 +301,7 @@ void BTSerialPortBindingServer::EIO_AfterRead(uv_work_t *req) {
 
     Local<Object> globalObj = Nan::GetCurrentContext()->Global();
     Local<Function> bufferConstructor = Local<Function>::Cast(globalObj->Get(Nan::New("Buffer").ToLocalChecked()));
-    Handle<Value> constructorArgs[1] = { Nan::New<v8::Integer>(baton->size) };
+    Local<Value> constructorArgs[1] = { Nan::New<v8::Integer>(baton->size) };
     Local<Object> resultBuffer = Nan::NewInstance(bufferConstructor, 1, constructorArgs).ToLocalChecked();
     memcpy(Buffer::Data(resultBuffer), baton->result, baton->size);
 
@@ -336,7 +336,7 @@ void BTSerialPortBindingServer::Init(Local<Object> target) {
     Nan::SetPrototypeMethod(t, "disconnectClient", DisconnectClient);
     Nan::SetPrototypeMethod(t, "isOpen", IsOpen);
 
-    target->Set(ctx, Nan::New("BTSerialPortBindingServer").ToLocalChecked(), t->GetFunction());
+    target->Set(ctx, Nan::New("BTSerialPortBindingServer").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
 }
 
 BTSerialPortBindingServer::BTSerialPortBindingServer() :
@@ -380,16 +380,19 @@ NAN_METHOD(BTSerialPortBindingServer::New) {
     listen_baton_t * baton = rfcomm->mListenBaton;
     rfcomm->Wrap(info.This());
 
-    Handle<Object> jsOptions = Handle<Object>::Cast(info[2]);
-    Handle<Array> properties = jsOptions->GetPropertyNames();
-    int n = properties->Length();
-    std::map<std::string, std::string> options;
+    MaybeLocal<Object> object = info[2]->ToObject(Nan::GetCurrentContext());
+    MaybeLocal<Array> maybe_properties = object.ToLocalChecked()->GetOwnPropertyNames(Nan::GetCurrentContext());
 
-    for (int i = 0; i < n ; i++) {
-        Handle<Value>  property = properties->Get(Nan::New<Integer>(i));
-        string propertyName = std::string(*String::Utf8Value(property));
-        Handle<Value> optionValue = jsOptions->Get(property);
-        options[propertyName] = std::string(*String::Utf8Value(optionValue));
+    std::map<std::string, std::string> options;
+    if (!maybe_properties.IsEmpty()) {
+        Local<Array> properties = maybe_properties.ToLocalChecked();
+
+        for (int i = 0; i < properties->Length() ; i++) {
+            Local<Value> property = properties->Get(Nan::New<Integer>(i));
+            string propertyName = std::string(*Nan::Utf8String(property));
+            Local<Value> optionValue = object.ToLocalChecked()->Get(property);
+            options[propertyName] = std::string(*Nan::Utf8String(optionValue));
+        }
     }
 
     if(!str2uuid(options["uuid"].c_str(), &baton->uuid)){

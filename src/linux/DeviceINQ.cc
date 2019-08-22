@@ -163,7 +163,8 @@ void DeviceINQ::Init(Local<Object> target) {
     Nan::SetPrototypeMethod(t, "inquire", Inquire);
     Nan::SetPrototypeMethod(t, "findSerialPortChannel", SdpSearch);
     Nan::SetPrototypeMethod(t, "listPairedDevices", ListPairedDevices);
-    target->Set(ctx, Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
+
+    target->Set(ctx, Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
 }
 
 bt_inquiry DeviceINQ::doInquire() {
@@ -363,7 +364,6 @@ NAN_METHOD(DeviceINQ::ListPairedDevices) {
     Local<Value> argv[1] = {
         resultArray
     };
-    cb->Call(Nan::GetCurrentContext()->Global(), 1, argv);
-
+    cb->Call(Nan::GetCurrentContext(), Nan::GetCurrentContext()->Global(), 1, argv);
     return;
 }
