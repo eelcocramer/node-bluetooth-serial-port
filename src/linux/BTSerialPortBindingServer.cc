@@ -319,7 +319,7 @@ void BTSerialPortBindingServer::EIO_AfterRead(uv_work_t *req) {
     delete baton;
 }
 
-void BTSerialPortBindingServer::Init(Handle<Object> target) {
+void BTSerialPortBindingServer::Init(Local<Object> target) {
     Nan::HandleScope scope;
 
     Local<FunctionTemplate> t = Nan::New<FunctionTemplate>(New);
@@ -327,13 +327,16 @@ void BTSerialPortBindingServer::Init(Handle<Object> target) {
     t->InstanceTemplate()->SetInternalFieldCount(1);
     t->SetClassName(Nan::New("BTSerialPortBindingServer").ToLocalChecked());
 
+    Isolate *isolate = target->GetIsolate();
+    Local<Context> ctx = isolate->GetCurrentContext();
+
     Nan::SetPrototypeMethod(t, "write", Write);
     Nan::SetPrototypeMethod(t, "read", Read);
     Nan::SetPrototypeMethod(t, "close", Close);
     Nan::SetPrototypeMethod(t, "disconnectClient", DisconnectClient);
     Nan::SetPrototypeMethod(t, "isOpen", IsOpen);
 
-    target->Set(Nan::New("BTSerialPortBindingServer").ToLocalChecked(), t->GetFunction());
+    target->Set(ctx, Nan::New("BTSerialPortBindingServer").ToLocalChecked(), t->GetFunction());
 }
 
 BTSerialPortBindingServer::BTSerialPortBindingServer() :

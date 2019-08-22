@@ -148,7 +148,7 @@ void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
     baton = NULL;
 }
 
-void DeviceINQ::Init(Handle<Object> target) {
+void DeviceINQ::Init(Local<Object> target) {
     Nan::HandleScope scope;
 
     Local<FunctionTemplate> t = Nan::New<FunctionTemplate>(New);
@@ -156,14 +156,14 @@ void DeviceINQ::Init(Handle<Object> target) {
     t->InstanceTemplate()->SetInternalFieldCount(1);
     t->SetClassName(Nan::New("DeviceINQ").ToLocalChecked());
 
+    Isolate *isolate = target->GetIsolate();
+    Local<Context> ctx = isolate->GetCurrentContext();
+
     Nan::SetPrototypeMethod(t, "inquireSync", InquireSync);
     Nan::SetPrototypeMethod(t, "inquire", Inquire);
     Nan::SetPrototypeMethod(t, "findSerialPortChannel", SdpSearch);
     Nan::SetPrototypeMethod(t, "listPairedDevices", ListPairedDevices);
-    target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
-    target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
-    target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
-    target->Set(Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
+    target->Set(ctx, Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction());
 }
 
 bt_inquiry DeviceINQ::doInquire() {
@@ -314,7 +314,7 @@ NAN_METHOD(DeviceINQ::SdpSearch) {
     if (!info[0]->IsString()) {
         return Nan::ThrowTypeError("First argument should be a string value");
     }
-    String::Utf8Value address(info[0]);
+    String::Utf8Value address(info.GetIsolate(), info[0]);
 
     if(!info[1]->IsFunction()) {
         return Nan::ThrowTypeError("Second argument must be a function");
