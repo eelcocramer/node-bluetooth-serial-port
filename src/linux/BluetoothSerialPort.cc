@@ -15,7 +15,7 @@
 
 using namespace v8;
 
-void InitAll(Handle<Object> exports) {
+void InitAll(Local<Object> exports) {
 	DeviceINQ::Init(exports);
 	BTSerialPortBinding::Init(exports);
 }

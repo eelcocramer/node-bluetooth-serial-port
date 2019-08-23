@@ -1,5 +1,10 @@
 ## RELEASE NOTES
 
+### 2.2.6
+
+* Adds support for node v12
+* Node v6 and v7 are no longer supported
+
 ### 2.2.5
 
 * Fixes issue #97 where the server process does not exit correctly.

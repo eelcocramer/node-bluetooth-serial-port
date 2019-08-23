@@ -210,10 +210,13 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
     baton = nullptr;
 }
 
-void BTSerialPortBinding::Init(Handle<Object> target) {
+void BTSerialPortBinding::Init(Local<Object> target) {
     Nan::HandleScope scope;
 
     Local<FunctionTemplate> t = Nan::New<FunctionTemplate>(New);
+
+    Isolate *isolate = target->GetIsolate();
+    Local<Context> ctx = isolate->GetCurrentContext();
 
     t->InstanceTemplate()->SetInternalFieldCount(1);
     t->SetClassName(Nan::New("BTSerialPortBinding").ToLocalChecked());
@@ -221,9 +224,7 @@ void BTSerialPortBinding::Init(Handle<Object> target) {
     Nan::SetPrototypeMethod(t, "write", Write);
     Nan::SetPrototypeMethod(t, "read", Read);
     Nan::SetPrototypeMethod(t, "close", Close);
-    target->Set(Nan::New("BTSerialPortBinding").ToLocalChecked(), t->GetFunction());
-    target->Set(Nan::New("BTSerialPortBinding").ToLocalChecked(), t->GetFunction());
-    target->Set(Nan::New("BTSerialPortBinding").ToLocalChecked(), t->GetFunction());
+    target->Set(ctx, Nan::New("BTSerialPortBinding").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
 }
 
 BTSerialPortBinding::BTSerialPortBinding() : s(INVALID_SOCKET) {
@@ -244,8 +245,8 @@ NAN_METHOD(BTSerialPortBinding::New) {
         return Nan::ThrowError("usage: BTSerialPortBinding(address, channelID, callback, error)");
     }
 
-    String::Utf8Value address(info[0]);
-    int channelID = info[1]->Int32Value();
+    String::Utf8Value address(info.GetIsolate(), info[0]);
+    int channelID = info[1]->Int32Value(Nan::GetCurrentContext()).ToChecked();
     if (channelID <= 0) {
         return Nan::ThrowTypeError("ChannelID should be a positive int value");
     }

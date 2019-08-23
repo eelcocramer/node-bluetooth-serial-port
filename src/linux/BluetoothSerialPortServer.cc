@@ -15,7 +15,7 @@
 
 using namespace v8;
 
-void InitAllServer(Handle<Object> exports) {
+void InitAllServer(Local<Object> exports) {
 	BTSerialPortBindingServer::Init(exports);
 }
 
