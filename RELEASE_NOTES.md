@@ -1,5 +1,9 @@
 ## RELEASE NOTES
 
+### next release
+
+* Changes node version to `lts` in the Dockerfile
+
 ### 2.2.6
 
 * Adds support for node v12
