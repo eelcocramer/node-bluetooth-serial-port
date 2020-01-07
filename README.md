@@ -9,8 +9,7 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 ## New in the last release
 
-* Adds support for node v12
-* Node v6 and v7 are no longer supported
+* Changes node version to `lts` in the Dockerfile
 
 Check the [release notes](RELEASE_NOTES.md) for an overview of the change history.
 

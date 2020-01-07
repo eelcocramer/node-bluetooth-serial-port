@@ -1,6 +1,6 @@
 ## RELEASE NOTES
 
-### next release
+### 2.2.7
 
 * Changes node version to `lts` in the Dockerfile
 
