@@ -1,5 +1,7 @@
 # Bluetooth serial port communication for Node.js
 
+> _DEPRECATED_ Currently I have no plans to add support for nodejs version 1.13 and up. If you want to help out by adding support please contact me.
+
 [![Build Status](https://travis-ci.org/eelcocramer/node-bluetooth-serial-port.svg)](https://travis-ci.org/eelcocramer/node-bluetooth-serial-port)
 [![Build status](https://ci.appveyor.com/api/projects/status/4p1r3ddoid98qc7k?svg=true)](https://ci.appveyor.com/project/eelcocramer/node-bluetooth-serial-port)
 
