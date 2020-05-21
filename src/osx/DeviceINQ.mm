@@ -293,8 +293,8 @@ NAN_METHOD(DeviceINQ::ListPairedDevices) {
 
         Local<Object> deviceObj = Nan::New<v8::Object>();
 
-        deviceObj->Set(Nan::New("name").ToLocalChecked(), Nan::New([device.nameOrAddress UTF8String]).ToLocalChecked());
-        deviceObj->Set(Nan::New("address").ToLocalChecked(), Nan::New([device.addressString UTF8String]).ToLocalChecked());
+        Nan::Set(deviceObj, Nan::New("name").ToLocalChecked(), Nan::New([device.nameOrAddress UTF8String]).ToLocalChecked());
+        Nan::Set(deviceObj, Nan::New("address").ToLocalChecked(), Nan::New([device.addressString UTF8String]).ToLocalChecked());
 
         // A device may have multiple services, so enumerate each one
         Local<Array> servicesArray = Nan::New<v8::Array>((int)device.services.count);
@@ -304,18 +304,18 @@ NAN_METHOD(DeviceINQ::ListPairedDevices) {
             [service getRFCOMMChannelID:&channelID];
 
             Local<Object> serviceObj = Nan::New<v8::Object>();
-            serviceObj->Set(Nan::New("channel").ToLocalChecked(), Nan::New((int)channelID));
+            Nan::Set(serviceObj, Nan::New("channel").ToLocalChecked(), Nan::New((int)channelID));
 
             if ([service getServiceName])
-                serviceObj->Set(Nan::New("name").ToLocalChecked(), Nan::New([[service getServiceName] UTF8String]).ToLocalChecked());
+                Nan::Set(serviceObj, Nan::New("name").ToLocalChecked(), Nan::New([[service getServiceName] UTF8String]).ToLocalChecked());
             else
-                serviceObj->Set(Nan::New("name").ToLocalChecked(), Nan::Undefined());
+                Nan::Set(serviceObj, Nan::New("name").ToLocalChecked(), Nan::Undefined());
 
-            servicesArray->Set(j, serviceObj);
+            Nan::Set(servicesArray, j, serviceObj);
         }
-        deviceObj->Set(Nan::New("services").ToLocalChecked(), servicesArray);
+        Nan::Set(deviceObj, Nan::New("services").ToLocalChecked(), servicesArray);
 
-        resultArray->Set(i, deviceObj);
+        Nan::Set(resultArray, i, deviceObj);
     }
 
     Local<Value> argv[1] = {
