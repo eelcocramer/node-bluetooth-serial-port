@@ -110,6 +110,10 @@ void BTSerialPortBinding::EIO_Write(uv_work_t *req) {
     data->result = 0;
 
     if (rfcomm->s != 0) {
+        int sockFlags = fcntl(rfcomm->s, F_GETFL, 0);
+
+        fcntl(rfcomm->s, F_SETFL, sockFlags & (~O_NONBLOCK));
+
         do {
             int bytesSent = write(rfcomm->s, data->bufferData+data->result, bytesToSend);
             if (bytesSent >= 0) {
@@ -120,6 +124,8 @@ void BTSerialPortBinding::EIO_Write(uv_work_t *req) {
                 break;
             }
         } while (bytesToSend > 0);
+
+        fcntl(rfcomm->s, F_SETFL, sockFlags | O_NONBLOCK);
     } else {
         sprintf(data->errorString, "Attempting to write to a closed connection");
     }
@@ -202,10 +208,7 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
         argv[0] = Nan::Error("Error reading from connection");
         argv[1] = Nan::Undefined();
     } else {
-        Local<Object> globalObj = Nan::GetCurrentContext()->Global();
-        Local<Function> bufferConstructor = Local<Function>::Cast(globalObj->Get(Nan::New("Buffer").ToLocalChecked()));
-        Local<Value> constructorArgs[1] = { Nan::New<v8::Integer>(baton->size) };
-        Local<Object> resultBuffer = Nan::NewInstance(bufferConstructor, 1, constructorArgs).ToLocalChecked();
+        Local<Object> resultBuffer = Nan::NewBuffer(baton->size).ToLocalChecked();
         memcpy(Buffer::Data(resultBuffer), baton->result, baton->size);
 
         argv[0] = Nan::Undefined();

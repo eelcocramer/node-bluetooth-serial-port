@@ -299,10 +299,7 @@ void BTSerialPortBindingServer::EIO_AfterRead(uv_work_t *req) {
         return;
     }
 
-    Local<Object> globalObj = Nan::GetCurrentContext()->Global();
-    Local<Function> bufferConstructor = Local<Function>::Cast(globalObj->Get(Nan::New("Buffer").ToLocalChecked()));
-    Local<Value> constructorArgs[1] = { Nan::New<v8::Integer>(baton->size) };
-    Local<Object> resultBuffer = Nan::NewInstance(bufferConstructor, 1, constructorArgs).ToLocalChecked();
+    Local<Object> resultBuffer = Nan::NewBuffer(baton->size).ToLocalChecked();
     memcpy(Buffer::Data(resultBuffer), baton->result, baton->size);
 
     argv[0] = Nan::Undefined();

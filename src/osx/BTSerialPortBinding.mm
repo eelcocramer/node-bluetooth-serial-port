@@ -186,10 +186,7 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
         argv[0] = Nan::Error("Error reading from connection");
         argv[1] = Nan::Undefined();
     } else {
-        Local<Object> globalObj = Nan::GetCurrentContext()->Global();
-        Local<Function> bufferConstructor = Local<Function>::Cast(Nan::Get(globalObj, Nan::New("Buffer").ToLocalChecked()).ToLocalChecked());
-        Local<Value> constructorArgs[1] = { Nan::New<v8::Integer>(baton->size) };
-        Local<Object> resultBuffer = Nan::NewInstance(bufferConstructor, 1, constructorArgs).ToLocalChecked();
+        Local<Object> resultBuffer = Nan::NewBuffer(baton->size).ToLocalChecked();
         memcpy(Buffer::Data(resultBuffer), baton->result, baton->size);
 
         argv[0] = Nan::Undefined();
@@ -279,21 +276,16 @@ NAN_METHOD(BTSerialPortBinding::Write) {
     if (!info[1]->IsString()) {
         return Nan::ThrowTypeError("Second argument must be a string");
     }
+    // callback
+    if(!info[2]->IsFunction()) {
+        return Nan::ThrowTypeError("Third argument must be a function");
+    }
 
     Local<Object> bufferObject = info[0].As<Object>();
     void* bufferData = Buffer::Data(bufferObject);
     size_t bufferLength = Buffer::Length(bufferObject);
 
-    // string
-    if (!info[1]->IsString()) {
-        Nan::ThrowTypeError("Second argument must be a string");
-    }
     String::Utf8Value addressParameter(info.GetIsolate(), info[1]);
-
-    // callback
-    if(!info[2]->IsFunction()) {
-        return Nan::ThrowTypeError("Third argument must be a function");
-    }
 
     write_baton_t *baton = new write_baton_t();
     memset(baton, 0, sizeof(write_baton_t));

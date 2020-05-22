@@ -247,7 +247,7 @@ static NSLock *globalConnectLock = nil;
             ssize_t numBytesToWrite = ((numBytesRemaining > rfcommChannelMTU) ? rfcommChannelMTU :  numBytesRemaining);
 
             // Send the bytes
-            writeResult = [res.channel writeAsync:idx length:numBytesToWrite refcon:res];
+            writeResult = [res.channel writeSync:idx length:numBytesToWrite];
 
             // Updates the position in the buffer:
             numBytesRemaining -= numBytesToWrite;
