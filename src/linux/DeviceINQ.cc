@@ -234,8 +234,8 @@ NAN_METHOD(DeviceINQ::New) {
 
 class InquireWorker : public Nan::AsyncWorker {
  public:
-  InquireWorker(Nan::Callback* found, Nan::Callback *callback) 
-    : Nan::AsyncWorker(callback), found(found) {}
+  InquireWorker(Nan::Callback *callback) 
+    : Nan::AsyncWorker(callback) {}
   ~InquireWorker() {}
 
   // Executed inside the worker-thread.
@@ -252,33 +252,45 @@ class InquireWorker : public Nan::AsyncWorker {
   void HandleOKCallback () {
     Nan::HandleScope scope;
 
+    Local<Array> resultArray = Nan::New<Array>(inquiryResult.num_rsp);
+
     for (int i = 0; i < inquiryResult.num_rsp; i++) {
-      Local<Value> argv[] = {
-        Nan::New(inquiryResult.devices[i].address).ToLocalChecked(),  
-        Nan::New(inquiryResult.devices[i].name).ToLocalChecked()
-      };
-      found->Call(2, argv);
+      Local<Object> deviceObject = Nan::New<Object>();
+
+      Local<String> address = Nan::New(inquiryResult.devices[i].address).ToLocalChecked();
+      Local<String> name = Nan::New(inquiryResult.devices[i].name).ToLocalChecked();
+
+      Nan::Set(deviceObject, Nan::New("address").ToLocalChecked(), address);
+      Nan::Set(deviceObject, Nan::New("name").ToLocalChecked(), name);
+
+      Nan::Set(resultArray, i, deviceObject);
     }
 
-    Local<Value> argv[] = {};
-    callback->Call(0, argv);
+    Local<Value> argv[2];
+    argv[0] = Nan::Undefined();
+    argv[1] = resultArray;
+
+    callback->Call(2, argv);
   }
 
   private:
     bt_inquiry inquiryResult;
-    Nan::Callback* found;
 };
 
 // Asynchronous access to the `Inquire()` function
 NAN_METHOD(DeviceINQ::Inquire) {
-  const char *usage = "usage: inquire(found, callback)";
-  if (info.Length() != 2) {
-      return Nan::ThrowError(usage);
+  const char *usage = "usage: inquire(callback)";
+  if (info.Length() != 1) {
+    return Nan::ThrowError(usage);
   }
-  Nan::Callback *found = new Nan::Callback(info[0].As<Function>());
-  Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
 
-  Nan::AsyncQueueWorker(new InquireWorker(found, callback));
+  if (!info[0]->IsFunction()) {
+    return Nan::ThrowError("First argument must be a function");
+  }
+
+  Nan::Callback *callback = new Nan::Callback(info[0].As<Function>());
+
+  Nan::AsyncQueueWorker(new InquireWorker(callback));
 }
 
 NAN_METHOD(DeviceINQ::SdpSearch) {
