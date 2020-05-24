@@ -11,17 +11,18 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 ## New in the last release
 
-* Changes node version to `lts` in the Dockerfile
+- Changes node version to `lts` in the Dockerfile
 
 Check the [release notes](RELEASE_NOTES.md) for an overview of the change history.
 
 ## Prerequisites on Linux
 
-* Needs Bluetooth development packages to build
+- Needs Bluetooth development packages to build
 
 `apt-get install build-essential libbluetooth-dev`
 
 ### Note on RFCOMM Server Sockets
+
 As the initial implementation of the RFCOMM server sockets is based on BlueZ4, in order to work with SDP we need to change the bluetoothd service configuration file by modifing the systemd unit file: bluetooth.service:
 
 (Debian based distro)
@@ -34,7 +35,7 @@ As the initial implementation of the RFCOMM server sockets is based on BlueZ4, i
 
 and adding the --compat flag to the ExecStart value:
 
-`ExecStart=/usr/lib/bluetooth/bluetoothd `**`--compat`**
+`ExecStart=/usr/lib/bluetooth/bluetoothd`**`--compat`**
 
 Finally, restart the service:
 
@@ -45,12 +46,12 @@ sudo systemctl restart bluetooth
 
 ## Prerequisites on macOS
 
-* Needs Xcode and Xcode command line tools installed.
+- Needs Xcode and Xcode command line tools installed.
 
 ## Prerequisites on Windows
 
-* Needs Visual Studio (Visual C++) and its command line tools installed.
-* Needs Python 2.x installed and accessible from the command line path.
+- Needs Visual Studio (Visual C++) and its command line tools installed.
+- Needs Python 2.x installed and accessible from the command line path.
 
 ## Install
 
@@ -65,64 +66,78 @@ sudo systemctl restart bluetooth
 ## Basic client usage
 
 ```javascript
+var btSerial = new (require("bluetooth-serial-port").BluetoothSerialPort)();
 
-var btSerial = new (require('bluetooth-serial-port')).BluetoothSerialPort();
+btSerial.on("found", function (address, name) {
+  btSerial.findSerialPortChannel(
+    address,
+    function (channel) {
+      btSerial.connect(
+        address,
+        channel,
+        function () {
+          console.log("connected");
 
-btSerial.on('found', function(address, name) {
-	btSerial.findSerialPortChannel(address, function(channel) {
-		btSerial.connect(address, channel, function() {
-			console.log('connected');
+          btSerial.write(Buffer.from("my data", "utf-8"), function (
+            err,
+            bytesWritten
+          ) {
+            if (err) console.log(err);
+          });
 
-			btSerial.write(Buffer.from('my data', 'utf-8'), function(err, bytesWritten) {
-				if (err) console.log(err);
-			});
+          btSerial.on("data", function (buffer) {
+            console.log(buffer.toString("utf-8"));
+          });
+        },
+        function () {
+          console.log("cannot connect");
+        }
+      );
 
-			btSerial.on('data', function(buffer) {
-				console.log(buffer.toString('utf-8'));
-			});
-		}, function () {
-			console.log('cannot connect');
-		});
-
-		// close the connection when you're ready
-		btSerial.close();
-	}, function() {
-		console.log('found nothing');
-	});
+      // close the connection when you're ready
+      btSerial.close();
+    },
+    function () {
+      console.log("found nothing");
+    }
+  );
 });
 
 btSerial.inquire();
-
 ```
 
 ## Basic server usage (only on Linux)
 
 ```javascript
-var server = new(require('bluetooth-serial-port')).BluetoothSerialPortServer();
+var server = new (require("bluetooth-serial-port").BluetoothSerialPortServer)();
 
 var CHANNEL = 10; // My service channel. Defaults to 1 if omitted.
-var UUID = '38e851bc-7144-44b4-9cd8-80549c6f2912'; // My own service UUID. Defaults to '1101' if omitted
+var UUID = "38e851bc-7144-44b4-9cd8-80549c6f2912"; // My own service UUID. Defaults to '1101' if omitted
 
-server.on('data', function(buffer) {
-    console.log('Received data from client: ' + buffer);
+server.on("data", function (buffer) {
+  console.log("Received data from client: " + buffer);
 
-    // ...
+  // ...
 
-    console.log('Sending data to the client');
-    server.write(Buffer.from('...'), function (err, bytesWritten) {
-        if (err) {
-            console.log('Error!');
-        } else {
-            console.log('Send ' + bytesWritten + ' to the client!');
-        }
-    });
+  console.log("Sending data to the client");
+  server.write(Buffer.from("..."), function (err, bytesWritten) {
+    if (err) {
+      console.log("Error!");
+    } else {
+      console.log("Send " + bytesWritten + " to the client!");
+    }
+  });
 });
 
-server.listen(function (clientAddress) {
-    console.log('Client: ' + clientAddress + ' connected!');
-}, function(error){
-	console.error("Something wrong happened!:" + error);
-}, {uuid: UUID, channel: CHANNEL} );
+server.listen(
+  function (clientAddress) {
+    console.log("Client: " + clientAddress + " connected!");
+  },
+  function (error) {
+    console.error("Something wrong happened!:" + error);
+  },
+  { uuid: UUID, channel: CHANNEL }
+);
 ```
 
 ## API
@@ -133,7 +148,7 @@ server.listen(function (clientAddress) {
 
 Emitted when data is read from the serial port connection.
 
-* buffer - the data that was read into a [Buffer](http://nodejs.org/api/buffer.html) object.
+- buffer - the data that was read into a [Buffer](http://nodejs.org/api/buffer.html) object.
 
 #### Event: ('closed')
 
@@ -143,14 +158,14 @@ Emitted when a connection was closed either by the user (i.e. calling `close` or
 
 Emitted when reading from the serial port connection results in an error. The connection is closed.
 
-* err - an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object) describing the failure.
+- err - an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object) describing the failure.
 
 #### Event: ('found', address, name)
 
 Emitted when a bluetooth device was found.
 
-* address - the address of the device
-* name - the name of the device (or the address if the name is unavailable)
+- address - the address of the device
+- name - the name of the device (or the address if the name is unavailable)
 
 #### Event: ('finished')
 
@@ -160,22 +175,18 @@ Emitted when the device inquiry execution did finish.
 
 Starts searching for bluetooth devices. When a device is found a 'found' event will be emitted.
 
-#### BluetoothSerialPort.inquireSync()
-
-Starts searching synchronously for bluetooth devices. When a device is found a 'found' event will be emitted.
-
 #### BluetoothSerialPort.findSerialPortChannel(address, callback[, errorCallback])
 
 Checks if a device has a serial port service running and if it is found it passes the channel id to use for the RFCOMM connection.
 
-* callback(channel) - called when finished looking for a serial port on the device.
-* errorCallback - called the search finished but no serial port channel was found on the device.
-Connects to a remote bluetooth device.
+- callback(channel) - called when finished looking for a serial port on the device.
+- errorCallback - called the search finished but no serial port channel was found on the device.
+  Connects to a remote bluetooth device.
 
-* bluetoothAddress - the address of the remote Bluetooth device.
-* channel - the channel to connect to.
-* [successCallback] - called when a connection has been established.
-* [errorCallback(err)] - called when the connection attempt results in an error. The parameter is an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object).
+- bluetoothAddress - the address of the remote Bluetooth device.
+- channel - the channel to connect to.
+- [successCallback] - called when a connection has been established.
+- [errorCallback(err)] - called when the connection attempt results in an error. The parameter is an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object).
 
 #### BluetoothSerialPort.close()
 
@@ -189,16 +200,16 @@ Check whether the connection is open or not.
 
 Writes a [Buffer](http://nodejs.org/api/buffer.html) to the serial port connection.
 
-* buffer - the [Buffer](http://nodejs.org/api/buffer.html) to be written.
-* callback(err, bytesWritten) - is called when the write action has been completed. When the `err` parameter is set an error has occured, in that case `err` is an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object). When `err` is not set the write action was successful and `bytesWritten` contains the amount of bytes that is written to the connection.
+- buffer - the [Buffer](http://nodejs.org/api/buffer.html) to be written.
+- callback(err, bytesWritten) - is called when the write action has been completed. When the `err` parameter is set an error has occured, in that case `err` is an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object). When `err` is not set the write action was successful and `bytesWritten` contains the amount of bytes that is written to the connection.
 
 #### BluetoothSerialPort.listPairedDevices(callback)
 
-__NOT AVAILABLE ON LINUX__
+**NOT AVAILABLE ON LINUX**
 
 Lists the devices that are currently paired with the host.
 
-* callback(pairedDevices) - is called when the paired devices object has been populated. See the [pull request](https://github.com/eelcocramer/node-bluetooth-serial-port/pull/30) for more information on the `pairedDevices` object.
+- callback(pairedDevices) - is called when the paired devices object has been populated. See the [pull request](https://github.com/eelcocramer/node-bluetooth-serial-port/pull/30) for more information on the `pairedDevices` object.
 
 ### BluetoothSerialPortServer
 
@@ -206,24 +217,22 @@ Lists the devices that are currently paired with the host.
 
 Listens for an incoming bluetooth connection. It will automatically advertise the server via SDP
 
-* callback(address) - is called when a new client is connecting.
-* errorCallback(err) - is called when an error occurs.
-* options - An object with these properties:
-  * uuid - [String] The UUID of the server. If omitted the default value will be 1101 (corresponding to Serial Port Profile UUID). Can be a 16 bit or 32 bit UUID.
-  * channel - [Number] The RFCOMM channel the server is listening on, in the range of 1-30. If omitted the default value will be 1.
+- callback(address) - is called when a new client is connecting.
+- errorCallback(err) - is called when an error occurs.
+- options - An object with these properties:
+
+  - uuid - [String] The UUID of the server. If omitted the default value will be 1101 (corresponding to Serial Port Profile UUID). Can be a 16 bit or 32 bit UUID.
+  - channel - [Number] The RFCOMM channel the server is listening on, in the range of 1-30. If omitted the default value will be 1.
 
     Example:
-    `var options = {
-	    uuid: 'ffffffff-ffff-ffff-ffff-fffffffffff1',
-	    channel: 10
-     }`
+    `var options = { uuid: 'ffffffff-ffff-ffff-ffff-fffffffffff1', channel: 10 }`
 
 #### BluetoothSerialPortServer.write(buffer, callback)
 
 Writes data from a buffer to a connection.
 
-* buffer - the buffer to send over the connection.
-* callback(err, len) - called when the data is send or an error did occur. `error` contains the error is appropriated. `len` has the number of bytes that were written to the connection.
+- buffer - the buffer to send over the connection.
+- callback(err, len) - called when the data is send or an error did occur. `error` contains the error is appropriated. `len` has the number of bytes that were written to the connection.
 
 #### BluetoothSerialPortServer.close()
 
@@ -241,7 +250,7 @@ Checks is a server is listening or not.
 
 Emitted when data is read from the serial port connection.
 
-* buffer - the data that was read into a [Buffer](http://nodejs.org/api/buffer.html) object.
+- buffer - the data that was read into a [Buffer](http://nodejs.org/api/buffer.html) object.
 
 #### Event: ('disconnected')
 
@@ -255,7 +264,7 @@ Emitted when the server is closed (i.e. from calling `close` or as the result of
 
 Emitted when reading from the serial port connection results in an error. The connection is closed.
 
-* err - an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object) describing the failure.
+- err - an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object) describing the failure.
 
 ## Typescript support
 

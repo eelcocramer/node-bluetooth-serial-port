@@ -10,13 +10,17 @@ declare module BluetoothSerialPort {
   class BluetoothSerialPort extends EventEmitter {
     constructor();
     inquire(): void;
-    inquireSync(): void;
     findSerialPortChannel(
-        address: string, successCallback: (channel: number) => void,
-        errorCallback?: () => void): void;
+      address: string,
+      successCallback: (channel: number) => void,
+      errorCallback?: () => void
+    ): void;
     connect(
-        address: string, channel: number, successCallback: () => void,
-        errorCallback?: (err?: Error) => void): void;
+      address: string,
+      channel: number,
+      successCallback: () => void,
+      errorCallback?: (err?: Error) => void
+    ): void;
     write(buffer: Buffer, cb: (err?: Error) => void): void;
     close(): void;
     isOpen(): boolean;
@@ -25,10 +29,11 @@ declare module BluetoothSerialPort {
   class BluetoothSerialPortServer {
     constructor();
     listen(
-        successCallback: (clientAddress: string) => void,
-        errorCallback?: (err: any) => void,
-        options?: {uuid?: string; channel: number;}): void;
-    on(event: string, callback: (arg1:any, arg2:any) => void): void;
+      successCallback: (clientAddress: string) => void,
+      errorCallback?: (err: any) => void,
+      options?: { uuid?: string; channel: number }
+    ): void;
+    on(event: string, callback: (arg1: any, arg2: any) => void): void;
     write(buffer: Buffer, callback: (err?: Error) => void): void;
     close(): void;
     disconnectClient(): void;

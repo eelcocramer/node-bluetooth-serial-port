@@ -69,7 +69,6 @@ class DeviceINQ : public Nan::ObjectWrap {
 
         static NAN_METHOD(New);
         static NAN_METHOD(Inquire);
-        static NAN_METHOD(InquireSync);
         static NAN_METHOD(SdpSearch);
         static NAN_METHOD(ListPairedDevices);
 

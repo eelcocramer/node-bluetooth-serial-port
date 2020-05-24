@@ -124,7 +124,6 @@ void DeviceINQ::Init(Local<Object> target) {
     Isolate *isolate = target->GetIsolate();
     Local<Context> ctx = isolate->GetCurrentContext();
 
-    Nan::SetPrototypeMethod(t, "inquireSync", InquireSync);
     Nan::SetPrototypeMethod(t, "inquire", Inquire);
     Nan::SetPrototypeMethod(t, "findSerialPortChannel", SdpSearch);
     Nan::SetPrototypeMethod(t, "listPairedDevices", ListPairedDevices);
@@ -247,28 +246,6 @@ NAN_METHOD(DeviceINQ::New) {
 
     inquire->Wrap(info.This());
     info.GetReturnValue().Set(info.This());
-}
-
-NAN_METHOD(DeviceINQ::InquireSync) {
-    const char *usage = "usage: inquireSync(found, callback)";
-    if (info.Length() != 2) {
-        return Nan::ThrowError(usage);
-    }
-
-    Nan::Callback *found = new Nan::Callback(info[0].As<Function>());
-    Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
-
-    bt_inquiry inquiryResult = DeviceINQ::doInquire();
-    for (int i = 0; i < inquiryResult.num_rsp; i++) {
-        Local<Value> argv[2] = {
-            Nan::New(inquiryResult.devices[i].address).ToLocalChecked(),
-            Nan::New(inquiryResult.devices[i].name).ToLocalChecked()
-        };
-        found->Call(2, argv);
-    }
-
-    callback->Call(0, 0);
-    return;
 }
 
 class InquireWorker : public Nan::AsyncWorker {

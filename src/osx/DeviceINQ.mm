@@ -129,7 +129,6 @@ void DeviceINQ::Init(Local<Object> target) {
     Isolate *isolate = target->GetIsolate();
     Local<Context> ctx = isolate->GetCurrentContext();
 
-    Nan::SetPrototypeMethod(t, "inquireSync", InquireSync);
     Nan::SetPrototypeMethod(t, "inquire", Inquire);
     Nan::SetPrototypeMethod(t, "findSerialPortChannel", SdpSearch);
     Nan::SetPrototypeMethod(t, "listPairedDevices", ListPairedDevices);
@@ -201,36 +200,6 @@ NAN_METHOD(DeviceINQ::Inquire) {
   Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
 
   Nan::AsyncQueueWorker(new InquireWorker(found, callback));
-}
-
-NAN_METHOD(DeviceINQ::InquireSync) {
-    const char *usage = "usage: inquireSync(found, callback)";
-    if (info.Length() != 2) {
-        Nan::ThrowError(usage);
-    }
-
-    Nan::Callback *found = new Nan::Callback(info[0].As<Function>());
-    Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
-
-    NSValue *boxedDevice;
-    NSArray *inquiryResult = doInquire();
-    NSEnumerator *enumerator = [inquiryResult objectEnumerator];
-    while (boxedDevice = [enumerator nextObject]) {
-        struct bt_device device;
-
-        [boxedDevice getValue:&device];
-        Local<Value> argv[] = {
-            Nan::New(device.address).ToLocalChecked(),
-            Nan::New(device.name).ToLocalChecked()
-        };
-
-        found->Call(2, argv);
-    }
-
-    callback->Call(0, 0);
-    [inquiryResult release];
-
-    return;
 }
 
 NAN_METHOD(DeviceINQ::SdpSearch) {
