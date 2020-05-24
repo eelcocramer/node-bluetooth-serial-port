@@ -14,6 +14,7 @@
 #import <Foundation/NSObject.h>
 #import <IOBluetooth/objc/IOBluetoothDevice.h>
 #import <IOBluetooth/objc/IOBluetoothRFCOMMChannel.h>
+#import <IOBluetooth/objc/IOBluetoothSDPDataElement.h>
 #import <IOBluetooth/objc/IOBluetoothSDPUUID.h>
 #import <IOBluetooth/objc/IOBluetoothSDPServiceRecord.h>
 
@@ -27,6 +28,10 @@
 
 #ifndef RFCOMM_UUID
 #define RFCOMM_UUID 0x0003
+#endif
+
+#ifndef SERIAL_PORT_UUID
+#define SERIAL_PORT_UUID 0x1101
 #endif
 
 using namespace node;
@@ -61,6 +66,12 @@ using namespace v8;
 
 static NSMutableDictionary *instanceWorkers = nil;
 static NSLock *globalConnectLock = nil;
+
+@interface BluetoothWorker () <IOBluetoothDeviceInquiryDelegate>
+
+@property (nonatomic, assign) CFRunLoopRef inquiryRunLoop;
+
+@end
 
 /** Class that is handling all the Bluetooth work */
 @implementation BluetoothWorker
@@ -263,12 +274,25 @@ static NSLock *globalConnectLock = nil;
     CFRunLoopStop(CFRunLoopGetCurrent());
 }
 
-/** Inquire Bluetooth devices and send results through the given pipe */
-- (void) inquireWithPipe: (pipe_t *)pipe
+/** Inquire Bluetooth devices and return results */
+- (NSArray<IOBluetoothDevice *> *)inquire
 {
     @synchronized(self) {
-      inquiryProducer = pipe_producer_new(pipe);
-        [self performSelector:@selector(inquiryTask) onThread:worker withObject:nil waitUntilDone:false];
+        IOBluetoothDeviceInquiry *bdi = [[IOBluetoothDeviceInquiry alloc] initWithDelegate:self];
+        [bdi setUpdateNewDeviceNames:YES];
+
+        if ([bdi start] != kIOReturnSuccess) {
+            return @[];
+        }
+
+        self.inquiryRunLoop = CFRunLoopGetCurrent();
+        CFRetain(self.inquiryRunLoop);
+        CFRunLoopRun();
+        CFRelease(self.inquiryRunLoop);
+
+        [bdi stop];
+
+        return [bdi foundDevices];
     }
 }
 
@@ -281,7 +305,7 @@ static NSLock *globalConnectLock = nil;
 }
 
 /** Get the RFCOMM channel for a given device */
-- (int) getRFCOMMChannelID: (NSString *) address
+- (int)getRFCOMMChannelID:(NSString *) address
 {
     [sdpLock lock];
     // call the task on the worker thread and wait for the result
@@ -295,15 +319,16 @@ static NSLock *globalConnectLock = nil;
 - (void) getRFCOMMChannelIDTask: (NSString *) address
 {
     IOBluetoothDevice *device = [IOBluetoothDevice deviceWithAddressString:address];
-    IOBluetoothSDPUUID *uuid = [[IOBluetoothSDPUUID alloc] initWithUUID16:RFCOMM_UUID];
-    NSArray *uuids = [NSArray arrayWithObject:uuid];
+
+    NSArray *uuidsSerialPort = @[[IOBluetoothSDPUUID uuid16:SERIAL_PORT_UUID]];
+    NSArray *uuidsRFComm = @[[IOBluetoothSDPUUID uuid16:RFCOMM_UUID]];
 
     // always perform a new SDP query
     NSDate *lastServicesUpdate = [device getLastServicesUpdate];
-    NSDate *currentServiceUpdate = NULL;
+    NSDate *currentServiceUpdate = nil;
 
     // only search for the UUIDs we are going to need...
-    [device performSDPQuery: NULL uuids: uuids];
+    [device performSDPQuery:nil uuids:uuidsRFComm];
 
     bool stop = false;
 
@@ -312,7 +337,7 @@ static NSLock *globalConnectLock = nil;
     while (!stop && [[NSDate date] timeIntervalSince1970] < endTime) { // wait no more than 60 seconds for SDP update
         currentServiceUpdate = [device getLastServicesUpdate];
 
-        if (currentServiceUpdate != NULL && [currentServiceUpdate laterDate: lastServicesUpdate]) {
+        if (currentServiceUpdate != nil && [currentServiceUpdate laterDate: lastServicesUpdate]) {
             stop = true;
         } else {
             sleep(1);
@@ -323,12 +348,14 @@ static NSLock *globalConnectLock = nil;
 
     // if there are services check if it is the one we are looking for.
     if (services != NULL) {
-        for (NSUInteger i=0; i<[services count]; i++) {
-            IOBluetoothSDPServiceRecord *sr = [services objectAtIndex: i];
+        for (NSUInteger i = 0; i < services.count; i++) {
+            IOBluetoothSDPServiceRecord *sr = [services objectAtIndex:i];
 
-            if ([sr hasServiceFromArray: uuids]) {
+            IOBluetoothSDPDataElement *serviceClassIDList = [sr getAttributeDataElement:0x0001];
+
+            if ([serviceClassIDList containsValue:uuidsSerialPort]) {
                 BluetoothRFCOMMChannelID cid = -1;
-                if ([sr getRFCOMMChannelID: &cid] == kIOReturnSuccess) {
+                if ([sr getRFCOMMChannelID:&cid] == kIOReturnSuccess) {
                     lastChannelID = cid;
                     return;
                 }
@@ -360,32 +387,10 @@ static NSLock *globalConnectLock = nil;
 }
 
 /** Called when the device inquiry completes */
-- (void) deviceInquiryComplete: (IOBluetoothDeviceInquiry *) sender error: (IOReturn) error aborted: (BOOL) aborted
+- (void)deviceInquiryComplete:(IOBluetoothDeviceInquiry *)sender error:(IOReturn)error aborted:(BOOL)aborted
 {
-    @synchronized(self) {
-        if (inquiryProducer != NULL) {
-            // free the producer so the main thread is signaled that the inquiry has been completed.
-            pipe_producer_free(inquiryProducer);
-            inquiryProducer = NULL;
-        }
-    }
-}
-
-/** Called when a device has been found */
-- (void) deviceInquiryDeviceFound: (IOBluetoothDeviceInquiry*) sender device: (IOBluetoothDevice*) device
-{
-    @synchronized(self) {
-        if (inquiryProducer != NULL) {
-            device_info_t *info = new device_info_t;
-            strcpy(info->address, [[device getAddressString] UTF8String]);
-            strcpy(info->name, [[device getNameOrAddress] UTF8String]);
-
-            // push the device data into the pipe to notify the main thread
-            pipe_push(inquiryProducer, info, 1);
-
-            delete info;
-        }
-    }
+    CFRunLoopStop(self.inquiryRunLoop);
+    CFRunLoopStop(CFRunLoopGetCurrent());
 }
 
 @end

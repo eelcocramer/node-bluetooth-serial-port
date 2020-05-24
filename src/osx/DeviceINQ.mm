@@ -45,8 +45,8 @@ using namespace v8;
 
 class InquireWorker : public Nan::AsyncWorker {
  public:
-  InquireWorker(Nan::Callback* found, Nan::Callback *callback)
-    : Nan::AsyncWorker(callback), found(found) {}
+  InquireWorker(Nan::Callback *callback)
+    : Nan::AsyncWorker(callback) {}
   ~InquireWorker() {}
 
   // Executed inside the worker-thread.
@@ -62,26 +62,34 @@ class InquireWorker : public Nan::AsyncWorker {
   // so it is safe to use V8 again
   void HandleOKCallback () {
     Nan::HandleScope scope;
-    struct bt_device device;
-    NSValue *boxedDevice;
 
-    NSEnumerator *enumerator = [inquiryResult objectEnumerator];
-    while (boxedDevice = [enumerator nextObject]) {
-        [boxedDevice getValue:&device];
-        Local<Value> argv[] = {
-            Nan::New(device.address).ToLocalChecked(),
-            Nan::New(device.name).ToLocalChecked()
-        };
-        found->Call(2, argv);
+    Local<Array> resultArray = Nan::New<Array>(inquiryResult.count);
+
+    for (int i = 0; i < inquiryResult.count; i++) {
+        IOBluetoothDevice *device = inquiryResult[i];
+
+        Local<Object> deviceObject = Nan::New<Object>();
+
+        Local<String> address = Nan::New(device.addressString.UTF8String).ToLocalChecked();
+        Local<String> name = Nan::New(device.nameOrAddress.UTF8String).ToLocalChecked();
+
+        Nan::Set(deviceObject, Nan::New("address").ToLocalChecked(), address);
+        Nan::Set(deviceObject, Nan::New("name").ToLocalChecked(), name);
+
+        Nan::Set(resultArray, i, deviceObject);
     }
 
-    callback->Call(0, 0);
+    Local<Value> argv[2];
+    argv[0] = Nan::Undefined();
+    argv[1] = resultArray;
+
+    callback->Call(2, argv);
+
     [inquiryResult release];
   }
 
   private:
-    NSArray *inquiryResult;
-    Nan::Callback* found;
+    NSArray<IOBluetoothDevice *> *inquiryResult;
 };
 
 void DeviceINQ::EIO_SdpSearch(uv_work_t *req) {
@@ -90,8 +98,8 @@ void DeviceINQ::EIO_SdpSearch(uv_work_t *req) {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
     NSString *address = [NSString stringWithCString:baton->address encoding:NSASCIIStringEncoding];
-    BluetoothWorker *worker = [BluetoothWorker getInstance: address];
-    baton->channelID = [worker getRFCOMMChannelID: address];
+    BluetoothWorker *worker = [BluetoothWorker getInstance:address];
+    baton->channelID = [worker getRFCOMMChannelID:address];
 
     [pool release];
 }
@@ -137,33 +145,10 @@ void DeviceINQ::Init(Local<Object> target) {
 
 NSArray *DeviceINQ::doInquire() {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+
     BluetoothWorker *worker = [BluetoothWorker getInstance:nil];
-    NSMutableArray *devices = [[NSMutableArray alloc] init];
 
-    // create pipe to communicate with delegate
-    pipe_t *pipe = pipe_new(sizeof(device_info_t), 0);
-    [worker inquireWithPipe: pipe];
-    pipe_consumer_t *c = pipe_consumer_new(pipe);
-    pipe_free(pipe);
-
-    device_info_t *infod = new device_info_t;
-    size_t result;
-
-    do {
-        result = pipe_pop_eager(c, infod, 1);
-
-        if (result != 0) {
-            bt_device device;
-            strcpy(device.name, infod->name);
-            strcpy(device.address, infod->address);
-
-            NSValue *boxedDevice = [NSValue valueWithBytes:&device objCType:@encode(struct bt_device)];
-            [devices addObject:boxedDevice];
-        }
-    } while (result != 0);
-
-    delete infod;
-    pipe_consumer_free(c);
+    NSArray<IOBluetoothDevice *> *devices = [worker inquire];
 
     [pool release];
 
@@ -181,7 +166,7 @@ DeviceINQ::~DeviceINQ() {
 NAN_METHOD(DeviceINQ::New) {
     const char *usage = "usage: DeviceINQ()";
     if (info.Length() != 0) {
-        Nan::ThrowError(usage);
+        return Nan::ThrowError(usage);
     }
 
     DeviceINQ* inquire = new DeviceINQ();
@@ -192,14 +177,24 @@ NAN_METHOD(DeviceINQ::New) {
 
 // Asynchronous access to the `Inquire()` function
 NAN_METHOD(DeviceINQ::Inquire) {
-  const char *usage = "usage: inquire(found, callback)";
-  if (info.Length() != 2) {
-      Nan::ThrowError(usage);
+  const char *usage = "usage: inquire(callback)";
+  if (info.Length() != 1) {
+    return Nan::ThrowError(usage);
   }
-  Nan::Callback *found = new Nan::Callback(info[0].As<Function>());
-  Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
 
-  Nan::AsyncQueueWorker(new InquireWorker(found, callback));
+  if (!info[0]->IsFunction()) {
+    return Nan::ThrowError("First argument must be a function");
+  }
+
+  Nan::Callback *callback = new Nan::Callback(info[0].As<Function>());
+
+  Nan::AsyncQueueWorker(new InquireWorker(callback));
+
+  // running this here before we hand off to background thread, as the
+  // inquiry needs a main-thread runloop in order to scan.
+  //
+  // the IOBluetoothDeviceInquiryDelegate will stop this when complete
+  CFRunLoopRun();
 }
 
 NAN_METHOD(DeviceINQ::SdpSearch) {
@@ -246,7 +241,7 @@ NAN_METHOD(DeviceINQ::ListPairedDevices) {
 
     NSArray *pairedDevices = [IOBluetoothDevice pairedDevices];
 
-    Local<Array> resultArray = Nan::New<v8::Array>((int)pairedDevices.count);
+    Local<Array> resultArray = Nan::New<Array>((int)pairedDevices.count);
 
     // Builds an array of objects representing a paired device:
     // ex: {
@@ -260,13 +255,13 @@ NAN_METHOD(DeviceINQ::ListPairedDevices) {
     for (int i = 0; i < (int)pairedDevices.count; ++i) {
         IOBluetoothDevice *device = [pairedDevices objectAtIndex:i];
 
-        Local<Object> deviceObj = Nan::New<v8::Object>();
+        Local<Object> deviceObj = Nan::New<Object>();
 
         Nan::Set(deviceObj, Nan::New("name").ToLocalChecked(), Nan::New([device.nameOrAddress UTF8String]).ToLocalChecked());
         Nan::Set(deviceObj, Nan::New("address").ToLocalChecked(), Nan::New([device.addressString UTF8String]).ToLocalChecked());
 
         // A device may have multiple services, so enumerate each one
-        Local<Array> servicesArray = Nan::New<v8::Array>((int)device.services.count);
+        Local<Array> servicesArray = Nan::New<Array>((int)device.services.count);
         for (int j = 0; j < (int)device.services.count; ++j) {
             IOBluetoothSDPServiceRecord *service = [device.services objectAtIndex:j];
             BluetoothRFCOMMChannelID channelID;
