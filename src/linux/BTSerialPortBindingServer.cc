@@ -162,7 +162,7 @@ void BTSerialPortBindingServer::EIO_AfterListen(uv_work_t *req) {
             Nan::Error(baton->errorString)
         };
 
-        baton->ecb->Call(1, argv);
+        Nan::Call(*baton->ecb, 1, argv);
         return;
     }
 
@@ -214,7 +214,7 @@ void BTSerialPortBindingServer::EIO_AfterWrite(uv_work_t *req) {
         argv[1] = Nan::New<v8::Integer>((int32_t)data->result);
     }
 
-    data->callback->Call(2, argv);
+    Nan::Call(*data->callback, 2, argv);
 
     uv_mutex_lock(&data->rfcomm->mWriteQueueMutex);
     ngx_queue_remove(&queuedWrite->queue);
@@ -294,7 +294,7 @@ void BTSerialPortBindingServer::EIO_AfterRead(uv_work_t *req) {
                 baton->rfcomm->AdvertiseAndAccept();
             }
             argv[0] = Nan::Error(CLIENT_CLOSED_CONNECTION);
-            baton->cb->Call(2, argv);
+            Nan::Call(*baton->cb, 2, argv);
         }
         return;
     }
@@ -305,7 +305,7 @@ void BTSerialPortBindingServer::EIO_AfterRead(uv_work_t *req) {
     argv[0] = Nan::Undefined();
     argv[1] = resultBuffer;
 
-    baton->cb->Call(2, argv);
+    Nan::Call(*baton->cb, 2, argv);
 
     if (try_catch.HasCaught()) {
         Nan::FatalException(try_catch);
@@ -604,7 +604,7 @@ NAN_METHOD(BTSerialPortBindingServer::Read) {
         argv[1] = Nan::Undefined();
 
         std::unique_ptr<Nan::Callback> nc(new Nan::Callback(cb));
-        nc->Call(2, argv);
+        Nan::Call(*nc, 2, argv);
         return;
     }
     read_baton_t *baton = new read_baton_t();
@@ -704,6 +704,6 @@ void BTSerialPortBindingServer::ClientWorker::HandleOKCallback(){
     Local<Value> argv[] = {
         Nan::New<v8::String>((mBaton->clientAddress)).ToLocalChecked()
     };
-    callback->Call(1, argv);
 
+    Nan::Call(*callback, 1, argv);
 }

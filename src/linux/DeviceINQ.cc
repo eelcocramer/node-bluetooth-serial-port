@@ -136,7 +136,7 @@ void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
         Nan::New(baton->channelID)
     };
 
-    baton->cb->Call(1, argv);
+    Nan::Call(*baton->cb, 1, argv);
 
     if (try_catch.HasCaught()) {
         Nan::FatalException(try_catch);
@@ -270,7 +270,7 @@ class InquireWorker : public Nan::AsyncWorker {
     argv[0] = Nan::Undefined();
     argv[1] = resultArray;
 
-    callback->Call(2, argv);
+    Nan::Call(*callback, 2, argv);
   }
 
   private:
