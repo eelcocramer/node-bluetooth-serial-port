@@ -25,7 +25,7 @@ install:
   - node -e "console.log(process.arch);"
   - if "%PLATFORM%" == "x64" SET PATH=C:\Python27-x64;%PATH%
   - if "%PLATFORM%" == "x86" SET PATH=C:\python27;%PATH%
-  - npm install -g node-gyp
+  - yarn install node-gyp
   - yarn
   - yarn install-debug
 
