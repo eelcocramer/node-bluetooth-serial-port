@@ -4,12 +4,12 @@
 >
 > Supported versions: Node 8 - 14 (primary focus on LTS).
 
-[![Build Status](https://travis-ci.org/eelcocramer/node-bluetooth-serial-port.svg)](https://travis-ci.org/eelcocramer/node-bluetooth-serial-port)
-[![Build status](https://ci.appveyor.com/api/projects/status/4p1r3ddoid98qc7k?svg=true)](https://ci.appveyor.com/project/eelcocramer/node-bluetooth-serial-port)
+[![Build Status](https://travis-ci.com/tinyprinter/node-bluetooth-serial-port.svg)](https://travis-ci.com/tinyprinter/node-bluetooth-serial-port)
+[![Build status](https://ci.appveyor.com/api/projects/status/muqesa5dl5flyxjd?svg=true)](https://ci.appveyor.com/project/notjosh/node-bluetooth-serial-port)
 
 This node module lets you communicate over Bluetooth serial port with devices using Node.js. The goal is have an easy to use API. This module is great for communicating with Bluetooth enabled Arduino devices.
 
-If you have any problems make sure to [checkout the FAQ](https://github.com/eelcocramer/node-bluetooth-serial-port/issues?q=label%3AFAQ).
+If you have any problems make sure to [checkout the FAQ](https://github.com/tinyprinter/node-bluetooth-serial-port/issues?q=label%3AFAQ).
 
 ## New in the last release
 
@@ -297,4 +297,4 @@ btSerial.findSerialPortChannel(address: string, (channel: number) => {
 
 ## LICENSE
 
-This module is available under a [FreeBSD license](http://opensource.org/licenses/BSD-2-Clause), see the [LICENSE file](https://github.com/eelcocramer/node-bluetooth-serial-port/blob/master/LICENSE.md) for details.
+This module is available under a [FreeBSD license](http://opensource.org/licenses/BSD-2-Clause), see the [LICENSE file](https://github.com/tinyprinter/node-bluetooth-serial-port/blob/master/LICENSE.md) for details.
