@@ -65,7 +65,7 @@ class InquireWorker : public Nan::AsyncWorker {
 
     Local<Array> resultArray = Nan::New<Array>(inquiryResult.count);
 
-    for (int i = 0; i < inquiryResult.count; i++) {
+    for (int i = 0; i < (int)inquiryResult.count; i++) {
         IOBluetoothDevice *device = inquiryResult[i];
 
         Local<Object> deviceObject = Nan::New<Object>();
@@ -83,7 +83,7 @@ class InquireWorker : public Nan::AsyncWorker {
     argv[0] = Nan::Undefined();
     argv[1] = resultArray;
 
-    callback->Call(2, argv);
+    Nan::Call(*callback, 2, argv);
 
     [inquiryResult release];
   }
@@ -114,7 +114,8 @@ void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
     Local<Value> argv[] = {
         Nan::New(baton->channelID)
     };
-    baton->cb->Call(1, argv);
+
+    Nan::Call(*baton->cb, 1, argv);
 
     if (try_catch.HasCaught()) {
         Nan::FatalException(try_catch);
@@ -140,7 +141,7 @@ void DeviceINQ::Init(Local<Object> target) {
     Nan::SetPrototypeMethod(t, "inquire", Inquire);
     Nan::SetPrototypeMethod(t, "findSerialPortChannel", SdpSearch);
     Nan::SetPrototypeMethod(t, "listPairedDevices", ListPairedDevices);
-    target->Set(ctx, Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
+    (void)target->Set(ctx, Nan::New("DeviceINQ").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
 }
 
 NSArray *DeviceINQ::doInquire() {
@@ -270,10 +271,11 @@ NAN_METHOD(DeviceINQ::ListPairedDevices) {
             Local<Object> serviceObj = Nan::New<v8::Object>();
             Nan::Set(serviceObj, Nan::New("channel").ToLocalChecked(), Nan::New((int)channelID));
 
-            if ([service getServiceName])
+            if ([service getServiceName]) {
                 Nan::Set(serviceObj, Nan::New("name").ToLocalChecked(), Nan::New([[service getServiceName] UTF8String]).ToLocalChecked());
-            else
+            } else {
                 Nan::Set(serviceObj, Nan::New("name").ToLocalChecked(), Nan::Undefined());
+            }
 
             Nan::Set(servicesArray, j, serviceObj);
         }
@@ -285,7 +287,7 @@ NAN_METHOD(DeviceINQ::ListPairedDevices) {
     Local<Value> argv[1] = {
         resultArray
     };
-    cb->Call(Nan::GetCurrentContext(), Nan::GetCurrentContext()->Global(), 1, argv);
+    (void)cb->Call(Nan::GetCurrentContext(), Nan::GetCurrentContext()->Global(), 1, argv);
 
     return;
 }

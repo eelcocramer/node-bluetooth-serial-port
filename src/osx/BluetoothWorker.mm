@@ -125,8 +125,11 @@ static NSLock *globalConnectLock = nil;
 {
     NSRunLoop *runLoop = [NSRunLoop currentRunLoop];
     //schedule a timer so runMode won't stop immediately
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wnonnull"
     keepAliveTimer = [[NSTimer alloc] initWithFireDate:[NSDate distantFuture]
         interval:1 target:nil selector:nil userInfo:nil repeats:YES];
+    #pragma GCC diagnostic pop
     [runLoop addTimer:keepAliveTimer forMode:NSDefaultRunLoopMode];
     [[NSRunLoop currentRunLoop] run];
 }
@@ -383,7 +386,7 @@ static NSLock *globalConnectLock = nil;
 /** Called when a channel has been closed */
 - (void)rfcommChannelClosed:(IOBluetoothRFCOMMChannel*)rfcommChannel
 {
-    [self disconnectFromDevice: [[rfcommChannel getDevice] getAddressString]];
+    [self disconnectFromDevice: [[rfcommChannel getDevice] addressString]];
 }
 
 /** Called when the device inquiry completes */
