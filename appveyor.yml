@@ -1,11 +1,13 @@
+branches:
+  only:
+    - master
+
 environment:
   # Visual Studio Version
   MSVS_VERSION: 2017
   # Test against these versions of Node.js and io.js
   matrix:
     # node.js
-    - nodejs_version: "8"
-    - nodejs_version: "9"
     - nodejs_version: "10"
     - nodejs_version: "11"
     - nodejs_version: "12"
@@ -22,14 +24,14 @@ install:
   - ps: Install-Product node $env:nodejs_version $env:Platform
   # install modules
   - node --version
-  - npm -g install npm@latest
-  - npm --version
+  - npm -g install yarn@latest
+  - yarn --version
   - node -e "console.log(process.arch);"
   - if "%PLATFORM%" == "x64" SET PATH=C:\Python27-x64;%PATH%
   - if "%PLATFORM%" == "x86" SET PATH=C:\python27;%PATH%
-  - npm install node-gyp
-  - npm update
-  - npm run install-debug
+  - yarn add node-gyp
+  - yarn
+  - yarn install-debug
 
 # Post-install test scripts.
 test_script:
