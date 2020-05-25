@@ -333,7 +333,7 @@ void BTSerialPortBindingServer::Init(Local<Object> target) {
     Nan::SetPrototypeMethod(t, "disconnectClient", DisconnectClient);
     Nan::SetPrototypeMethod(t, "isOpen", IsOpen);
 
-    target->Set(Nan::New("BTSerialPortBindingServer").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
+    Nan::Set(target, Nan::New("BTSerialPortBindingServer").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
 }
 
 BTSerialPortBindingServer::BTSerialPortBindingServer() :
@@ -386,9 +386,9 @@ NAN_METHOD(BTSerialPortBindingServer::New) {
     std::map<std::string, std::string> options;
 
     for (int i = 0; i < n ; i++) {
-        Local<Value>  property = properties->Get(Nan::New<Integer>(i));
+        Local<Value>  property = Nan::Get(properties, Nan::New<Integer>(i)).ToLocalChecked();
         string propertyName = std::string(*String::Utf8Value(isolate, property));
-        Local<Value> optionValue = jsOptions->Get(property);
+        Local<Value> optionValue = Nan::Get(jsOptions, property).ToLocalChecked();
         options[propertyName] = std::string(*String::Utf8Value(isolate, optionValue));
     }
 
