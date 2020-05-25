@@ -2,7 +2,7 @@
 
 > Note: This fork doesn't aim for backward compatibility with the (now unmaintained) upstream project. There are a handful of differences, but the documentation should be up to date.
 >
-> Supported versions: Node 8 - 14 (primary focus on LTS).
+> Supported versions: Node 10 - 14 (primary focus on LTS).
 
 [![Build Status](https://travis-ci.com/tinyprinter/node-bluetooth-serial-port.svg)](https://travis-ci.com/tinyprinter/node-bluetooth-serial-port)
 [![Build status](https://ci.appveyor.com/api/projects/status/muqesa5dl5flyxjd?svg=true)](https://ci.appveyor.com/project/notjosh/node-bluetooth-serial-port)
