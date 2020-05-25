@@ -63,7 +63,7 @@ void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
     Nan::TryCatch try_catch;
 
     if (baton->status == 0) {
-        baton->cb->Call(0, nullptr);
+        Nan::Call(*baton->cb, 0, nullptr);
     } else {
         if (baton->rfcomm->s != INVALID_SOCKET) {
             closesocket(baton->rfcomm->s);
@@ -187,10 +187,7 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
         argv[0] = Nan::Error("Error reading from connection");
         argv[1] = Nan::Undefined();
     } else {
-        Local<Object> globalObj = Nan::GetCurrentContext()->Global();
-        Local<Function> bufferConstructor = Local<Function>::Cast(globalObj->Get(Nan::New("Buffer").ToLocalChecked()));
-        Local<Value> constructorArgs[1] = { Nan::New<v8::Integer>(baton->size) };
-        Local<Object> resultBuffer = Nan::NewInstance(bufferConstructor, 1, constructorArgs).ToLocalChecked();
+        Local<Object> resultBuffer = Nan::NewBuffer(baton->size).ToLocalChecked();
 
         memcpy_s(Buffer::Data(resultBuffer), baton->size, baton->result, baton->size);
 
