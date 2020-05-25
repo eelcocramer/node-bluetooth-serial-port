@@ -13,6 +13,8 @@ env:
     - export NODE_VERSION="10"
     - export NODE_VERSION="11"
     - export NODE_VERSION="12"
+    - export NODE_VERSION="13"
+    - export NODE_VERSION="14"
 
 matrix:
   fast-finish: true
@@ -44,4 +46,3 @@ cache:
     - $HOME/.node-gyp
     - $HOME/.npm
     - node_modules
-

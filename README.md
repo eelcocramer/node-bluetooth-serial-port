@@ -1,6 +1,8 @@
 # Bluetooth serial port communication for Node.js
 
-> Note: This fork doesn't aim for backward compatibility with the (now unmaintained) upstream project. There are a handful of differences, but the documentation should be up to date,
+> Note: This fork doesn't aim for backward compatibility with the (now unmaintained) upstream project. There are a handful of differences, but the documentation should be up to date.
+>
+> Supported versions: Node 8 - 14 (primary focus on LTS).
 
 [![Build Status](https://travis-ci.org/eelcocramer/node-bluetooth-serial-port.svg)](https://travis-ci.org/eelcocramer/node-bluetooth-serial-port)
 [![Build status](https://ci.appveyor.com/api/projects/status/4p1r3ddoid98qc7k?svg=true)](https://ci.appveyor.com/project/eelcocramer/node-bluetooth-serial-port)
