@@ -26,9 +26,6 @@ before_install:
   - yarn config set python `which python`
   - gcc --version
   - g++ --version
-  - node --version
-  - npm --version
-  - yarn --version
 
 cache:
   yarn: true
