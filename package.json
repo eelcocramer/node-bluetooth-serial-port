@@ -11,11 +11,11 @@
     "os x",
     "windows"
   ],
-  "homepage": "https://github.com/eelcocramer/node-bluetooth-serial-port",
-  "bugs": "https://github.com/eelcocramer/node-bluetooth-serial-port/issues",
+  "homepage": "https://github.com/tinyprinter/node-bluetooth-serial-port",
+  "bugs": "https://github.com/tinyprinter/node-bluetooth-serial-port/issues",
   "repository": {
     "type": "git",
-    "url": "https://github.com/eelcocramer/node-bluetooth-serial-port"
+    "url": "https://github.com/tinyprinter/node-bluetooth-serial-port"
   },
   "directories": {
     "lib": "./lib"
