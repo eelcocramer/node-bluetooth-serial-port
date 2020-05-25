@@ -41,7 +41,8 @@
   },
   "scripts": {
     "install": "node-gyp configure build",
-    "install-debug": "node-gyp configure build --debug"
+    "install-debug": "node-gyp configure build --debug",
+    "test": "node ./test/index.js"
   },
   "license": "MIT",
   "contributors": [

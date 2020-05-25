@@ -1,20 +1,17 @@
-language: cpp # node_js is not supported yet on osx
+language: node_js
 compiler: gcc
 sudo: false
 
+node_js:
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
 os:
   - linux
   - osx
-
-env:
-  matrix:
-    - export NODE_VERSION="8"
-    - export NODE_VERSION="9"
-    - export NODE_VERSION="10"
-    - export NODE_VERSION="11"
-    - export NODE_VERSION="12"
-    - export NODE_VERSION="13"
-    - export NODE_VERSION="14"
+  - windows
 
 matrix:
   fast-finish: true
@@ -27,22 +24,15 @@ addons:
       - libbluetooth-dev
 
 before_install:
-  - git clone https://github.com/creationix/nvm.git ./.nvm
-  - source ./.nvm/nvm.sh
-  - nvm install $NODE_VERSION
-  - nvm use $NODE_VERSION
-  - npm config set python `which python`
+  - yarn config set python `which python`
   - gcc --version
   - g++ --version
-  - npm --version
   - node --version
-
-script:
-  - npm install
-  - node ./test/index.js
+  - npm --version
+  - yarn --version
 
 cache:
+  yarn: true
   directories:
     - $HOME/.node-gyp
-    - $HOME/.npm
     - node_modules

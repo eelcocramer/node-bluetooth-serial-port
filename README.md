@@ -57,7 +57,7 @@ sudo systemctl restart bluetooth
 
 ## Install
 
-`npm install bluetooth-serial-port`
+`npm install bluetooth-serial-port` or `yarn add bluetooth-serial-port`
 
 ## Test build Linux using docker
 
