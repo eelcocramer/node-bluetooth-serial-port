@@ -1,3 +1,5 @@
 requiredChecks:
-  - appveyor
   - travis-ci
+
+requiredStatuses:
+  - appveyor
