@@ -2,4 +2,4 @@ requiredChecks:
   - travis-ci
 
 requiredStatuses:
-  - appveyor
+  - continuous-integration/appveyor/pr
