@@ -33,7 +33,7 @@
     "stable": "^0.1.8"
   },
   "optionalDependencies": {
-    "@types/node": "^7.0.10"
+    "@types/node": "^14.14.19"
   },
   "engines": {
     "node": ">= 6.x",
