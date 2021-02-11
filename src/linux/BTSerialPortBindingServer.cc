@@ -162,7 +162,7 @@ void BTSerialPortBindingServer::EIO_AfterListen(uv_work_t *req) {
             Nan::Error(baton->errorString)
         };
 
-        baton->ecb->Call(1, argv);
+        Nan::Call(*baton->ecb, 1, argv);
         return;
     }
 
@@ -214,7 +214,7 @@ void BTSerialPortBindingServer::EIO_AfterWrite(uv_work_t *req) {
         argv[1] = Nan::New<v8::Integer>((int32_t)data->result);
     }
 
-    data->callback->Call(2, argv);
+    Nan::Call(*data->callback, 2, argv);
 
     uv_mutex_lock(&data->rfcomm->mWriteQueueMutex);
     ngx_queue_remove(&queuedWrite->queue);
@@ -294,21 +294,18 @@ void BTSerialPortBindingServer::EIO_AfterRead(uv_work_t *req) {
                 baton->rfcomm->AdvertiseAndAccept();
             }
             argv[0] = Nan::Error(CLIENT_CLOSED_CONNECTION);
-            baton->cb->Call(2, argv);
+            Nan::Call(*baton->cb, 2, argv);
         }
         return;
     }
 
-    Local<Object> globalObj = Nan::GetCurrentContext()->Global();
-    Local<Function> bufferConstructor = Local<Function>::Cast(globalObj->Get(Nan::New("Buffer").ToLocalChecked()));
-    Local<Value> constructorArgs[1] = { Nan::New<v8::Integer>(baton->size) };
-    Local<Object> resultBuffer = Nan::NewInstance(bufferConstructor, 1, constructorArgs).ToLocalChecked();
+    Local<Object> resultBuffer = Nan::NewBuffer(baton->size).ToLocalChecked();
     memcpy(Buffer::Data(resultBuffer), baton->result, baton->size);
 
     argv[0] = Nan::Undefined();
     argv[1] = resultBuffer;
 
-    baton->cb->Call(2, argv);
+    Nan::Call(*baton->cb, 2, argv);
 
     if (try_catch.HasCaught()) {
         Nan::FatalException(try_catch);
@@ -336,7 +333,7 @@ void BTSerialPortBindingServer::Init(Local<Object> target) {
     Nan::SetPrototypeMethod(t, "disconnectClient", DisconnectClient);
     Nan::SetPrototypeMethod(t, "isOpen", IsOpen);
 
-    target->Set(Nan::New("BTSerialPortBindingServer").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
+    Nan::Set(target, Nan::New("BTSerialPortBindingServer").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
 }
 
 BTSerialPortBindingServer::BTSerialPortBindingServer() :
@@ -389,9 +386,9 @@ NAN_METHOD(BTSerialPortBindingServer::New) {
     std::map<std::string, std::string> options;
 
     for (int i = 0; i < n ; i++) {
-        Local<Value>  property = properties->Get(Nan::New<Integer>(i));
+        Local<Value>  property = Nan::Get(properties, Nan::New<Integer>(i)).ToLocalChecked();
         string propertyName = std::string(*String::Utf8Value(isolate, property));
-        Local<Value> optionValue = jsOptions->Get(property);
+        Local<Value> optionValue = Nan::Get(jsOptions, property).ToLocalChecked();
         options[propertyName] = std::string(*String::Utf8Value(isolate, optionValue));
     }
 
@@ -607,7 +604,7 @@ NAN_METHOD(BTSerialPortBindingServer::Read) {
         argv[1] = Nan::Undefined();
 
         std::unique_ptr<Nan::Callback> nc(new Nan::Callback(cb));
-        nc->Call(2, argv);
+        Nan::Call(*nc, 2, argv);
         return;
     }
     read_baton_t *baton = new read_baton_t();
@@ -707,6 +704,6 @@ void BTSerialPortBindingServer::ClientWorker::HandleOKCallback(){
     Local<Value> argv[] = {
         Nan::New<v8::String>((mBaton->clientAddress)).ToLocalChecked()
     };
-    callback->Call(1, argv);
 
+    Nan::Call(*callback, 1, argv);
 }

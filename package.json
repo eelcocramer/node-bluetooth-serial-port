@@ -11,11 +11,11 @@
     "os x",
     "windows"
   ],
-  "homepage": "https://github.com/eelcocramer/node-bluetooth-serial-port",
-  "bugs": "https://github.com/eelcocramer/node-bluetooth-serial-port/issues",
+  "homepage": "https://github.com/tinyprinter/node-bluetooth-serial-port",
+  "bugs": "https://github.com/tinyprinter/node-bluetooth-serial-port/issues",
   "repository": {
     "type": "git",
-    "url": "https://github.com/eelcocramer/node-bluetooth-serial-port"
+    "url": "https://github.com/tinyprinter/node-bluetooth-serial-port"
   },
   "directories": {
     "lib": "./lib"
@@ -28,20 +28,21 @@
     "win32"
   ],
   "dependencies": {
-    "bindings": "1.2.x",
+    "bindings": "1.5.0",
     "nan": "latest",
     "stable": "^0.1.8"
   },
   "optionalDependencies": {
-    "@types/node": "^7.0.10"
+    "@types/node": "^14.0.5"
   },
   "engines": {
-    "node": ">= 6.x",
+    "node": ">= 10.x",
     "npm": ">= 1.1.x"
   },
   "scripts": {
     "install": "node-gyp configure build",
-    "install-debug": "node-gyp configure build --debug"
+    "install-debug": "node-gyp configure build --debug",
+    "test": "node ./test/index.js"
   },
   "license": "MIT",
   "contributors": [

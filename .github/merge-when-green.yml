@@ -1,0 +1,5 @@
+requiredChecks:
+  - travis-ci
+
+requiredStatuses:
+  - continuous-integration/appveyor/pr

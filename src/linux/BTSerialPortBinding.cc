@@ -80,14 +80,14 @@ void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
     Nan::TryCatch try_catch;
 
     if (baton->status == 0) {
-        baton->cb->Call(0, NULL);
+        Nan::Call(*baton->cb, 0, NULL);
     } else {
         char msg[80];
         sprintf(msg, "Cannot connect: %d", baton->status);
         Local<Value> argv[] = {
             Nan::Error(msg)
         };
-        baton->ecb->Call(1, argv);
+        Nan::Call(*baton->ecb, 1, argv);
     }
 
     if (try_catch.HasCaught()) {
@@ -110,8 +110,12 @@ void BTSerialPortBinding::EIO_Write(uv_work_t *req) {
     data->result = 0;
 
     if (rfcomm->s != 0) {
+        int sockFlags = fcntl(rfcomm->s, F_GETFL, 0);
+
+        fcntl(rfcomm->s, F_SETFL, sockFlags & (~O_NONBLOCK));
+
         do {
-            int bytesSent = write(rfcomm->s, data->bufferData+data->result, bytesToSend);
+            int bytesSent = write(rfcomm->s, data->bufferData + data->result, bytesToSend);
             if (bytesSent >= 0) {
                 bytesToSend -= bytesSent;
                 data->result += bytesSent;
@@ -120,6 +124,8 @@ void BTSerialPortBinding::EIO_Write(uv_work_t *req) {
                 break;
             }
         } while (bytesToSend > 0);
+
+        fcntl(rfcomm->s, F_SETFL, sockFlags | O_NONBLOCK);
     } else {
         sprintf(data->errorString, "Attempting to write to a closed connection");
     }
@@ -140,7 +146,7 @@ void BTSerialPortBinding::EIO_AfterWrite(uv_work_t *req) {
         argv[1] = Nan::New<v8::Integer>((int32_t)data->result);
     }
 
-    data->callback->Call(2, argv);
+    Nan::Call(*data->callback, 2, argv);
 
     uv_mutex_lock(&write_queue_mutex);
     ngx_queue_remove(&queuedWrite->queue);
@@ -202,17 +208,14 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
         argv[0] = Nan::Error("Error reading from connection");
         argv[1] = Nan::Undefined();
     } else {
-        Local<Object> globalObj = Nan::GetCurrentContext()->Global();
-        Local<Function> bufferConstructor = Local<Function>::Cast(globalObj->Get(Nan::New("Buffer").ToLocalChecked()));
-        Local<Value> constructorArgs[1] = { Nan::New<v8::Integer>(baton->size) };
-        Local<Object> resultBuffer = Nan::NewInstance(bufferConstructor, 1, constructorArgs).ToLocalChecked();
+        Local<Object> resultBuffer = Nan::NewBuffer(baton->size).ToLocalChecked();
         memcpy(Buffer::Data(resultBuffer), baton->result, baton->size);
 
         argv[0] = Nan::Undefined();
         argv[1] = resultBuffer;
     }
 
-    baton->cb->Call(2, argv);
+    Nan::Call(*baton->cb, 2, argv);
 
     if (try_catch.HasCaught()) {
         Nan::FatalException(try_catch);
@@ -239,7 +242,7 @@ void BTSerialPortBinding::Init(Local<Object> target) {
     Nan::SetPrototypeMethod(t, "write", Write);
     Nan::SetPrototypeMethod(t, "read", Read);
     Nan::SetPrototypeMethod(t, "close", Close);
-    target->Set(Nan::New("BTSerialPortBinding").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
+    Nan::Set(target, Nan::New("BTSerialPortBinding").ToLocalChecked(), t->GetFunction(ctx).ToLocalChecked());
 }
 
 BTSerialPortBinding::BTSerialPortBinding() :
@@ -389,7 +392,7 @@ NAN_METHOD(BTSerialPortBinding::Read) {
         argv[1] = Nan::Undefined();
 
         Nan::Callback *nc = new Nan::Callback(cb);
-        nc->Call(2, argv);
+        Nan::Call(*nc, 2, argv);
     } else {
         read_baton_t *baton = new read_baton_t();
         baton->rfcomm = rfcomm;
