@@ -136,7 +136,8 @@ void DeviceINQ::EIO_AfterSdpSearch(uv_work_t *req) {
         Nan::New(baton->channelID)
     };
 
-    baton->cb->Call(1, argv);
+    Nan::AsyncResource resource("bluetooth-serial-port:SdpSearch");
+    baton->cb->Call(1, argv, &resource);
 
     if (try_catch.HasCaught()) {
         Nan::FatalException(try_catch);
@@ -239,26 +240,27 @@ NAN_METHOD(DeviceINQ::InquireSync) {
         return Nan::ThrowError(usage);
     }
 
+    Nan::AsyncResource resource("bluetooth-serial-port:InquireSync");
     Nan::Callback *found = new Nan::Callback(info[0].As<Function>());
     Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
 
     bt_inquiry inquiryResult = DeviceINQ::doInquire();
     for (int i = 0; i < inquiryResult.num_rsp; i++) {
       Local<Value> argv[] = {
-        Nan::New(inquiryResult.devices[i].address).ToLocalChecked(),  
+        Nan::New(inquiryResult.devices[i].address).ToLocalChecked(),
         Nan::New(inquiryResult.devices[i].name).ToLocalChecked()
       };
-      found->Call(2, argv);
+      found->Call(2, argv, &resource);
     }
 
     Local<Value> argv[] = {};
-    callback->Call(0, argv);
+    callback->Call(0, argv, &resource);
     return;
 }
 
 class InquireWorker : public Nan::AsyncWorker {
  public:
-  InquireWorker(Nan::Callback* found, Nan::Callback *callback) 
+  InquireWorker(Nan::Callback* found, Nan::Callback *callback)
     : Nan::AsyncWorker(callback), found(found) {}
   ~InquireWorker() {}
 
@@ -276,16 +278,17 @@ class InquireWorker : public Nan::AsyncWorker {
   void HandleOKCallback () {
     Nan::HandleScope scope;
 
+    Nan::AsyncResource resource("bluetooth-serial-port:Inquire");
     for (int i = 0; i < inquiryResult.num_rsp; i++) {
       Local<Value> argv[] = {
-        Nan::New(inquiryResult.devices[i].address).ToLocalChecked(),  
+        Nan::New(inquiryResult.devices[i].address).ToLocalChecked(),
         Nan::New(inquiryResult.devices[i].name).ToLocalChecked()
       };
-      found->Call(2, argv);
+      found->Call(2, argv, &resource);
     }
 
     Local<Value> argv[] = {};
-    callback->Call(0, argv);
+    callback->Call(0, argv, &resource);
   }
 
   private:
