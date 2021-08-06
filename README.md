@@ -22,7 +22,7 @@ Check the [release notes](RELEASE_NOTES.md) for an overview of the change histor
 `apt-get install build-essential libbluetooth-dev`
 
 ### Note on RFCOMM Server Sockets
-As the initial implementation of the RFCOMM server sockets is based on BlueZ4, in order to work with SDP we need to change the bluetoothd service configuration file by modifing the systemd unit file: bluetooth.service:
+As the initial implementation of the RFCOMM server sockets is based on BlueZ4, in order to work with SDP we need to change the bluetooth service configuration file by modifing the systemd unit file: bluetooth.service:
 
 (Debian based distro)
 
