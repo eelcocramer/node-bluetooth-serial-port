@@ -63,7 +63,7 @@ void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
     Nan::TryCatch try_catch;
     Nan::AsyncResource resource("bluetooth-serial-port:Connect");
     if (baton->status == 0) {
-        Nan::Call(*baton->cb, 0, nullptr, &resource);
+        baton->cb->Call(0, nullptr, &resource);
     } else {
         if (baton->rfcomm->s != INVALID_SOCKET) {
             closesocket(baton->rfcomm->s);

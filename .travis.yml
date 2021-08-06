@@ -8,7 +8,6 @@ os:
 
 env:
   matrix:
-    - export NODE_VERSION="10"
     - export NODE_VERSION="11"
     - export NODE_VERSION="12"
     - export NODE_VERSION="14"
