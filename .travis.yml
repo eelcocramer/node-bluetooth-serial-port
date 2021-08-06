@@ -1,3 +1,4 @@
+version: ~> 1.0
 language: cpp # node_js is not supported yet on osx
 compiler: gcc
 sudo: false
