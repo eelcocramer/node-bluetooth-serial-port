@@ -13,9 +13,6 @@ env:
     - export NODE_VERSION="14"
     - export NODE_VERSION="16"
 
-matrix:
-  fast-finish: true
-
 addons:
   apt:
     sources:
