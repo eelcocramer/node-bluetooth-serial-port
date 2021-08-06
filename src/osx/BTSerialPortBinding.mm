@@ -75,15 +75,16 @@ void BTSerialPortBinding::EIO_AfterConnect(uv_work_t *req) {
 
     Nan::TryCatch try_catch;
 
+    Nan::AsyncResource resource("bluetooth-serial-port:Connect");
     if (baton->status == 0) {
-        baton->cb->Call(0, NULL);
+        baton->cb->Call(0, NULL, &resource);
     } else {
         char msg[80];
         sprintf(msg, "Cannot connect: %d", baton->status);
         Local<Value> argv[] = {
             Nan::Error(msg)
         };
-        baton->ecb->Call(1, argv);
+        baton->ecb->Call(1, argv, &resource);
     }
 
     if (try_catch.HasCaught()) {
@@ -130,7 +131,8 @@ void BTSerialPortBinding::EIO_AfterWrite(uv_work_t *req) {
         argv[1] = Nan::New<v8::Integer>((int32_t)data->result);
     }
 
-    data->callback->Call(2, argv);
+    Nan::AsyncResource resource("bluetooth-serial-port:Write");
+    data->callback->Call(2, argv, &resource);
 
     uv_mutex_lock(&write_queue_mutex);
     ngx_queue_remove(&queuedWrite->queue);
@@ -186,17 +188,15 @@ void BTSerialPortBinding::EIO_AfterRead(uv_work_t *req) {
         argv[0] = Nan::Error("Error reading from connection");
         argv[1] = Nan::Undefined();
     } else {
-        Local<Object> globalObj = Nan::GetCurrentContext()->Global();
-        Local<Function> bufferConstructor = Local<Function>::Cast(globalObj->Get(Nan::New("Buffer").ToLocalChecked()));
-        Local<Value> constructorArgs[1] = { Nan::New<v8::Integer>(baton->size) };
-        Local<Object> resultBuffer = Nan::NewInstance(bufferConstructor, 1, constructorArgs).ToLocalChecked();
+        Local<Object> resultBuffer = Nan::NewBuffer(baton->size).ToLocalChecked();
         memcpy(Buffer::Data(resultBuffer), baton->result, baton->size);
 
         argv[0] = Nan::Undefined();
         argv[1] = resultBuffer;
     }
 
-    baton->cb->Call(2, argv);
+    Nan::AsyncResource resource("bluetooth-serial-port:Read");
+    baton->cb->Call(2, argv, &resource);
 
     if (try_catch.HasCaught()) {
         Nan::FatalException(try_catch);
@@ -361,7 +361,8 @@ NAN_METHOD(BTSerialPortBinding::Read) {
         argv[1] = Nan::Undefined();
 
         Nan::Callback *nc = new Nan::Callback(cb);
-        nc->Call(2, argv);
+        Nan::AsyncResource resource("bluetooth-serial-port:Read");
+        nc->Call(2, argv, &resource);
     } else {
         read_baton_t *baton = new read_baton_t();
         baton->rfcomm = rfcomm;
