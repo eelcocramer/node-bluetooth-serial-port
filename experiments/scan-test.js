@@ -17,7 +17,7 @@
     var BluetoothSerialPort = require("../lib/bluetooth-serial-port.js").BluetoothSerialPort;
     var serial = new BluetoothSerialPort();
 
-    serial.on('found', function (address, name) {
+    serial.on('found', function(address, name) {
         console.log('Found: ' + address + ' with name ' + name);
 
         serial.findSerialPortChannel(address, function(channel) {
@@ -45,7 +45,7 @@
                     }
 
                     setTimeout(function() {
-                        serial.write(buf, function (err, count) {
+                        serial.write(buf, function(err, count) {
                             if (err) {
                                 console.log('Error received: ' + err);
                             } else {

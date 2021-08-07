@@ -12,8 +12,8 @@
           'cflags':['-std=c++11']
         }],
         [ 'OS=="mac"', {
-          'sources': ['src/osx/DeviceINQ.mm', 'src/osx/BluetoothWorker.mm', 'src/osx/pipe.c', 'src/osx/BluetoothDeviceResources.mm', 'src/osx/BluetoothSerialPort.mm', 'src/osx/BTSerialPortBinding.mm'],
-          'include_dirs' : [ "<!(node -e \"require('nan')\")", 'src', 'src/osx' ],
+          'sources': ['src/macos/DeviceINQ.mm', 'src/macos/BluetoothWorker.mm', 'src/macos/pipe.c', 'src/macos/BluetoothDeviceResources.mm', 'src/macos/BluetoothSerialPort.mm', 'src/macos/BTSerialPortBinding.mm'],
+          'include_dirs' : [ "<!(node -e \"require('nan')\")", 'src', 'src/macos' ],
           'libraries':['-framework Foundation', '-framework IOBluetooth', '-fobjc-arc'],
           'cflags!': [ '-fno-exceptions' ],
           'cflags_cc!': [ '-fno-exceptions' ],

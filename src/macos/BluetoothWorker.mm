@@ -270,14 +270,15 @@ static NSLock *globalConnectLock = nil;
       inquiryProducer = pipe_producer_new(pipe);
         [self performSelector:@selector(inquiryTask) onThread:worker withObject:nil waitUntilDone:false];
     }
+
 }
 
 /** Worker task to the the inquiry */
 - (void) inquiryTask
 {
-  IOBluetoothDeviceInquiry *bdi = [[IOBluetoothDeviceInquiry alloc] init];
-    [bdi setDelegate: self];
-    [bdi start];
+  printf("inquiry started\n");
+  IOBluetoothDeviceInquiry *bdi = [IOBluetoothDeviceInquiry inquiryWithDelegate:self];
+  [bdi start];
 }
 
 /** Get the RFCOMM channel for a given device */
@@ -336,7 +337,7 @@ static NSLock *globalConnectLock = nil;
         }
     }
 
-    // This can happen is some conditions where the network is unreliable. Just ignore for now...
+    // This can happen in some conditions where the network is unreliable. Just ignore for now...
     lastChannelID = -1;
 }
 
@@ -356,12 +357,13 @@ static NSLock *globalConnectLock = nil;
 /** Called when a channel has been closed */
 - (void)rfcommChannelClosed:(IOBluetoothRFCOMMChannel*)rfcommChannel
 {
-    [self disconnectFromDevice: [[rfcommChannel getDevice] getAddressString]];
+    [self disconnectFromDevice: [[rfcommChannel getDevice] addressString]];
 }
 
 /** Called when the device inquiry completes */
 - (void) deviceInquiryComplete: (IOBluetoothDeviceInquiry *) sender error: (IOReturn) error aborted: (BOOL) aborted
 {
+    printf("inquiry complete\n");
     @synchronized(self) {
         if (inquiryProducer != NULL) {
             // free the producer so the main thread is signaled that the inquiry has been completed.
@@ -374,11 +376,12 @@ static NSLock *globalConnectLock = nil;
 /** Called when a device has been found */
 - (void) deviceInquiryDeviceFound: (IOBluetoothDeviceInquiry*) sender device: (IOBluetoothDevice*) device
 {
+    printf("device found\n");
     @synchronized(self) {
         if (inquiryProducer != NULL) {
             device_info_t *info = new device_info_t;
-            strcpy(info->address, [[device getAddressString] UTF8String]);
-            strcpy(info->name, [[device getNameOrAddress] UTF8String]);
+            strcpy(info->address, [[device addressString] UTF8String]);
+            strcpy(info->name, [[device addressString] UTF8String]);
 
             // push the device data into the pipe to notify the main thread
             pipe_push(inquiryProducer, info, 1);

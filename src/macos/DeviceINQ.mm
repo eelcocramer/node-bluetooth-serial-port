@@ -145,7 +145,6 @@ NSArray *DeviceINQ::doInquire() {
     pipe_t *pipe = pipe_new(sizeof(device_info_t), 0);
     [worker inquireWithPipe: pipe];
     pipe_consumer_t *c = pipe_consumer_new(pipe);
-    pipe_free(pipe);
 
     device_info_t *infod = new device_info_t;
     size_t result;
@@ -165,6 +164,7 @@ NSArray *DeviceINQ::doInquire() {
 
     delete infod;
     pipe_consumer_free(c);
+    pipe_free(pipe);
 
     [pool release];
 
