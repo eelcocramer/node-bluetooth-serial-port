@@ -145,6 +145,7 @@ NSArray *DeviceINQ::doInquire() {
     pipe_t *pipe = pipe_new(sizeof(device_info_t), 0);
     [worker inquireWithPipe: pipe];
     pipe_consumer_t *c = pipe_consumer_new(pipe);
+    pipe_free(pipe);
 
     device_info_t *infod = new device_info_t;
     size_t result;
@@ -164,7 +165,6 @@ NSArray *DeviceINQ::doInquire() {
 
     delete infod;
     pipe_consumer_free(c);
-    pipe_free(pipe);
 
     [pool release];
 
@@ -215,6 +215,7 @@ NAN_METHOD(DeviceINQ::InquireSync) {
     NSValue *boxedDevice;
     NSArray *inquiryResult = doInquire();
     NSEnumerator *enumerator = [inquiryResult objectEnumerator];
+    Nan::AsyncResource resource("bluetooth-serial-port:inqureSync");
     while (boxedDevice = [enumerator nextObject]) {
         struct bt_device device;
 
@@ -224,10 +225,10 @@ NAN_METHOD(DeviceINQ::InquireSync) {
             Nan::New(device.name).ToLocalChecked()
         };
 
-        found->Call(2, argv);
+        found->Call(2, argv, &resource);
     }
 
-    callback->Call(0, 0);
+    callback->Call(0, 0, &resource);
     [inquiryResult release];
 
     return;
