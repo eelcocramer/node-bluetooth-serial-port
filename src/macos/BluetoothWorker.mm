@@ -45,6 +45,16 @@ using namespace v8;
 @synthesize pipe;
 @end
 
+@interface DeviceInquiryRunLoopStopper : NSObject <IOBluetoothDeviceInquiryDelegate>
+@end
+@implementation DeviceInquiryRunLoopStopper
+- (void)deviceInquiryComplete:(__unused IOBluetoothDeviceInquiry *)sender
+                        error:(__unused IOReturn)error
+                      aborted:(__unused BOOL)aborted {
+  CFRunLoopStop(CFRunLoopGetCurrent());
+}
+@end
+
 /** Private class for wrapping data */
 @interface BTData : NSObject {
     NSData *data;
@@ -261,8 +271,8 @@ static NSLock *globalConnectLock = nil;
 {
     @synchronized(self) {
       inquiryProducer = pipe_producer_new(pipe);
-      dispatch_async(worker_queue, ^{
-          [self inquiryTask];
+      dispatch_sync(worker_queue, ^{
+        [self inquiryTask];
       });
     }
 }
@@ -270,11 +280,25 @@ static NSLock *globalConnectLock = nil;
 /** Worker task to the the inquiry */
 - (void) inquiryTask
 {
-  IOBluetoothDeviceInquiry *bdi = [IOBluetoothDeviceInquiry inquiryWithDelegate:self];
-//  bdi.inquiryLength = 30;
-  [bdi start];
-//  [NSThread sleepUntilDate: [NSDate dateWithTimeIntervalSinceNow: 31]];
-//  [bdi stop];
+    @autoreleasepool {
+        DeviceInquiryRunLoopStopper *stopper = [[[DeviceInquiryRunLoopStopper alloc] init] autorelease];
+        IOBluetoothDeviceInquiry *bdi = [IOBluetoothDeviceInquiry inquiryWithDelegate:stopper];
+        [bdi setInquiryLength: 10];
+        [bdi start];
+        CFRunLoopRun();
+        [bdi stop];
+
+        NSArray *devices = [bdi foundDevices];
+        fprintf(stderr, "found %lu devices\n", [devices count]);
+        for (IOBluetoothDevice *device in devices) {
+            [self deviceFound: device];
+        }
+        if (inquiryProducer != NULL) {
+            // free the producer so the main thread is signaled that the inquiry has been completed.
+            pipe_producer_free(inquiryProducer);
+            inquiryProducer = NULL;
+        }
+    }
 }
 
 /** Get the RFCOMM channel for a given device */
@@ -358,33 +382,21 @@ static NSLock *globalConnectLock = nil;
     [self disconnectFromDevice: [[rfcommChannel getDevice] addressString]];
 }
 
-/** Called when the device inquiry completes */
-- (void) deviceInquiryComplete: (IOBluetoothDeviceInquiry *) sender error: (IOReturn) error aborted: (BOOL) aborted
-{
-    @synchronized(self) {
-        if (inquiryProducer != NULL) {
-            // free the producer so the main thread is signaled that the inquiry has been completed.
-            pipe_producer_free(inquiryProducer);
-            inquiryProducer = NULL;
-        }
-    }
-}
-
 /** Called when a device has been found */
-- (void) deviceInquiryDeviceFound: (IOBluetoothDeviceInquiry*) sender device: (IOBluetoothDevice*) device
+- (void) deviceFound:(IOBluetoothDevice*) device
 {
-    @synchronized(self) {
-        if (inquiryProducer != NULL) {
-            device_info_t *info = new device_info_t;
-            strcpy(info->address, [[device addressString] UTF8String]);
-            strcpy(info->name, [[device addressString] UTF8String]);
+    if (inquiryProducer != NULL) {
+        device_info_t *info = new device_info_t;
+        strcpy(info->address, [[device addressString] UTF8String]);
+        strcpy(info->name, [[device addressString] UTF8String]);
 
-            // push the device data into the pipe to notify the main thread
-            pipe_push(inquiryProducer, info, 1);
+        // push the device data into the pipe to notify the main thread
+        pipe_push(inquiryProducer, info, 1);
 
-            delete info;
-        }
+        delete info;
     }
 }
 
 @end
+
+
