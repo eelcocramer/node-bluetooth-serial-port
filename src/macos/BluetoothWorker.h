@@ -39,6 +39,7 @@ BluetoothDeviceResources *res;
     NSLock *writeLock;
     IOReturn writeResult;
     NSTimer *keepAliveTimer;
+    BOOL runLoopIsStopped;
 }
 
 + (id)getInstance: (NSString *) address;

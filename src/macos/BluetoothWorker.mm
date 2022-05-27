@@ -260,6 +260,7 @@ static NSLock *globalConnectLock = nil;
 - (void) inquireWithPipe: (pipe_t *)pipe
 {
     @synchronized(self) {
+      runLoopIsStopped = YES;
       inquiryProducer = pipe_producer_new(pipe);
       dispatch_async(worker_queue, ^{
           [self inquiryTask];
@@ -270,11 +271,20 @@ static NSLock *globalConnectLock = nil;
 /** Worker task to the the inquiry */
 - (void) inquiryTask
 {
+    @autoreleasepool {
   IOBluetoothDeviceInquiry *bdi = [IOBluetoothDeviceInquiry inquiryWithDelegate:self];
-//  bdi.inquiryLength = 30;
+  bdi.inquiryLength = 10;
   [bdi start];
+  fprintf(stderr,"before: %d\n", runLoopIsStopped);
+  NSRunLoop *runLoop = [NSRunLoop currentRunLoop];
+  while ( runLoopIsStopped) {
+    NSDate *date = [NSDate distantFuture];
+        [runLoop runMode:NSDefaultRunLoopMode beforeDate:date];
+  }
+  fprintf(stderr,"after\n");
 //  [NSThread sleepUntilDate: [NSDate dateWithTimeIntervalSinceNow: 31]];
-//  [bdi stop];
+  [bdi stop];
+    }
 }
 
 /** Get the RFCOMM channel for a given device */
@@ -361,12 +371,14 @@ static NSLock *globalConnectLock = nil;
 /** Called when the device inquiry completes */
 - (void) deviceInquiryComplete: (IOBluetoothDeviceInquiry *) sender error: (IOReturn) error aborted: (BOOL) aborted
 {
+    fprintf(stderr, "complete with aborted = %d\n", aborted);
     @synchronized(self) {
         if (inquiryProducer != NULL) {
             // free the producer so the main thread is signaled that the inquiry has been completed.
             pipe_producer_free(inquiryProducer);
             inquiryProducer = NULL;
         }
+        runLoopIsStopped = NO;
     }
 }
 
