@@ -4,10 +4,10 @@
 
 > _DEPRECATED_ Currently I have no plans to add support for nodejs version 1.13 and up. If you want to help out by adding support please contact me. It was a great experience maintaining this project for almost 8 years. It was great to see people step in to improve this project. Thank you all!
 
-[![Build Status](https://travis-ci.com/eelcocramer/node-bluetooth-serial-port.svg)](https://travis-ci.com/eelcocramer/node-bluetooth-serial-port)
+[![Build status](https://dl.circleci.com/status-badge/img/gh/eelcocramer/node-bluetooth-serial-port/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/eelcocramer/node-bluetooth-serial-port/tree/master)
 [![Build status](https://ci.appveyor.com/api/projects/status/4p1r3ddoid98qc7k?svg=true)](https://ci.appveyor.com/project/eelcocramer/node-bluetooth-serial-port)
 
-This node module lets you communicate over Bluetooth serial port with devices using Node.js. The goal is have an easy to use API. This module is great for communicating with Bluetooth enabled Arduino devices.
+This node module lets you communicate over Bluetooth serial port with devices using NodeJS. The goal is have an easy to use API. This module is great for communicating with Bluetooth enabled Arduino devices.
 
 If you have any problems make sure to [checkout the FAQ](https://github.com/eelcocramer/node-bluetooth-serial-port/issues?q=label%3AFAQ).
 
