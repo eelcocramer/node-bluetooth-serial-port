@@ -415,8 +415,8 @@ NAN_METHOD(DeviceINQ::ListPairedDevices) {
                         : Nan::New(address);
 
                     Local<Object> deviceObj = Nan::New<v8::Object>();
-                    deviceObj->Set(Nan::New("name").ToLocalChecked(), Nan::New(querySet->lpszServiceInstanceName).ToLocalChecked());
-                    deviceObj->Set(Nan::New("address").ToLocalChecked(), addressString.ToLocalChecked());
+                    Nan::Set(deviceObj, Nan::New("name").ToLocalChecked(), Nan::New(querySet->lpszServiceInstanceName).ToLocalChecked());
+                    Nan::Set(deviceObj, Nan::New("address").ToLocalChecked(), addressString.ToLocalChecked());
 
                     Local<Array> servicesArray = Local<Array>(Nan::New<Array>());
                     {
@@ -445,9 +445,9 @@ NAN_METHOD(DeviceINQ::ListPairedDevices) {
                                 if (lookupServiceError2 != SOCKET_ERROR ) {
                                     int port = (int)((SOCKADDR_BTH *)querySet2->lpcsaBuffer->RemoteAddr.lpSockaddr)->port;
                                     Local<Object> serviceObj = Nan::New<v8::Object>();
-                                    serviceObj->Set(Nan::New("channel").ToLocalChecked(), Nan::New(port));
-                                    serviceObj->Set(Nan::New("name").ToLocalChecked(), Nan::New(querySet2->lpszServiceInstanceName).ToLocalChecked());
-                                    servicesArray->Set(place++, serviceObj);
+                                    Nan::Set(serviceObj, Nan::New("channel").ToLocalChecked(), Nan::New(port));
+                                    Nan::Set(serviceObj, Nan::New("name").ToLocalChecked(), Nan::New(querySet2->lpszServiceInstanceName).ToLocalChecked());
+                                    Nan::Set(servicesArray, place++, serviceObj);
                                 } else {
                                     int lookupServiceErrorNumber = WSAGetLastError();
                                     if (lookupServiceErrorNumber == WSAEFAULT) {
@@ -476,8 +476,8 @@ NAN_METHOD(DeviceINQ::ListPairedDevices) {
                         free(querySet2);
                     }
 
-                    deviceObj->Set(Nan::New("services").ToLocalChecked(), servicesArray);
-                    resultArray->Set(i, deviceObj);
+                    Nan::Set(deviceObj, Nan::New("services").ToLocalChecked(), servicesArray);
+                    Nan::Set(resultArray, i, deviceObj);
                     i = i+1;
                 }
             } else {

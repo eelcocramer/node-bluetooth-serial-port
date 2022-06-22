@@ -1,60 +1,59 @@
 {
-  "name": "bluetooth-serial-port",
-  "version": "2.2.7",
-  "description": "Bluetooth serial port communication for Node.js",
-  "author": "Eelco Cramer <eelco@hailendal.org>",
-  "keywords": [
-    "bluetooth",
-    "serial port",
-    "rfcomm",
-    "linux",
-    "os x",
-    "windows"
-  ],
-  "homepage": "https://github.com/eelcocramer/node-bluetooth-serial-port",
-  "bugs": "https://github.com/eelcocramer/node-bluetooth-serial-port/issues",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/eelcocramer/node-bluetooth-serial-port"
-  },
-  "directories": {
-    "lib": "./lib"
-  },
-  "main": "./lib/bluetooth-serial-port.js",
-  "types": "./lib/bluetooth-serial-port.d.ts",
-  "os": [
-    "darwin",
-    "linux",
-    "win32"
-  ],
-  "dependencies": {
-    "bindings": "1.2.x",
-    "nan": "latest",
-    "stable": "^0.1.8"
-  },
-  "optionalDependencies": {
-    "@types/node": "^7.0.10"
-  },
-  "engines": {
-    "node": ">= 6.x",
-    "npm": ">= 1.1.x"
-  },
-  "scripts": {
-    "install": "node-gyp configure build",
-    "install-debug": "node-gyp configure build --debug"
-  },
-  "license": "MIT",
-  "contributors": [
-    "Eric Smekens",
-    "Juho Vepsäläinen",
-    "Elmar Langholz",
-    "Donald Ness",
-    "Joost Verdoorn",
-    "Max Metral",
-    "Thomas Wickham",
-    "Adrián Estrada",
-    "Juan Gomez",
-    "Eric Lundby",
-    "Kevin Clarens"
-  ]
+    "name": "bluetooth-serial-port",
+    "version": "3.0.0",
+    "description": "Bluetooth serial port communication for Node.js",
+    "author": "Eelco Cramer <eelco@hailendal.org>",
+    "keywords": [
+        "bluetooth",
+        "serial port",
+        "rfcomm",
+        "linux",
+        "windows"
+    ],
+    "homepage": "https://github.com/eelcocramer/node-bluetooth-serial-port",
+    "bugs": "https://github.com/eelcocramer/node-bluetooth-serial-port/issues",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/eelcocramer/node-bluetooth-serial-port"
+    },
+    "directories": {
+        "lib": "./lib"
+    },
+    "main": "./lib/bluetooth-serial-port.js",
+    "types": "./lib/bluetooth-serial-port.d.ts",
+    "os": [
+        "darwin",
+        "linux",
+        "win32"
+    ],
+    "dependencies": {
+        "bindings": "1.5.x",
+        "nan": "2.16.x",
+        "stable": "^0.1.8"
+    },
+    "optionalDependencies": {
+        "@types/node": "^18.0.0"
+    },
+    "engines": {
+        "node": ">= 16.x",
+        "npm": ">= 8.x"
+    },
+    "scripts": {
+        "install": "node-gyp configure build",
+        "install-debug": "node-gyp configure build --debug"
+    },
+    "license": "MIT",
+    "contributors": [
+        "Eric Smekens",
+        "Juho Vepsäläinen",
+        "Elmar Langholz",
+        "Donald Ness",
+        "Joost Verdoorn",
+        "Max Metral",
+        "Thomas Wickham",
+        "Adrián Estrada",
+        "Juan Gomez",
+        "Eric Lundby",
+        "Kevin Clarens"
+    ]
 }

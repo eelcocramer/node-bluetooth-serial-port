@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <node_object_wrap.h>
+#include <dispatch/dispatch.h>
 #include "pipe.h"
 
 #ifndef RFCOMM_UUID
@@ -102,29 +103,17 @@ static NSLock *globalConnectLock = nil;
     deviceLock = [[NSLock alloc] init];
     connectLock = [[NSLock alloc] init];
     writeLock = [[NSLock alloc] init];
-
-    // creates a worker thread that handles all the asynchronous stuff
-    worker = [[NSThread alloc]initWithTarget: self selector: @selector(startBluetoothThread:) object: nil];
-    [worker start];
+    worker_queue = dispatch_queue_create("btworker", NULL);
     return self;
-}
-
-/** Creates a run loop and sets a timer to keep the run loop alive */
-- (void) startBluetoothThread: (id) arg
-{
-    NSRunLoop *runLoop = [NSRunLoop currentRunLoop];
-    //schedule a timer so runMode won't stop immediately
-    keepAliveTimer = [[NSTimer alloc] initWithFireDate:[NSDate distantFuture]
-        interval:1 target:nil selector:nil userInfo:nil repeats:YES];
-    [runLoop addTimer:keepAliveTimer forMode:NSDefaultRunLoopMode];
-    [[NSRunLoop currentRunLoop] run];
 }
 
 /** Disconnect from a Bluetooth device */
 - (void) disconnectFromDevice:(NSString *)address
 {
     // this function is called synchronous from javascript so it waits on the worker task to complete.
-    [self performSelector:@selector(disconnectFromDeviceTask:) onThread:worker withObject: address waitUntilDone:true];
+    dispatch_sync(worker_queue, ^{
+        [self disconnectFromDeviceTask: address];
+    });
 }
 
 /** Task on the worker to disconnect from a Bluetooth device */
@@ -167,7 +156,9 @@ static NSLock *globalConnectLock = nil;
         address, @"address", [NSNumber numberWithInt: channel], @"channel", pipeObj, @"pipe", nil];
 
     // connect to a device and wait for the result
-    [self performSelector:@selector(connectDeviceTask:) onThread:worker withObject:parameters waitUntilDone:true];
+    dispatch_sync(worker_queue, ^{
+        [self connectDeviceTask:parameters];
+    });
     IOReturn result = connectResult;
     [connectLock unlock];
 
@@ -218,7 +209,9 @@ static NSLock *globalConnectLock = nil;
     writeData.address = address;
 
     // wait for the write to be performed on the worker thread
-    [self performSelector:@selector(writeAsyncTask:) onThread:worker withObject:writeData waitUntilDone:true];
+    dispatch_sync(worker_queue, ^{
+        [self writeAsyncTask:writeData];
+    });
 
     IOReturn result = writeResult;
     [writeLock unlock];
@@ -268,16 +261,20 @@ static NSLock *globalConnectLock = nil;
 {
     @synchronized(self) {
       inquiryProducer = pipe_producer_new(pipe);
-        [self performSelector:@selector(inquiryTask) onThread:worker withObject:nil waitUntilDone:false];
+      dispatch_async(worker_queue, ^{
+          [self inquiryTask];
+      });
     }
 }
 
 /** Worker task to the the inquiry */
 - (void) inquiryTask
 {
-  IOBluetoothDeviceInquiry *bdi = [[IOBluetoothDeviceInquiry alloc] init];
-    [bdi setDelegate: self];
-    [bdi start];
+  IOBluetoothDeviceInquiry *bdi = [IOBluetoothDeviceInquiry inquiryWithDelegate:self];
+//  bdi.inquiryLength = 30;
+  [bdi start];
+//  [NSThread sleepUntilDate: [NSDate dateWithTimeIntervalSinceNow: 31]];
+//  [bdi stop];
 }
 
 /** Get the RFCOMM channel for a given device */
@@ -285,7 +282,9 @@ static NSLock *globalConnectLock = nil;
 {
     [sdpLock lock];
     // call the task on the worker thread and wait for the result
-    [self performSelector:@selector(getRFCOMMChannelIDTask:) onThread:worker withObject:address waitUntilDone:true];
+    dispatch_sync(worker_queue, ^{
+        [self getRFCOMMChannelIDTask:address];
+    });
     int returnValue = lastChannelID;
     [sdpLock unlock];
     return returnValue;
@@ -336,7 +335,7 @@ static NSLock *globalConnectLock = nil;
         }
     }
 
-    // This can happen is some conditions where the network is unreliable. Just ignore for now...
+    // This can happen in some conditions where the network is unreliable. Just ignore for now...
     lastChannelID = -1;
 }
 
@@ -356,7 +355,7 @@ static NSLock *globalConnectLock = nil;
 /** Called when a channel has been closed */
 - (void)rfcommChannelClosed:(IOBluetoothRFCOMMChannel*)rfcommChannel
 {
-    [self disconnectFromDevice: [[rfcommChannel getDevice] getAddressString]];
+    [self disconnectFromDevice: [[rfcommChannel getDevice] addressString]];
 }
 
 /** Called when the device inquiry completes */
@@ -377,8 +376,8 @@ static NSLock *globalConnectLock = nil;
     @synchronized(self) {
         if (inquiryProducer != NULL) {
             device_info_t *info = new device_info_t;
-            strcpy(info->address, [[device getAddressString] UTF8String]);
-            strcpy(info->name, [[device getNameOrAddress] UTF8String]);
+            strcpy(info->address, [[device addressString] UTF8String]);
+            strcpy(info->name, [[device addressString] UTF8String]);
 
             // push the device data into the pipe to notify the main thread
             pipe_push(inquiryProducer, info, 1);

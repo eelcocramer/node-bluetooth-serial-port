@@ -1,5 +1,10 @@
 ## RELEASE NOTES
 
+### 3.0.0
+
+* Fixes building issues with recent version of NodeJS.
+* Drops support for Darwin / MacOS for the moment. If you want to use the module on a Mac please install v2.2.7.
+
 ### 2.2.7
 
 * Changes node version to `lts` in the Dockerfile

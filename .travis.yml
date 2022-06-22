@@ -1,3 +1,4 @@
+version: ~> 1.0
 language: cpp # node_js is not supported yet on osx
 compiler: gcc
 sudo: false
@@ -8,11 +9,9 @@ os:
 
 env:
   matrix:
-    - export NODE_VERSION="8"
-    - export NODE_VERSION="9"
-    - export NODE_VERSION="10"
-    - export NODE_VERSION="11"
-    - export NODE_VERSION="12"
+    - export NODE_VERSION="14"
+    - export NODE_VERSION="16"
+    - export NODE_VERSION="18"
 
 addons:
   apt:
