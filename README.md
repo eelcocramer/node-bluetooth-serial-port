@@ -1,8 +1,12 @@
 # Bluetooth serial port communication for Node.js
 
-> MacOS support has (temporarely) been dropped as of version v3.0.0 of the module. If you use the module on a Mac please stay on v2 of this module.
+## Consider a donation
 
-> _DEPRECATED_ Currently I have no plans to add support for nodejs version 1.13 and up. If you want to help out by adding support please contact me. It was a great experience maintaining this project for almost 8 years. It was great to see people step in to improve this project. Thank you all!
+This piece of open source software is free (as in speech) to [use, modify and distribute](LICENSE.md), no strings attached. If this software saves you some cash and you want to do something for the good please consider making a donation to a [charity](https://www.doctorswithoutborders.org). Any charity will do. 🙏
+
+> MacOS support has (temporarily) been dropped as of version v3.0.0 of the module. If you use the module on a Mac please stay on v2 of this module.
+
+> _DEPRECATED_ Currently I have no plans to add support for NodeJS version 1.13 and up. If you want to help out by adding support please contact me. It was a great experience maintaining this project for almost 8 years. It was great to see people step in to improve this project. Thank you all!
 
 [![Build status](https://dl.circleci.com/status-badge/img/gh/eelcocramer/node-bluetooth-serial-port/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/eelcocramer/node-bluetooth-serial-port/tree/master)
 [![Build status](https://ci.appveyor.com/api/projects/status/4p1r3ddoid98qc7k?svg=true)](https://ci.appveyor.com/project/eelcocramer/node-bluetooth-serial-port)
