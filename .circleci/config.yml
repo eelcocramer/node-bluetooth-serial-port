@@ -35,6 +35,57 @@ jobs:
           name: Run build
           command: npm install --unsafe-perm
 
+  build-16:
+    # These next lines define a docker executor: https://circleci.com/docs/2.0/executor-types/
+    # You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
+    # A list of available CircleCI docker Convenience Images are available here: https://circleci.com/developer/images/image/cimg/node
+    docker:
+      - image: node:16
+    # Then run your tests!
+    # CircleCI will report the results back to your VCS provider.
+    steps:
+      # Checkout the code as the first step.
+      - checkout
+      # Next, the node orb's install-packages step will install the dependencies from a package.json.
+      # The orb install-packages step will also automatically cache them for faster future runs.
+      - node/install-packages
+      # If you are using yarn instead npm, remove the line above and uncomment the two lines below.
+      # - node/install-packages:
+      #     pkg-manager: yarn
+      - run:
+          name: Install dependencies
+          command: apt-get update && apt-get install -y build-essential libbluetooth-dev
+
+      - run:
+          name: Run build
+          command: npm install --unsafe-perm
+
+  build-18:
+    # These next lines define a docker executor: https://circleci.com/docs/2.0/executor-types/
+    # You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
+    # A list of available CircleCI docker Convenience Images are available here: https://circleci.com/developer/images/image/cimg/node
+    docker:
+      - image: node:18
+    # Then run your tests!
+    # CircleCI will report the results back to your VCS provider.
+    steps:
+      # Checkout the code as the first step.
+      - checkout
+      # Next, the node orb's install-packages step will install the dependencies from a package.json.
+      # The orb install-packages step will also automatically cache them for faster future runs.
+      - node/install-packages
+      # If you are using yarn instead npm, remove the line above and uncomment the two lines below.
+      # - node/install-packages:
+      #     pkg-manager: yarn
+      - run:
+          name: Install dependencies
+          command: apt-get update && apt-get install -y build-essential libbluetooth-dev
+
+      - run:
+          name: Run build
+          command: npm install --unsafe-perm
+
+
 workflows:
   # Below is the definition of your workflow.
   # Inside the workflow, you provide the jobs you want to run, e.g this workflow runs the build-and-test job above.
@@ -43,5 +94,7 @@ workflows:
   build:
     jobs:
       - build-14
+      - build-16
+      - build-18
       # For running simple node tests, you could optionally instead use the node/test job from the orb to replicate and replace the manually defined "test" job above in fewer lines.
       # - node/test
