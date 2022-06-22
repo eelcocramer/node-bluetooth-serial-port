@@ -1,6 +1,6 @@
 {
     "name": "bluetooth-serial-port",
-    "version": "2.2.7",
+    "version": "3.0.0",
     "description": "Bluetooth serial port communication for Node.js",
     "author": "Eelco Cramer <eelco@hailendal.org>",
     "keywords": [
@@ -8,7 +8,6 @@
         "serial port",
         "rfcomm",
         "linux",
-        "os x",
         "windows"
     ],
     "homepage": "https://github.com/eelcocramer/node-bluetooth-serial-port",
@@ -29,15 +28,15 @@
     ],
     "dependencies": {
         "bindings": "1.5.x",
-        "nan": "2.15.x",
+        "nan": "2.16.x",
         "stable": "^0.1.8"
     },
     "optionalDependencies": {
-        "@types/node": "^16.4.13"
+        "@types/node": "^18.0.0"
     },
     "engines": {
-        "node": ">= 10.x",
-        "npm": ">= 5.x"
+        "node": ">= 16.x",
+        "npm": ">= 8.x"
     },
     "scripts": {
         "install": "node-gyp configure build",

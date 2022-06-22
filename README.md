@@ -1,5 +1,7 @@
 # Bluetooth serial port communication for Node.js
 
+> MacOS support has (temporarely) been dropped as of version v3.0.0 of the module. If you use the module on a Mac please stay on v2 of this module.
+
 > _DEPRECATED_ Currently I have no plans to add support for nodejs version 1.13 and up. If you want to help out by adding support please contact me. It was a great experience maintaining this project for almost 8 years. It was great to see people step in to improve this project. Thank you all!
 
 [![Build Status](https://travis-ci.com/eelcocramer/node-bluetooth-serial-port.svg)](https://travis-ci.com/eelcocramer/node-bluetooth-serial-port)
@@ -43,10 +45,6 @@ Finally, restart the service:
 sudo systemctl daemon-reload
 sudo systemctl restart bluetooth
 ```
-
-## Prerequisites on macOS
-
--   Needs Xcode and Xcode command line tools installed.
 
 ## Prerequisites on Windows
 
