@@ -22,7 +22,6 @@
     "main": "./lib/bluetooth-serial-port.js",
     "types": "./lib/bluetooth-serial-port.d.ts",
     "os": [
-        "darwin",
         "linux",
         "win32"
     ],
