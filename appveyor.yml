@@ -3,10 +3,6 @@ environment:
   MSVS_VERSION: 2017
   # Test against these versions of Node.js and io.js
   matrix:
-    allow_failures:
-      - platform: x86
-        nodejs_version: "18"
-
     # node.js
     - nodejs_version: "14"
     - nodejs_version: "16"
@@ -14,7 +10,6 @@ environment:
 
 
 platform:
-  - x86
   - x64
 
 # Install scripts. (runs after repo cloning)
