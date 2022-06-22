@@ -15,9 +15,9 @@ jobs:
     # You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # A list of available CircleCI docker Convenience Images are available here: https://circleci.com/developer/images/image/cimg/node
     docker:
-      - image: cimg/node:14
-      - image: cimg/node:16
-      - image: cimg/node:18
+      - image: node:14
+      - image: node:16
+      - image: node:18
     # Then run your tests!
     # CircleCI will report the results back to your VCS provider.
     steps:
