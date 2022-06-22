@@ -29,7 +29,7 @@ jobs:
       #     pkg-manager: yarn
       - run:
           name: Install dependencies
-          command: apt get update && apt-get install -y build-essential libbluetooth-dev
+          command: apt-get update && apt-get install -y build-essential libbluetooth-dev
 
       - run:
           name: Run build
