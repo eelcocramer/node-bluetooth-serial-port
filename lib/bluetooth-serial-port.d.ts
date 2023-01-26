@@ -20,7 +20,7 @@ declare module BluetoothSerialPort {
     write(buffer: Buffer, cb: (err?: Error) => void): void;
     close(): void;
     isOpen(): boolean;
-    listPairedDevices(): void;
+    listPairedDevices(cb: (devices: any) => void): void;
   }
   class BluetoothSerialPortServer {
     constructor();
