@@ -1,5 +1,9 @@
 ## RELEASE NOTES
 
+### 3.0.1
+
+* Fixes typescript definition for `listPairedDevices`.
+
 ### 3.0.0
 
 * Fixes building issues with recent version of NodeJS.
