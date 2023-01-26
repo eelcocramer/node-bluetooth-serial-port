@@ -4,7 +4,6 @@ environment:
   # Test against these versions of Node.js and io.js
   matrix:
     # node.js
-    - nodejs_version: "14"
     - nodejs_version: "16"
     - nodejs_version: "18"
 
