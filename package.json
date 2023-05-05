@@ -31,7 +31,7 @@
         "stable": "^0.1.8"
     },
     "optionalDependencies": {
-        "@types/node": "^18.0.0"
+        "@types/node": "^20.0.0"
     },
     "engines": {
         "node": ">= 16.x",
