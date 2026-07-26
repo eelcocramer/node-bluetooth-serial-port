@@ -5,6 +5,11 @@
 * Fixes memory leaks.
 * Adds support for node 20, 22 and 24
 
+### 3.0.2
+
+* Changes node version to `lts` in the Dockerfile
+
+
 ### 3.0.1
 
 * Fixes typescript definition for `listPairedDevices`.
