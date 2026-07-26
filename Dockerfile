@@ -1,4 +1,4 @@
-FROM node:14
+FROM node:18
 RUN apt-get update
 RUN apt-get install -y build-essential libbluetooth-dev
 ADD . node-bluetooth-serial-port
