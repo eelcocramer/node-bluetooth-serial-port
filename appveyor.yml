@@ -1,3 +1,5 @@
+image: Visual Studio 2019
+
 environment:
   # Visual Studio Version
   MSVS_VERSION: 2017
