@@ -256,6 +256,8 @@ NAN_METHOD(DeviceINQ::InquireSync) {
 
     Local<Value> argv[] = {};
     callback->Call(0, argv, &resource);
+    delete callback;
+    delete found;
     return;
 }
 
