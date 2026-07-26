@@ -1,5 +1,9 @@
 ## RELEASE NOTES
 
+### 3.0.2
+
+* Fixes memory leaks.
+
 ### 3.0.1
 
 * Fixes typescript definition for `listPairedDevices`.

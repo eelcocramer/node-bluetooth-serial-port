@@ -49,16 +49,6 @@ jobs:
           name: install build dependencies
           command: apt-get update && apt-get install -y build-essential libbluetooth-dev
       - node/install-packages
-  build-26:
-    docker:
-      - image: node:26
-    steps:
-      - checkout:
-          method: full
-      - run:
-          name: install build dependencies
-          command: apt-get update && apt-get install -y build-essential libbluetooth-dev
-      - node/install-packages
 
 workflows:
   build:
@@ -67,4 +57,3 @@ workflows:
       - build-20
       - build-22
       - build-24
-      - build-26
