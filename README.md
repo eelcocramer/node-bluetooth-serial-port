@@ -17,13 +17,14 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 ## New in the last release
 
--   Changes node version to `lts` in the Dockerfile
+* Fixes memory leaks.
+* Adds support for node 20, 22 and 24
 
 Check the [release notes](RELEASE_NOTES.md) for an overview of the change history.
 
 ## Prerequisites on Linux
 
--   Needs Bluetooth development packages to build
+* Needs Bluetooth development packages to build
 
 `apt-get install build-essential libbluetooth-dev`
 

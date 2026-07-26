@@ -391,6 +391,7 @@ NAN_METHOD(BTSerialPortBinding::Read) {
         Nan::AsyncResource resource("bluetooth-serial-port:Read");
         Nan::Callback *nc = new Nan::Callback(cb);
         nc->Call(2, argv, &resource);
+        delete nc;
     } else {
         read_baton_t *baton = new read_baton_t();
         baton->rfcomm = rfcomm;
