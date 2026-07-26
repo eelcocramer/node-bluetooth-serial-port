@@ -21,11 +21,11 @@ install:
   - npm --version
   - npm ci --ignore-scripts
 
-# Build script (forces Script mode instead of default MSBuild mode).
-build_script:
-  - npm run install-debug
+# Disable automatic MSBuild discovery (there is no .sln/.vcxproj in repo root).
+build: off
 
 # Post-install test scripts.
 test_script:
   # run tests
+  - npm run install-debug
   - node test\index.js
