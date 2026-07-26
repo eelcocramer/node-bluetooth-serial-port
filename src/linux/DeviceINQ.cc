@@ -265,7 +265,9 @@ class InquireWorker : public Nan::AsyncWorker {
  public:
   InquireWorker(Nan::Callback* found, Nan::Callback *callback)
     : Nan::AsyncWorker(callback), found(found) {}
-  ~InquireWorker() {}
+  ~InquireWorker() {
+        delete found;
+    }
 
   // Executed inside the worker-thread.
   // It is not safe to access V8, or V8 data structures
