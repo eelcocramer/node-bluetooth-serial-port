@@ -1,0 +1,31 @@
+environment:
+  # Visual Studio Version
+  MSVS_VERSION: 2017
+  # Test against these Node.js versions
+  matrix:
+    - nodejs_version: "16"
+    - nodejs_version: "18"
+    - nodejs_version: "20"
+
+
+platform:
+  - x64
+
+# Install scripts. (runs after repo cloning)
+install:
+  # Get the latest stable version of Node.js or io.js
+  - ps: Install-Product node $env:nodejs_version $env:Platform
+  # install modules
+  - node --version
+  - npm install -g npm@latest
+  - npm --version
+  - npm ci --ignore-scripts
+
+# Disable automatic MSBuild discovery (there is no .sln/.vcxproj in repo root).
+build: off
+
+# Post-install test scripts.
+test_script:
+  # run tests
+  - npm run install-debug
+  - node test\index.js
