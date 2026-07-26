@@ -252,6 +252,7 @@ NAN_METHOD(DeviceINQ::InquireSync) {
       };
       found->Call(2, argv, &resource);
     }
+    free(inquireResult.devices)
 
     Local<Value> argv[] = {};
     callback->Call(0, argv, &resource);
@@ -289,6 +290,7 @@ class InquireWorker : public Nan::AsyncWorker {
 
     Local<Value> argv[] = {};
     callback->Call(0, argv, &resource);
+    free(inquireResult.devices)
   }
 
   private:
