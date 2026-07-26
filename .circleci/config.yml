@@ -6,32 +6,15 @@ orbs:
   # The Node.js orb contains a set of prepackaged CircleCI configuration you can utilize
   # Orbs reduce the amount of configuration required for common tasks.
   # See the orb documentation here: https://circleci.com/developer/orbs/orb/circleci/node
-  node: circleci/node@4.1
+  node: circleci/node@4.7
 
 jobs:
-  build-14:
-    docker:
-      - image: node:14
-    steps:
-      - checkout
-      - run:
-          name: Install dependencies
-          command: apt-get update && apt-get install -y build-essential libbluetooth-dev
-      - node/install-packages
-
-  build-16:
-    docker:
-      - image: node:16
-    steps:
-      - checkout
-      - run:
-          name: Install build dependencies
-          command: apt-get update && apt-get install -y build-essential libbluetooth-dev
-      - node/install-packages
-
   build-18:
     docker:
       - image: node:18
+    environment:
+      # Disable blobless clone which hangs on some executor/git combinations
+      CIRCLE_DISABLE_BLOBLESS_CLONE: "1"
     steps:
       - checkout
       - run:
@@ -42,6 +25,4 @@ jobs:
 workflows:
   build:
     jobs:
-      - build-14
-      - build-16
       - build-18
