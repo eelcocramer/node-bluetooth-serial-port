@@ -1,5 +1,15 @@
 ## RELEASE NOTES
 
+### 3.0.4
+
+* Bumps dependencies
+
+### 3.0.3
+
+* Fixes memory leaks.
+* Adds support for node 20, 22 and 24
+
+
 ### 3.0.2
 
 * Fixes memory leaks.
