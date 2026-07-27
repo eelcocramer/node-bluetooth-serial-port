@@ -24,13 +24,21 @@ function run(command, args) {
     });
 }
 
+function exitCode(result) {
+    if (typeof result.status === "number") {
+        return result.status;
+    }
+
+    return 1;
+}
+
 function installNative() {
     var nodeMajor = Number(process.versions.node.split(".")[0]);
     var supported = isSupportedTarget(process.platform, process.arch, nodeMajor);
 
     if (!supported) {
         console.log("[bluetooth-serial-port] No prebuilt binary for this target, building from source.");
-        return run("node-gyp", ["configure", "build"]).status || 1;
+        return exitCode(run("node-gyp", ["configure", "build"]));
     }
 
     var prebuildResult = run("prebuild-install", ["--binary-name", "BluetoothSerialPort.node", "--verbose"]);
@@ -39,7 +47,7 @@ function installNative() {
     }
 
     console.warn("[bluetooth-serial-port] Prebuilt download failed, building from source.");
-    return run("node-gyp", ["configure", "build"]).status || 1;
+    return exitCode(run("node-gyp", ["configure", "build"]));
 }
 
 if (require.main === module) {
@@ -47,6 +55,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+    exitCode: exitCode,
     isSupportedTarget: isSupportedTarget,
     installNative: installNative
 };
