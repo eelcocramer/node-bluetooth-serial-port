@@ -43,8 +43,9 @@
     },
     "scripts": {
         "install": "node scripts/install-native.js",
+        "install-release": "node-gyp configure build",
         "install-debug": "node-gyp configure build --debug",
-        "prebuild": "prebuild --include-regex \"\\\\.node$\" --strip",
+        "prebuild": "prebuild --strip",
         "test": "node test/index.js && node test/install-native.js"
     },
     "license": "MIT",

@@ -29,10 +29,10 @@ build: off
 # Post-install test scripts.
 test_script:
   # run tests
-  - npm run install-debug
+  - npm run install-release
   - node test\index.js
   - node test\install-native.js
   - ps: |
       if ($env:APPVEYOR_REPO_TAG -eq "true" -and $env:GITHUB_TOKEN) {
-        npx prebuild --include-regex "\\.node$" --strip -u $env:GITHUB_TOKEN
+        npx prebuild --strip -u $env:GITHUB_TOKEN
       }

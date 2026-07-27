@@ -21,7 +21,7 @@ jobs:
       - node/install-packages
       - run:
           name: build native addon
-          command: npm run install-debug
+          command: npm run install-release
       - run:
           name: run tests
           command: npm test
@@ -29,7 +29,7 @@ jobs:
           name: upload prebuilds for tagged releases
           command: |
             if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
-              npx prebuild --include-regex "\\.node$" --strip -u "$GITHUB_TOKEN"
+              npx prebuild --strip -u "$GITHUB_TOKEN"
             fi
   build-20:
     docker:
@@ -43,7 +43,7 @@ jobs:
       - node/install-packages
       - run:
           name: build native addon
-          command: npm run install-debug
+          command: npm run install-release
       - run:
           name: run tests
           command: npm test
@@ -51,7 +51,7 @@ jobs:
           name: upload prebuilds for tagged releases
           command: |
             if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
-              npx prebuild --include-regex "\\.node$" --strip -u "$GITHUB_TOKEN"
+              npx prebuild --strip -u "$GITHUB_TOKEN"
             fi
   build-22:
     docker:
@@ -65,7 +65,7 @@ jobs:
       - node/install-packages
       - run:
           name: build native addon
-          command: npm run install-debug
+          command: npm run install-release
       - run:
           name: run tests
           command: npm test
@@ -73,7 +73,7 @@ jobs:
           name: upload prebuilds for tagged releases
           command: |
             if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
-              npx prebuild --include-regex "\\.node$" --strip -u "$GITHUB_TOKEN"
+              npx prebuild --strip -u "$GITHUB_TOKEN"
             fi
   build-24:
     docker:
@@ -87,7 +87,7 @@ jobs:
       - node/install-packages
       - run:
           name: build native addon
-          command: npm run install-debug
+          command: npm run install-release
       - run:
           name: run tests
           command: npm test
@@ -95,7 +95,7 @@ jobs:
           name: upload prebuilds for tagged releases
           command: |
             if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
-              npx prebuild --include-regex "\\.node$" --strip -u "$GITHUB_TOKEN"
+              npx prebuild --strip -u "$GITHUB_TOKEN"
             fi
 
 workflows:
