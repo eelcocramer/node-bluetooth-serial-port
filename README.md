@@ -25,7 +25,8 @@ Check the [release notes](RELEASE_NOTES.md) for an overview of the change histor
 
 ## Prerequisites on Linux
 
-* Needs Bluetooth development packages to build
+* Build prerequisites are only needed when no matching prebuilt binary is available.
+* Needs Bluetooth development packages for source builds.
 
 `apt-get install build-essential libbluetooth-dev`
 
@@ -54,12 +55,16 @@ sudo systemctl restart bluetooth
 
 ## Prerequisites on Windows
 
--   Needs Visual Studio (Visual C++) and its command line tools installed.
--   Needs Python 2.x installed and accessible from the command line path.
+-   Build prerequisites are only needed when no matching prebuilt binary is available.
+-   Needs Visual Studio (Visual C++) and its command line tools for source builds.
+-   Needs Python installed and accessible from the command line path.
 
 ## Install
 
 `npm install bluetooth-serial-port`
+
+For Linux x64 and Windows x64 on Node 18, 20, 22 and 24, installation first downloads a prebuilt native binary from GitHub Releases.
+If a matching prebuild is unavailable, install falls back to a local `node-gyp` build.
 
 ## Test build Linux using docker
 

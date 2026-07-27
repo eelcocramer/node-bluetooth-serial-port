@@ -31,3 +31,8 @@ test_script:
   # run tests
   - npm run install-debug
   - node test\index.js
+  - node test\install-native.js
+  - ps: |
+      if ($env:APPVEYOR_REPO_TAG -eq "true" -and $env:GITHUB_TOKEN) {
+        npx prebuild --include-regex "\\.node$" --strip -u $env:GITHUB_TOKEN
+      }
