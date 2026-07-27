@@ -105,3 +105,30 @@ workflows:
       - build-20
       - build-22
       - build-24
+
+  release:
+    jobs:
+      - build-18:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
+      - build-20:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
+      - build-22:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
+      - build-24:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
