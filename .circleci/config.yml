@@ -20,6 +20,9 @@ jobs:
           command: apt-get update && apt-get install -y build-essential libbluetooth-dev
       - node/install-packages
       - run:
+          name: build native addon
+          command: npm run install-debug
+      - run:
           name: run tests
           command: npm test
       - run:
@@ -38,6 +41,9 @@ jobs:
           name: install build dependencies
           command: apt-get update && apt-get install -y build-essential libbluetooth-dev
       - node/install-packages
+      - run:
+          name: build native addon
+          command: npm run install-debug
       - run:
           name: run tests
           command: npm test
@@ -58,6 +64,9 @@ jobs:
           command: apt-get update && apt-get install -y build-essential libbluetooth-dev
       - node/install-packages
       - run:
+          name: build native addon
+          command: npm run install-debug
+      - run:
           name: run tests
           command: npm test
       - run:
@@ -76,6 +85,9 @@ jobs:
           name: install build dependencies
           command: apt-get update && apt-get install -y build-essential libbluetooth-dev
       - node/install-packages
+      - run:
+          name: build native addon
+          command: npm run install-debug
       - run:
           name: run tests
           command: npm test
