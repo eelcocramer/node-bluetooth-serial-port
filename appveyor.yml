@@ -69,18 +69,21 @@ test_script:
         }
 
         $release = Get-OrCreateRelease $repoName $tag $headers
-        $uploadBase = $release.upload_url.Replace("{?name,label}", "")
+        if (-not $release.id) {
+          throw "GitHub release payload did not include a release id."
+        }
+        $releaseId = $release.id
 
         Get-ChildItem prebuilds -Recurse -Filter *.node | ForEach-Object {
           $platformArch = Split-Path $_.DirectoryName -Leaf
           $assetName    = "$platformArch--$($_.Name)"
-          $existing = $release.assets | Where-Object { $_.name -eq $assetName }
-          if ($existing) {
-            $deleteApi = "https://api.github.com/repos/$repoName/releases/assets/$($existing.id)"
+          $existing = @($release.assets | Where-Object { $_.name -eq $assetName })
+          foreach ($asset in $existing) {
+            $deleteApi = "https://api.github.com/repos/$repoName/releases/assets/$($asset.id)"
             Invoke-RestMethod -Method Delete -Uri $deleteApi -Headers $headers
           }
 
-          $uploadUrl = "$uploadBase?name=$([System.Uri]::EscapeDataString($assetName))"
+          $uploadUrl = "https://uploads.github.com/repos/$repoName/releases/$releaseId/assets?name=$([System.Uri]::EscapeDataString($assetName))"
           Invoke-RestMethod -Method Post -Uri $uploadUrl -Headers $headers -ContentType "application/octet-stream" -InFile $_.FullName
         }
       }
