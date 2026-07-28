@@ -18,6 +18,8 @@ platform:
 install:
   # Get the latest stable version of Node.js or io.js
   - ps: Install-Product node $env:nodejs_version $env:Platform
+  # install gh CLI
+  - choco install gh -y
   # install modules
   - node --version
   - npm --version
@@ -31,8 +33,16 @@ test_script:
   # run tests
   - npm run install-release
   - node test\index.js
-  - node test\install-native.js
   - ps: |
       if ($env:APPVEYOR_REPO_TAG -eq "true" -and $env:GITHUB_TOKEN) {
-        & node .\node_modules\prebuild\bin.js --strip -u $env:GITHUB_TOKEN
+        node scripts\create-prebuilds.js --strip
+        $tag = $env:APPVEYOR_REPO_TAG_NAME
+        Get-ChildItem prebuilds -Recurse -Filter *.node | ForEach-Object {
+          $platformArch = Split-Path $_.DirectoryName -Leaf
+          $assetName    = "$platformArch--$($_.Name)"
+          $tempPath     = Join-Path $env:TEMP $assetName
+          Copy-Item $_.FullName $tempPath
+          gh release upload $tag $tempPath --clobber --repo $env:APPVEYOR_REPO_NAME
+          Remove-Item $tempPath
+        }
       }
