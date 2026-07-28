@@ -216,7 +216,7 @@ void BTSerialPortBinding::Init(Local<Object> target) {
     t->InstanceTemplate()->SetInternalFieldCount(1);
     t->SetClassName(Nan::New("BTSerialPortBinding").ToLocalChecked());
 
-    Isolate *isolate = target->GetIsolate();
+    Isolate *isolate = Isolate::GetCurrent();
     Local<Context> ctx = isolate->GetCurrentContext();
 
     Nan::SetPrototypeMethod(t, "write", Write);

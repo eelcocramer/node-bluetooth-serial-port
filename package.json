@@ -1,12 +1,13 @@
 {
     "name": "bluetooth-serial-port",
-    "version": "3.0.4",
+    "version": "3.0.5-alpha.4",
     "description": "Bluetooth serial port communication for Node.js",
     "author": "Eelco Cramer <eelco@hailendal.org>",
     "keywords": [
         "bluetooth",
         "serial port",
         "rfcomm",
+        "darwin",
         "linux",
         "windows"
     ],
@@ -29,6 +30,7 @@
         "prebuilds/"
     ],
     "os": [
+        "darwin",
         "linux",
         "win32"
     ],

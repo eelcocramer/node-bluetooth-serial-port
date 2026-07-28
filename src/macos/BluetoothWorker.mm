@@ -19,6 +19,7 @@
 
 #include <v8.h>
 #include <node.h>
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -32,6 +33,8 @@
 
 using namespace node;
 using namespace v8;
+
+static const CFTimeInterval INQUIRY_TIMEOUT_SECONDS = 20.0;
 
 /** Private class for wrapping a pipe */
 @interface Pipe : NSObject {
@@ -58,6 +61,49 @@ using namespace v8;
 @implementation BTData
 @synthesize data;
 @synthesize address;
+@end
+
+/** Stops the current run loop when inquiry completes. */
+@interface DeviceInquiryRunLoopStopper : NSObject <IOBluetoothDeviceInquiryDelegate> {
+    @private
+    BOOL completed;
+}
+
+- (BOOL)isCompleted;
+
+@end
+
+@implementation DeviceInquiryRunLoopStopper
+
+- (id)init
+{
+    self = [super init];
+    if (self != nil) {
+        completed = NO;
+    }
+
+    return self;
+}
+
+- (BOOL)isCompleted
+{
+    return completed;
+}
+
+- (void)deviceInquiryDeviceFound:(IOBluetoothDeviceInquiry *)sender device:(IOBluetoothDevice *)device
+{
+    (void)sender;
+    (void)device;
+}
+
+- (void)deviceInquiryComplete:(IOBluetoothDeviceInquiry *)sender error:(IOReturn)error aborted:(BOOL)aborted
+{
+    (void)sender;
+    (void)error;
+    (void)aborted;
+    completed = YES;
+}
+
 @end
 
 static NSMutableDictionary *instanceWorkers = nil;
@@ -260,21 +306,57 @@ static NSLock *globalConnectLock = nil;
 - (void) inquireWithPipe: (pipe_t *)pipe
 {
     @synchronized(self) {
-      inquiryProducer = pipe_producer_new(pipe);
-      dispatch_async(worker_queue, ^{
-          [self inquiryTask];
-      });
+        if (inquiryProducer != NULL) {
+            pipe_producer_free(inquiryProducer);
+            inquiryProducer = NULL;
+        }
+        inquiryProducer = pipe_producer_new(pipe);
+    }
+
+    if ([NSThread isMainThread]) {
+        [self inquiryTask];
+    } else {
+        dispatch_sync(worker_queue, ^{
+            [self inquiryTask];
+        });
     }
 }
 
 /** Worker task to the the inquiry */
 - (void) inquiryTask
 {
-  IOBluetoothDeviceInquiry *bdi = [IOBluetoothDeviceInquiry inquiryWithDelegate:self];
-//  bdi.inquiryLength = 30;
-  [bdi start];
-//  [NSThread sleepUntilDate: [NSDate dateWithTimeIntervalSinceNow: 31]];
-//  [bdi stop];
+    @autoreleasepool {
+        DeviceInquiryRunLoopStopper *stopper = [[DeviceInquiryRunLoopStopper alloc] init];
+        IOBluetoothDeviceInquiry *inquiry = [[IOBluetoothDeviceInquiry alloc] initWithDelegate:stopper];
+
+        if (inquiry == nil) {
+            [self completeInquiry];
+            [stopper release];
+            return;
+        }
+
+        [inquiry setInquiryLength:10];
+        IOReturn startStatus = [inquiry start];
+
+        if (startStatus == kIOReturnSuccess) {
+            NSDate *deadline = [NSDate dateWithTimeIntervalSinceNow:INQUIRY_TIMEOUT_SECONDS];
+            while (![stopper isCompleted] && [deadline timeIntervalSinceNow] > 0) {
+                [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:deadline];
+            }
+        }
+
+        [inquiry stop];
+        [inquiry setDelegate:nil];
+
+        NSArray *foundDevices = [inquiry foundDevices];
+        for (IOBluetoothDevice *device in foundDevices) {
+            [self emitInquiryDevice:device];
+        }
+
+        [self completeInquiry];
+        [inquiry release];
+        [stopper release];
+    }
 }
 
 /** Get the RFCOMM channel for a given device */
@@ -361,29 +443,47 @@ static NSLock *globalConnectLock = nil;
 /** Called when the device inquiry completes */
 - (void) deviceInquiryComplete: (IOBluetoothDeviceInquiry *) sender error: (IOReturn) error aborted: (BOOL) aborted
 {
+    (void)sender;
+    (void)error;
+    (void)aborted;
+    [self completeInquiry];
+}
+
+/** Called when a device has been found */
+- (void) deviceInquiryDeviceFound: (IOBluetoothDeviceInquiry*) sender device: (IOBluetoothDevice*) device
+{
+    (void)sender;
+    [self emitInquiryDevice:device];
+}
+
+- (void)completeInquiry
+{
     @synchronized(self) {
         if (inquiryProducer != NULL) {
-            // free the producer so the main thread is signaled that the inquiry has been completed.
             pipe_producer_free(inquiryProducer);
             inquiryProducer = NULL;
         }
     }
 }
 
-/** Called when a device has been found */
-- (void) deviceInquiryDeviceFound: (IOBluetoothDeviceInquiry*) sender device: (IOBluetoothDevice*) device
+- (void)emitInquiryDevice:(IOBluetoothDevice *)device
 {
     @synchronized(self) {
-        if (inquiryProducer != NULL) {
-            device_info_t *info = new device_info_t;
-            strcpy(info->address, [[device addressString] UTF8String]);
-            strcpy(info->name, [[device addressString] UTF8String]);
-
-            // push the device data into the pipe to notify the main thread
-            pipe_push(inquiryProducer, info, 1);
-
-            delete info;
+        if (inquiryProducer == NULL || device == nil) {
+            return;
         }
+
+        device_info_t info;
+        memset(&info, 0, sizeof(device_info_t));
+
+        const char *address = [[device addressString] UTF8String];
+        const char *name = [[device nameOrAddress] UTF8String];
+
+        snprintf(info.address, sizeof(info.address), "%s", address != NULL ? address : "");
+        snprintf(info.name, sizeof(info.name), "%s", name != NULL ? name : info.address);
+
+        // push the device data into the pipe to notify the main thread
+        pipe_push(inquiryProducer, &info, 1);
     }
 }
 
