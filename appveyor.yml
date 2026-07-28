@@ -18,14 +18,6 @@ platform:
 install:
   # Get the latest stable version of Node.js or io.js
   - ps: Install-Product node $env:nodejs_version $env:Platform
-  # install gh CLI
-  - ps: |
-      choco install gh -y --no-progress
-      $ghCmd = Get-Command gh.exe -ErrorAction SilentlyContinue
-      if (-not $ghCmd) {
-        throw "GitHub CLI (gh.exe) not found after installation."
-      }
-      & $ghCmd.Source --version
   # install modules
   - node --version
   - npm --version
@@ -42,48 +34,53 @@ test_script:
   - ps: |
       $ErrorActionPreference = "Stop"
 
-      function Find-GhPath {
-        $cmd = Get-Command gh.exe -ErrorAction SilentlyContinue
-        if ($cmd) { return $cmd.Source }
-
-        $candidates = @(
-          "$env:ProgramFiles\GitHub CLI\gh.exe",
-          "$env:ChocolateyInstall\bin\gh.exe"
-        )
-
-        foreach ($candidate in $candidates) {
-          if (Test-Path $candidate) { return $candidate }
-        }
-
-        throw "GitHub CLI (gh.exe) is required for release uploads but was not found."
-      }
-
-      function Invoke-Gh([string]$ghPath, [string[]]$args) {
-        & $ghPath @args
-        if ($LASTEXITCODE -ne 0) {
-          throw "gh command failed (exit code $LASTEXITCODE): gh $($args -join ' ')"
+      function Get-OrCreateRelease([string]$repoName, [string]$tag, [hashtable]$headers) {
+        $releaseApi = "https://api.github.com/repos/$repoName/releases/tags/$tag"
+        try {
+          return Invoke-RestMethod -Method Get -Uri $releaseApi -Headers $headers
+        } catch {
+          if ($_.Exception.Response -and $_.Exception.Response.StatusCode.value__ -eq 404) {
+            $createApi = "https://api.github.com/repos/$repoName/releases"
+            $body = @{
+              tag_name = $tag
+              name = $tag
+              body = ""
+              draft = $false
+              prerelease = $false
+            } | ConvertTo-Json
+            return Invoke-RestMethod -Method Post -Uri $createApi -Headers $headers -ContentType "application/json" -Body $body
+          }
+          throw
         }
       }
 
       if ($env:APPVEYOR_REPO_TAG -eq "true" -and $env:GITHUB_TOKEN) {
-        $ghPath = Find-GhPath
         node scripts\create-prebuilds.js --strip
         if ($LASTEXITCODE -ne 0) {
           throw "Failed to create prebuild artifacts."
         }
 
+        $repoName = $env:APPVEYOR_REPO_NAME
         $tag = $env:APPVEYOR_REPO_TAG_NAME
-        & $ghPath release view $tag --repo $env:APPVEYOR_REPO_NAME *> $null
-        if ($LASTEXITCODE -ne 0) {
-          Invoke-Gh $ghPath @("release", "create", $tag, "--title", $tag, "--notes", "", "--repo", $env:APPVEYOR_REPO_NAME)
+        $headers = @{
+          Authorization = ("Bearer " + $env:GITHUB_TOKEN)
+          Accept = "application/vnd.github+json"
+          "User-Agent" = "appveyor-prebuild-uploader"
         }
+
+        $release = Get-OrCreateRelease $repoName $tag $headers
+        $uploadBase = $release.upload_url.Replace("{?name,label}", "")
 
         Get-ChildItem prebuilds -Recurse -Filter *.node | ForEach-Object {
           $platformArch = Split-Path $_.DirectoryName -Leaf
           $assetName    = "$platformArch--$($_.Name)"
-          $tempPath     = Join-Path $env:TEMP $assetName
-          Copy-Item $_.FullName $tempPath
-          Invoke-Gh $ghPath @("release", "upload", $tag, $tempPath, "--clobber", "--repo", $env:APPVEYOR_REPO_NAME)
-          Remove-Item $tempPath
+          $existing = $release.assets | Where-Object { $_.name -eq $assetName }
+          if ($existing) {
+            $deleteApi = "https://api.github.com/repos/$repoName/releases/assets/$($existing.id)"
+            Invoke-RestMethod -Method Delete -Uri $deleteApi -Headers $headers
+          }
+
+          $uploadUrl = "$uploadBase?name=$([System.Uri]::EscapeDataString($assetName))"
+          Invoke-RestMethod -Method Post -Uri $uploadUrl -Headers $headers -ContentType "application/octet-stream" -InFile $_.FullName
         }
       }
