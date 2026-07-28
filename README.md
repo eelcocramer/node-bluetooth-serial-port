@@ -17,7 +17,7 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 
 ## New in the last releases
 
-* Downloads precompiled native assets from github
+* Installs precompiled native artifacts
 * Bumps dependencies
 * Fixes memory leaks.
 * Adds support for node 20, 22 and 24

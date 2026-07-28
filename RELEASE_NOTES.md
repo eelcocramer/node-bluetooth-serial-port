@@ -2,14 +2,13 @@
 
 ### 3.0.4
 
+* Installs precompiled native artifacts
 * Bumps dependencies
-* Downloads precompiled native assets from github
 
 ### 3.0.3
 
 * Fixes memory leaks.
 * Adds support for node 20, 22 and 24
-
 
 ### 3.0.2
 
