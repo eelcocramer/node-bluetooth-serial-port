@@ -33,6 +33,7 @@ jobs:
           command: |
             if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
               node scripts/create-prebuilds.js --strip
+              gh release create "$CIRCLE_TAG" --title "$CIRCLE_TAG" --notes "" --repo "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME" 2>/dev/null || true
               for f in prebuilds/*/*; do
                 platform_arch=$(basename $(dirname "$f"))
                 asset_name="${platform_arch}--$(basename "$f")"
@@ -65,6 +66,7 @@ jobs:
           command: |
             if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
               node scripts/create-prebuilds.js --strip
+              gh release create "$CIRCLE_TAG" --title "$CIRCLE_TAG" --notes "" --repo "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME" 2>/dev/null || true
               for f in prebuilds/*/*; do
                 platform_arch=$(basename $(dirname "$f"))
                 asset_name="${platform_arch}--$(basename "$f")"
@@ -97,6 +99,7 @@ jobs:
           command: |
             if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
               node scripts/create-prebuilds.js --strip
+              gh release create "$CIRCLE_TAG" --title "$CIRCLE_TAG" --notes "" --repo "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME" 2>/dev/null || true
               for f in prebuilds/*/*; do
                 platform_arch=$(basename $(dirname "$f"))
                 asset_name="${platform_arch}--$(basename "$f")"
@@ -129,6 +132,7 @@ jobs:
           command: |
             if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
               node scripts/create-prebuilds.js --strip
+              gh release create "$CIRCLE_TAG" --title "$CIRCLE_TAG" --notes "" --repo "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME" 2>/dev/null || true
               for f in prebuilds/*/*; do
                 platform_arch=$(basename $(dirname "$f"))
                 asset_name="${platform_arch}--$(basename "$f")"

@@ -37,6 +37,7 @@ test_script:
       if ($env:APPVEYOR_REPO_TAG -eq "true" -and $env:GITHUB_TOKEN) {
         node scripts\create-prebuilds.js --strip
         $tag = $env:APPVEYOR_REPO_TAG_NAME
+        gh release create $tag --title $tag --notes "" --repo $env:APPVEYOR_REPO_NAME 2>$null
         Get-ChildItem prebuilds -Recurse -Filter *.node | ForEach-Object {
           $platformArch = Split-Path $_.DirectoryName -Leaf
           $assetName    = "$platformArch--$($_.Name)"
