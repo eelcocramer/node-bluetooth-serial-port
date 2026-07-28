@@ -9,6 +9,18 @@ orbs:
   node: circleci/node@4.7
 
 jobs:
+  create-release:
+    docker:
+      - image: node:22
+    steps:
+      - checkout
+      - run:
+          name: create GitHub release
+          command: |
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list
+            apt-get update && apt-get install -y gh
+            gh release create "$CIRCLE_TAG" --title "$CIRCLE_TAG" --notes "" --repo "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME" 2>/dev/null || true
   build-18:
     docker:
       - image: node:18
@@ -33,7 +45,6 @@ jobs:
           command: |
             if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
               node scripts/create-prebuilds.js --strip
-              gh release create "$CIRCLE_TAG" --title "$CIRCLE_TAG" --notes "" --repo "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME" 2>/dev/null || true
               for f in prebuilds/*/*; do
                 platform_arch=$(basename $(dirname "$f"))
                 asset_name="${platform_arch}--$(basename "$f")"
@@ -66,7 +77,6 @@ jobs:
           command: |
             if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
               node scripts/create-prebuilds.js --strip
-              gh release create "$CIRCLE_TAG" --title "$CIRCLE_TAG" --notes "" --repo "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME" 2>/dev/null || true
               for f in prebuilds/*/*; do
                 platform_arch=$(basename $(dirname "$f"))
                 asset_name="${platform_arch}--$(basename "$f")"
@@ -99,7 +109,6 @@ jobs:
           command: |
             if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
               node scripts/create-prebuilds.js --strip
-              gh release create "$CIRCLE_TAG" --title "$CIRCLE_TAG" --notes "" --repo "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME" 2>/dev/null || true
               for f in prebuilds/*/*; do
                 platform_arch=$(basename $(dirname "$f"))
                 asset_name="${platform_arch}--$(basename "$f")"
@@ -132,7 +141,6 @@ jobs:
           command: |
             if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
               node scripts/create-prebuilds.js --strip
-              gh release create "$CIRCLE_TAG" --title "$CIRCLE_TAG" --notes "" --repo "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME" 2>/dev/null || true
               for f in prebuilds/*/*; do
                 platform_arch=$(basename $(dirname "$f"))
                 asset_name="${platform_arch}--$(basename "$f")"
@@ -152,25 +160,39 @@ workflows:
 
   release:
     jobs:
+      - create-release:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
       - build-18:
+          requires:
+            - create-release
           filters:
             branches:
               ignore: /.*/
             tags:
               only: /^v.*/
       - build-20:
+          requires:
+            - create-release
           filters:
             branches:
               ignore: /.*/
             tags:
               only: /^v.*/
       - build-22:
+          requires:
+            - create-release
           filters:
             branches:
               ignore: /.*/
             tags:
               only: /^v.*/
       - build-24:
+          requires:
+            - create-release
           filters:
             branches:
               ignore: /.*/
