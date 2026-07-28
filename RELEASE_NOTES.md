@@ -1,5 +1,10 @@
 ## RELEASE NOTES
 
+### 3.0.5
+
+* Adds Linux ARM binary artifacts
+* Re-enables MacOS support (experimental)
+
 ### 3.0.4
 
 * Installs precompiled native artifacts

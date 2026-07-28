@@ -18,6 +18,7 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 ## New in the last releases
 
 * Installs precompiled native artifacts
+* Re-enables MacOS support
 * Bumps dependencies
 * Fixes memory leaks.
 * Adds support for node 20, 22 and 24
@@ -69,7 +70,7 @@ sudo systemctl restart bluetooth
 
 `npm install bluetooth-serial-port`
 
-For Linux x64 and Windows x64 on Node 18, 20, 22 and 24, installation first downloads a prebuilt native binary from GitHub Releases.
+For Linux x64/arm64, Windows x64, and macOS x64/arm64 on Node 18, 20, 22 and 24, installation first downloads a prebuilt native binary from GitHub Releases.
 If a matching prebuild is unavailable, install falls back to a local `node-gyp` build.
 
 ## Test build Linux using docker
