@@ -35,7 +35,7 @@ jobs:
             apt-get update && apt-get install -y gh
       - run:
           name: install npm packages
-          command: npm ci --ignore-scripts
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
       - run:
           name: build native addon
           command: npm run install-release
@@ -97,7 +97,7 @@ jobs:
             apt-get update && apt-get install -y gh
       - run:
           name: install npm packages
-          command: npm ci --ignore-scripts
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
       - run:
           name: build native addon
           command: npm run install-release
@@ -159,7 +159,7 @@ jobs:
             apt-get update && apt-get install -y gh
       - run:
           name: install npm packages
-          command: npm ci --ignore-scripts
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
       - run:
           name: build native addon
           command: npm run install-release
@@ -221,7 +221,7 @@ jobs:
             apt-get update && apt-get install -y gh
       - run:
           name: install npm packages
-          command: npm ci --ignore-scripts
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
       - run:
           name: build native addon
           command: npm run install-release
@@ -284,7 +284,7 @@ jobs:
             apt-get update && apt-get install -y gh
       - run:
           name: install npm packages
-          command: npm ci --ignore-scripts
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
       - run:
           name: build native addon
           command: npm run install-release
@@ -347,7 +347,7 @@ jobs:
             apt-get update && apt-get install -y gh
       - run:
           name: install npm packages
-          command: npm ci --ignore-scripts
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
       - run:
           name: build native addon
           command: npm run install-release
@@ -410,7 +410,7 @@ jobs:
             apt-get update && apt-get install -y gh
       - run:
           name: install npm packages
-          command: npm ci --ignore-scripts
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
       - run:
           name: build native addon
           command: npm run install-release
@@ -473,7 +473,7 @@ jobs:
             apt-get update && apt-get install -y gh
       - run:
           name: install npm packages
-          command: npm ci --ignore-scripts
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
       - run:
           name: build native addon
           command: npm run install-release
@@ -532,7 +532,7 @@ jobs:
           npm-version: "10.9.2"
       - run:
           name: install npm packages
-          command: npm ci --ignore-scripts
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
       - run:
           name: build native addon
           command: npm run install-release
@@ -566,7 +566,7 @@ jobs:
           npm-version: "10.9.2"
       - run:
           name: install npm packages
-          command: npm ci --ignore-scripts
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
       - run:
           name: build native addon
           command: npm run install-release
@@ -600,7 +600,7 @@ jobs:
           npm-version: "10.9.2"
       - run:
           name: install npm packages
-          command: npm ci --ignore-scripts
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
       - run:
           name: build native addon
           command: npm run install-release
@@ -634,7 +634,7 @@ jobs:
           npm-version: "10.9.2"
       - run:
           name: install npm packages
-          command: npm ci --ignore-scripts
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
       - run:
           name: build native addon
           command: npm run install-release
@@ -668,7 +668,7 @@ jobs:
           npm-version: "10.9.2"
       - run:
           name: install npm packages
-          command: npm ci --ignore-scripts
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
       - run:
           name: build native addon
           command: npm run install-release
@@ -702,7 +702,7 @@ jobs:
           npm-version: "10.9.2"
       - run:
           name: install npm packages
-          command: npm ci --ignore-scripts
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
       - run:
           name: build native addon
           command: npm run install-release
@@ -736,7 +736,7 @@ jobs:
           npm-version: "10.9.2"
       - run:
           name: install npm packages
-          command: npm ci --ignore-scripts
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
       - run:
           name: build native addon
           command: npm run install-release
@@ -770,7 +770,7 @@ jobs:
           npm-version: "10.9.2"
       - run:
           name: install npm packages
-          command: npm ci --ignore-scripts
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
       - run:
           name: build native addon
           command: npm run install-release
