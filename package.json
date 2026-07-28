@@ -34,7 +34,7 @@
     ],
     "dependencies": {
         "nan": "^2.28.0",
-        "node-gyp-build": "^4.8.4",
+        "node-gyp-build": "^4.8.4"
     },
     "devDependencies": {},
     "optionalDependencies": {
