@@ -289,6 +289,7 @@ jobs:
       - checkout
       - node/install:
           node-version: "18"
+          npm-version: "10.9.2"
       - node/install-packages
       - run:
           name: build native addon
@@ -320,6 +321,7 @@ jobs:
       - checkout
       - node/install:
           node-version: "20"
+          npm-version: "10.9.2"
       - node/install-packages
       - run:
           name: build native addon
@@ -351,6 +353,7 @@ jobs:
       - checkout
       - node/install:
           node-version: "22"
+          npm-version: "10.9.2"
       - node/install-packages
       - run:
           name: build native addon
@@ -382,6 +385,7 @@ jobs:
       - checkout
       - node/install:
           node-version: "24"
+          npm-version: "10.9.2"
       - node/install-packages
       - run:
           name: build native addon
@@ -413,6 +417,7 @@ jobs:
       - checkout
       - node/install:
           node-version: "18"
+          npm-version: "10.9.2"
       - node/install-packages
       - run:
           name: build native addon
@@ -444,6 +449,7 @@ jobs:
       - checkout
       - node/install:
           node-version: "20"
+          npm-version: "10.9.2"
       - node/install-packages
       - run:
           name: build native addon
@@ -475,6 +481,7 @@ jobs:
       - checkout
       - node/install:
           node-version: "22"
+          npm-version: "10.9.2"
       - node/install-packages
       - run:
           name: build native addon
@@ -506,6 +513,7 @@ jobs:
       - checkout
       - node/install:
           node-version: "24"
+          npm-version: "10.9.2"
       - node/install-packages
       - run:
           name: build native addon
