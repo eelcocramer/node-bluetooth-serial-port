@@ -15,8 +15,9 @@ This node module lets you communicate over Bluetooth serial port with devices us
 
 If you have any problems make sure to [checkout the FAQ](https://github.com/eelcocramer/node-bluetooth-serial-port/issues?q=label%3AFAQ).
 
-## New in the last release
+## New in the last releases
 
+* Downloads precompiled native assets from github
 * Bumps dependencies
 * Fixes memory leaks.
 * Adds support for node 20, 22 and 24
