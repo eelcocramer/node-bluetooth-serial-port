@@ -153,10 +153,22 @@ jobs:
 workflows:
   build:
     jobs:
-      - build-18
-      - build-20
-      - build-22
-      - build-24
+      - build-18:
+          filters:
+            tags:
+              ignore: /.*/
+      - build-20:
+          filters:
+            tags:
+              ignore: /.*/
+      - build-22:
+          filters:
+            tags:
+              ignore: /.*/
+      - build-24:
+          filters:
+            tags:
+              ignore: /.*/
 
   release:
     jobs:
