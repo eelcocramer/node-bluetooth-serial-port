@@ -7,6 +7,7 @@
         "bluetooth",
         "serial port",
         "rfcomm",
+        "darwin",
         "linux",
         "windows"
     ],
@@ -29,6 +30,7 @@
         "prebuilds/"
     ],
     "os": [
+        "darwin",
         "linux",
         "win32"
     ],

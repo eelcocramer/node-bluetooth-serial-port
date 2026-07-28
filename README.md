@@ -4,7 +4,7 @@
 
 This piece of open source software is free (as in speech) to [use, modify and distribute](LICENSE.md), no strings attached. If this software saves you some cash and you want to do something for the good please consider making a donation to a [charity](https://www.doctorswithoutborders.org). Any charity will do. 🙏
 
-> MacOS support has (temporarily) been dropped as of version v3.0.0 of the module. If you use the module on a Mac please stay on v2 of this module.
+> macOS support is available again through source builds while prebuilt binaries are being restored.
 
 > _DEPRECATED_ I am no longer actively maintaining this project. If you want to help out by adding support please contact me. It was a great experience maintaining this project for almost 8 years. It was great to see people step in to improve this project. Thank you all!
 
@@ -59,6 +59,11 @@ sudo systemctl restart bluetooth
 -   Build prerequisites are only needed when no matching prebuilt binary is available.
 -   Needs Visual Studio (Visual C++) and its command line tools for source builds.
 -   Needs Python installed and accessible from the command line path.
+
+## Prerequisites on macOS
+
+-   Build prerequisites are only needed when no matching prebuilt binary is available.
+-   Install Xcode and Command Line Tools.
 
 ## Install
 
