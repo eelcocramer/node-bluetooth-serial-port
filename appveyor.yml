@@ -29,5 +29,61 @@ build: off
 # Post-install test scripts.
 test_script:
   # run tests
-  - npm run install-debug
+  - npm run install-release
   - node test\index.js
+  - ps: |
+      $ErrorActionPreference = "Stop"
+
+      function Get-OrCreateRelease([string]$repoName, [string]$tag, [hashtable]$headers) {
+        $releaseApi = "https://api.github.com/repos/$repoName/releases/tags/$tag"
+        try {
+          return Invoke-RestMethod -Method Get -Uri $releaseApi -Headers $headers
+        } catch {
+          if ($_.Exception.Response -and $_.Exception.Response.StatusCode.value__ -eq 404) {
+            $createApi = "https://api.github.com/repos/$repoName/releases"
+            $body = @{
+              tag_name = $tag
+              name = $tag
+              body = ""
+              draft = $false
+              prerelease = $false
+            } | ConvertTo-Json
+            return Invoke-RestMethod -Method Post -Uri $createApi -Headers $headers -ContentType "application/json" -Body $body
+          }
+          throw
+        }
+      }
+
+      if ($env:APPVEYOR_REPO_TAG -eq "true" -and $env:GITHUB_TOKEN) {
+        node scripts\create-prebuilds.js --strip
+        if ($LASTEXITCODE -ne 0) {
+          throw "Failed to create prebuild artifacts."
+        }
+
+        $repoName = $env:APPVEYOR_REPO_NAME
+        $tag = $env:APPVEYOR_REPO_TAG_NAME
+        $headers = @{
+          Authorization = ("Bearer " + $env:GITHUB_TOKEN)
+          Accept = "application/vnd.github+json"
+          "User-Agent" = "appveyor-prebuild-uploader"
+        }
+
+        $release = Get-OrCreateRelease $repoName $tag $headers
+        if (-not $release.id) {
+          throw "GitHub release payload did not include a release id."
+        }
+        $releaseId = $release.id
+
+        Get-ChildItem prebuilds -Recurse -Filter *.node | ForEach-Object {
+          $platformArch = Split-Path $_.DirectoryName -Leaf
+          $assetName    = "$platformArch--$($_.Name)"
+          $existing = @($release.assets | Where-Object { $_.name -eq $assetName })
+          foreach ($asset in $existing) {
+            $deleteApi = "https://api.github.com/repos/$repoName/releases/assets/$($asset.id)"
+            Invoke-RestMethod -Method Delete -Uri $deleteApi -Headers $headers
+          }
+
+          $uploadUrl = "https://uploads.github.com/repos/$repoName/releases/$releaseId/assets?name=$([System.Uri]::EscapeDataString($assetName))"
+          Invoke-RestMethod -Method Post -Uri $uploadUrl -Headers $headers -ContentType "application/octet-stream" -InFile $_.FullName
+        }
+      }

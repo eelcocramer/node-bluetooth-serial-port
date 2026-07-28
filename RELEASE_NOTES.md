@@ -3,6 +3,7 @@
 ### 3.0.4
 
 * Bumps dependencies
+* Downloads precompiled native assets from github
 
 ### 3.0.3
 

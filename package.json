@@ -1,6 +1,6 @@
 {
     "name": "bluetooth-serial-port",
-    "version": "3.0.4",
+    "version": "3.0.4-beta.12",
     "description": "Bluetooth serial port communication for Node.js",
     "author": "Eelco Cramer <eelco@hailendal.org>",
     "keywords": [
@@ -14,32 +14,43 @@
     "bugs": "https://github.com/eelcocramer/node-bluetooth-serial-port/issues",
     "repository": {
         "type": "git",
-        "url": "https://github.com/eelcocramer/node-bluetooth-serial-port"
+        "url": "git+https://github.com/eelcocramer/node-bluetooth-serial-port.git"
     },
     "directories": {
         "lib": "./lib"
     },
     "main": "./lib/bluetooth-serial-port.js",
     "types": "./lib/bluetooth-serial-port.d.ts",
+    "files": [
+        "lib/",
+        "src/",
+        "scripts/",
+        "binding.gyp",
+        "prebuilds/"
+    ],
     "os": [
         "linux",
         "win32"
     ],
     "dependencies": {
-        "bindings": "1.5.x",
         "nan": "^2.28.0",
-        "stable": "^0.1.8"
+        "node-gyp-build": "^4.8.4"
     },
+    "devDependencies": {},
     "optionalDependencies": {
-        "@types/node": "^26.1.1"
+        "@types/node": "^26.1.2"
     },
     "engines": {
         "node": ">= 18.x",
         "npm": ">= 8.x"
     },
     "scripts": {
-        "install": "node-gyp configure build",
-        "install-debug": "node-gyp configure build --debug"
+        "install": "node scripts/install-native.js",
+        "install-release": "node-gyp configure build",
+        "install-debug": "node-gyp configure build --debug",
+        "prebuild": "node scripts/create-prebuilds.js --strip",
+        "prepublishOnly": "node scripts/download-prebuilds.js",
+        "test": "node test/index.js"
     },
     "license": "MIT",
     "contributors": [
