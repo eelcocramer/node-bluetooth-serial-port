@@ -4,7 +4,7 @@
 
 This piece of open source software is free (as in speech) to [use, modify and distribute](LICENSE.md), no strings attached. If this software saves you some cash and you want to do something for the good please consider making a donation to a [charity](https://www.doctorswithoutborders.org). Any charity will do. 🙏
 
-> macOS support is available again through source builds while prebuilt binaries are being restored.
+> experimental macOS support is available again. Feedback (also when it is working as expected) would be highly apreciated.
 
 > _DEPRECATED_ I am no longer actively maintaining this project. If you want to help out by adding support please contact me. It was a great experience maintaining this project for almost 8 years. It was great to see people step in to improve this project. Thank you all!
 
