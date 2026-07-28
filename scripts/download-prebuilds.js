@@ -7,11 +7,6 @@ var path = require('path');
 var pkg = require('../package.json');
 var token = process.env.GITHUB_TOKEN;
 
-if (!token) {
-  console.error('Error: GITHUB_TOKEN environment variable is required to download prebuilds.');
-  process.exit(1);
-}
-
 // Parse owner/repo from repository.url
 // Handles: https://github.com/owner/repo or git+https://github.com/owner/repo
 var repoMatch = pkg.repository.url.match(/github\.com[/:]([^/]+)\/([^/.]+)/);
@@ -28,12 +23,17 @@ console.log('Downloading prebuilds for ' + owner + '/' + repo + '@' + tag + '...
 
 async function main() {
   var apiUrl = 'https://api.github.com/repos/' + owner + '/' + repo + '/releases/tags/' + tag;
+  var headers = {
+    'Accept': 'application/vnd.github.v3+json',
+    'User-Agent': repo + '-prebuild-downloader'
+  };
+
+  if (token) {
+    headers.Authorization = 'Bearer ' + token;
+  }
+
   var apiRes = await fetch(apiUrl, {
-    headers: {
-      'Authorization': 'Bearer ' + token,
-      'Accept': 'application/vnd.github.v3+json',
-      'User-Agent': repo + '-prebuild-downloader'
-    }
+    headers: headers
   });
 
   if (!apiRes.ok) {
@@ -68,11 +68,16 @@ async function main() {
 
     fs.mkdirSync(destDir, { recursive: true });
 
+    var dlHeaders = {
+      'User-Agent': repo + '-prebuild-downloader'
+    };
+
+    if (token) {
+      dlHeaders.Authorization = 'Bearer ' + token;
+    }
+
     var dlRes = await fetch(asset.browser_download_url, {
-      headers: {
-        'Authorization': 'Bearer ' + token,
-        'User-Agent': repo + '-prebuild-downloader'
-      }
+      headers: dlHeaders
     });
 
     if (!dlRes.ok) {
