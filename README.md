@@ -4,7 +4,7 @@
 
 This piece of open source software is free (as in speech) to [use, modify and distribute](LICENSE.md), no strings attached. If this software saves you some cash and you want to do something for the good please consider making a donation to a [charity](https://www.doctorswithoutborders.org). Any charity will do. 🙏
 
-> MacOS support has (temporarily) been dropped as of version v3.0.0 of the module. If you use the module on a Mac please stay on v2 of this module.
+> experimental macOS support is available again. Feedback (also when it is working as expected) would be highly apreciated.
 
 > _DEPRECATED_ I am no longer actively maintaining this project. If you want to help out by adding support please contact me. It was a great experience maintaining this project for almost 8 years. It was great to see people step in to improve this project. Thank you all!
 
@@ -18,6 +18,7 @@ If you have any problems make sure to [checkout the FAQ](https://github.com/eelc
 ## New in the last releases
 
 * Installs precompiled native artifacts
+* Re-enables MacOS support
 * Bumps dependencies
 * Fixes memory leaks.
 * Adds support for node 20, 22 and 24
@@ -60,11 +61,16 @@ sudo systemctl restart bluetooth
 -   Needs Visual Studio (Visual C++) and its command line tools for source builds.
 -   Needs Python installed and accessible from the command line path.
 
+## Prerequisites on macOS
+
+-   Build prerequisites are only needed when no matching prebuilt binary is available.
+-   Install Xcode and Command Line Tools.
+
 ## Install
 
 `npm install bluetooth-serial-port`
 
-For Linux x64 and Windows x64 on Node 18, 20, 22 and 24, installation first downloads a prebuilt native binary from GitHub Releases.
+For Linux x64/arm64, Windows x64, and macOS x64/arm64 on Node 18, 20, 22 and 24, installation first downloads a prebuilt native binary from GitHub Releases.
 If a matching prebuild is unavailable, install falls back to a local `node-gyp` build.
 
 ## Test build Linux using docker

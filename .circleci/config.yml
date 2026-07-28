@@ -33,7 +33,9 @@ jobs:
             curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
             echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list
             apt-get update && apt-get install -y gh
-      - node/install-packages
+      - run:
+          name: install npm packages
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
       - run:
           name: build native addon
           command: npm run install-release
@@ -44,13 +46,41 @@ jobs:
           name: upload prebuilds for tagged releases
           command: |
             if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
+              repo="$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
               node scripts/create-prebuilds.js --strip
+
+              found_release=0
+              for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+                if gh release view "$CIRCLE_TAG" --repo "$repo" >/dev/null 2>&1; then
+                  found_release=1
+                  break
+                fi
+                sleep 5
+              done
+              if [ "$found_release" -ne 1 ]; then
+                echo "GitHub release $CIRCLE_TAG was not found after waiting."
+                exit 1
+              fi
+
               for f in prebuilds/*/*; do
                 platform_arch=$(basename $(dirname "$f"))
                 asset_name="${platform_arch}--$(basename "$f")"
                 cp "$f" "/tmp/$asset_name"
-              gh release upload "$CIRCLE_TAG" "/tmp/$asset_name" --clobber --repo "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
-              rm "/tmp/$asset_name"
+
+                uploaded=0
+                for upload_attempt in 1 2 3 4 5; do
+                  if gh release upload "$CIRCLE_TAG" "/tmp/$asset_name" --clobber --repo "$repo"; then
+                    uploaded=1
+                    break
+                  fi
+                  sleep $((upload_attempt * 5))
+                done
+                rm "/tmp/$asset_name"
+
+                if [ "$uploaded" -ne 1 ]; then
+                  echo "Failed to upload $asset_name after retries."
+                  exit 1
+                fi
               done
             fi
   build-20:
@@ -65,7 +95,9 @@ jobs:
             curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
             echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list
             apt-get update && apt-get install -y gh
-      - node/install-packages
+      - run:
+          name: install npm packages
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
       - run:
           name: build native addon
           command: npm run install-release
@@ -76,13 +108,41 @@ jobs:
           name: upload prebuilds for tagged releases
           command: |
             if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
+              repo="$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
               node scripts/create-prebuilds.js --strip
+
+              found_release=0
+              for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+                if gh release view "$CIRCLE_TAG" --repo "$repo" >/dev/null 2>&1; then
+                  found_release=1
+                  break
+                fi
+                sleep 5
+              done
+              if [ "$found_release" -ne 1 ]; then
+                echo "GitHub release $CIRCLE_TAG was not found after waiting."
+                exit 1
+              fi
+
               for f in prebuilds/*/*; do
                 platform_arch=$(basename $(dirname "$f"))
                 asset_name="${platform_arch}--$(basename "$f")"
                 cp "$f" "/tmp/$asset_name"
-              gh release upload "$CIRCLE_TAG" "/tmp/$asset_name" --clobber --repo "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
-              rm "/tmp/$asset_name"
+
+                uploaded=0
+                for upload_attempt in 1 2 3 4 5; do
+                  if gh release upload "$CIRCLE_TAG" "/tmp/$asset_name" --clobber --repo "$repo"; then
+                    uploaded=1
+                    break
+                  fi
+                  sleep $((upload_attempt * 5))
+                done
+                rm "/tmp/$asset_name"
+
+                if [ "$uploaded" -ne 1 ]; then
+                  echo "Failed to upload $asset_name after retries."
+                  exit 1
+                fi
               done
             fi
   build-22:
@@ -97,7 +157,9 @@ jobs:
             curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
             echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list
             apt-get update && apt-get install -y gh
-      - node/install-packages
+      - run:
+          name: install npm packages
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
       - run:
           name: build native addon
           command: npm run install-release
@@ -108,13 +170,41 @@ jobs:
           name: upload prebuilds for tagged releases
           command: |
             if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
+              repo="$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
               node scripts/create-prebuilds.js --strip
+
+              found_release=0
+              for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+                if gh release view "$CIRCLE_TAG" --repo "$repo" >/dev/null 2>&1; then
+                  found_release=1
+                  break
+                fi
+                sleep 5
+              done
+              if [ "$found_release" -ne 1 ]; then
+                echo "GitHub release $CIRCLE_TAG was not found after waiting."
+                exit 1
+              fi
+
               for f in prebuilds/*/*; do
                 platform_arch=$(basename $(dirname "$f"))
                 asset_name="${platform_arch}--$(basename "$f")"
                 cp "$f" "/tmp/$asset_name"
-              gh release upload "$CIRCLE_TAG" "/tmp/$asset_name" --clobber --repo "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
-              rm "/tmp/$asset_name"
+
+                uploaded=0
+                for upload_attempt in 1 2 3 4 5; do
+                  if gh release upload "$CIRCLE_TAG" "/tmp/$asset_name" --clobber --repo "$repo"; then
+                    uploaded=1
+                    break
+                  fi
+                  sleep $((upload_attempt * 5))
+                done
+                rm "/tmp/$asset_name"
+
+                if [ "$uploaded" -ne 1 ]; then
+                  echo "Failed to upload $asset_name after retries."
+                  exit 1
+                fi
               done
             fi
   build-24:
@@ -129,7 +219,9 @@ jobs:
             curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
             echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list
             apt-get update && apt-get install -y gh
-      - node/install-packages
+      - run:
+          name: install npm packages
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
       - run:
           name: build native addon
           command: npm run install-release
@@ -140,13 +232,429 @@ jobs:
           name: upload prebuilds for tagged releases
           command: |
             if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
+              repo="$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
               node scripts/create-prebuilds.js --strip
+
+              found_release=0
+              for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+                if gh release view "$CIRCLE_TAG" --repo "$repo" >/dev/null 2>&1; then
+                  found_release=1
+                  break
+                fi
+                sleep 5
+              done
+              if [ "$found_release" -ne 1 ]; then
+                echo "GitHub release $CIRCLE_TAG was not found after waiting."
+                exit 1
+              fi
+
               for f in prebuilds/*/*; do
                 platform_arch=$(basename $(dirname "$f"))
                 asset_name="${platform_arch}--$(basename "$f")"
                 cp "$f" "/tmp/$asset_name"
-              gh release upload "$CIRCLE_TAG" "/tmp/$asset_name" --clobber --repo "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
-              rm "/tmp/$asset_name"
+
+                uploaded=0
+                for upload_attempt in 1 2 3 4 5; do
+                  if gh release upload "$CIRCLE_TAG" "/tmp/$asset_name" --clobber --repo "$repo"; then
+                    uploaded=1
+                    break
+                  fi
+                  sleep $((upload_attempt * 5))
+                done
+                rm "/tmp/$asset_name"
+
+                if [ "$uploaded" -ne 1 ]; then
+                  echo "Failed to upload $asset_name after retries."
+                  exit 1
+                fi
+              done
+            fi
+  build-linux-arm64-18:
+    docker:
+      - image: node:18
+    resource_class: arm.medium
+    steps:
+      - checkout
+      - run:
+          name: install build dependencies
+          command: |
+            apt-get update && apt-get install -y build-essential libbluetooth-dev
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list
+            apt-get update && apt-get install -y gh
+      - run:
+          name: install npm packages
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
+      - run:
+          name: build native addon
+          command: npm run install-release
+      - run:
+          name: run tests
+          command: npm test
+      - run:
+          name: upload prebuilds for tagged releases
+          command: |
+            if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
+              repo="$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
+              node scripts/create-prebuilds.js --strip
+
+              found_release=0
+              for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+                if gh release view "$CIRCLE_TAG" --repo "$repo" >/dev/null 2>&1; then
+                  found_release=1
+                  break
+                fi
+                sleep 5
+              done
+              if [ "$found_release" -ne 1 ]; then
+                echo "GitHub release $CIRCLE_TAG was not found after waiting."
+                exit 1
+              fi
+
+              for f in prebuilds/*/*; do
+                platform_arch=$(basename $(dirname "$f"))
+                asset_name="${platform_arch}--$(basename "$f")"
+                cp "$f" "/tmp/$asset_name"
+
+                uploaded=0
+                for upload_attempt in 1 2 3 4 5; do
+                  if gh release upload "$CIRCLE_TAG" "/tmp/$asset_name" --clobber --repo "$repo"; then
+                    uploaded=1
+                    break
+                  fi
+                  sleep $((upload_attempt * 5))
+                done
+                rm "/tmp/$asset_name"
+
+                if [ "$uploaded" -ne 1 ]; then
+                  echo "Failed to upload $asset_name after retries."
+                  exit 1
+                fi
+              done
+            fi
+  build-linux-arm64-20:
+    docker:
+      - image: node:20
+    resource_class: arm.medium
+    steps:
+      - checkout
+      - run:
+          name: install build dependencies
+          command: |
+            apt-get update && apt-get install -y build-essential libbluetooth-dev
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list
+            apt-get update && apt-get install -y gh
+      - run:
+          name: install npm packages
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
+      - run:
+          name: build native addon
+          command: npm run install-release
+      - run:
+          name: run tests
+          command: npm test
+      - run:
+          name: upload prebuilds for tagged releases
+          command: |
+            if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
+              repo="$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
+              node scripts/create-prebuilds.js --strip
+
+              found_release=0
+              for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+                if gh release view "$CIRCLE_TAG" --repo "$repo" >/dev/null 2>&1; then
+                  found_release=1
+                  break
+                fi
+                sleep 5
+              done
+              if [ "$found_release" -ne 1 ]; then
+                echo "GitHub release $CIRCLE_TAG was not found after waiting."
+                exit 1
+              fi
+
+              for f in prebuilds/*/*; do
+                platform_arch=$(basename $(dirname "$f"))
+                asset_name="${platform_arch}--$(basename "$f")"
+                cp "$f" "/tmp/$asset_name"
+
+                uploaded=0
+                for upload_attempt in 1 2 3 4 5; do
+                  if gh release upload "$CIRCLE_TAG" "/tmp/$asset_name" --clobber --repo "$repo"; then
+                    uploaded=1
+                    break
+                  fi
+                  sleep $((upload_attempt * 5))
+                done
+                rm "/tmp/$asset_name"
+
+                if [ "$uploaded" -ne 1 ]; then
+                  echo "Failed to upload $asset_name after retries."
+                  exit 1
+                fi
+              done
+            fi
+  build-linux-arm64-22:
+    docker:
+      - image: node:22
+    resource_class: arm.medium
+    steps:
+      - checkout
+      - run:
+          name: install build dependencies
+          command: |
+            apt-get update && apt-get install -y build-essential libbluetooth-dev
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list
+            apt-get update && apt-get install -y gh
+      - run:
+          name: install npm packages
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
+      - run:
+          name: build native addon
+          command: npm run install-release
+      - run:
+          name: run tests
+          command: npm test
+      - run:
+          name: upload prebuilds for tagged releases
+          command: |
+            if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
+              repo="$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
+              node scripts/create-prebuilds.js --strip
+
+              found_release=0
+              for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+                if gh release view "$CIRCLE_TAG" --repo "$repo" >/dev/null 2>&1; then
+                  found_release=1
+                  break
+                fi
+                sleep 5
+              done
+              if [ "$found_release" -ne 1 ]; then
+                echo "GitHub release $CIRCLE_TAG was not found after waiting."
+                exit 1
+              fi
+
+              for f in prebuilds/*/*; do
+                platform_arch=$(basename $(dirname "$f"))
+                asset_name="${platform_arch}--$(basename "$f")"
+                cp "$f" "/tmp/$asset_name"
+
+                uploaded=0
+                for upload_attempt in 1 2 3 4 5; do
+                  if gh release upload "$CIRCLE_TAG" "/tmp/$asset_name" --clobber --repo "$repo"; then
+                    uploaded=1
+                    break
+                  fi
+                  sleep $((upload_attempt * 5))
+                done
+                rm "/tmp/$asset_name"
+
+                if [ "$uploaded" -ne 1 ]; then
+                  echo "Failed to upload $asset_name after retries."
+                  exit 1
+                fi
+              done
+            fi
+  build-linux-arm64-24:
+    docker:
+      - image: node:24
+    resource_class: arm.medium
+    steps:
+      - checkout
+      - run:
+          name: install build dependencies
+          command: |
+            apt-get update && apt-get install -y build-essential libbluetooth-dev
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list
+            apt-get update && apt-get install -y gh
+      - run:
+          name: install npm packages
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
+      - run:
+          name: build native addon
+          command: npm run install-release
+      - run:
+          name: run tests
+          command: npm test
+      - run:
+          name: upload prebuilds for tagged releases
+          command: |
+            if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
+              repo="$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
+              node scripts/create-prebuilds.js --strip
+
+              found_release=0
+              for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+                if gh release view "$CIRCLE_TAG" --repo "$repo" >/dev/null 2>&1; then
+                  found_release=1
+                  break
+                fi
+                sleep 5
+              done
+              if [ "$found_release" -ne 1 ]; then
+                echo "GitHub release $CIRCLE_TAG was not found after waiting."
+                exit 1
+              fi
+
+              for f in prebuilds/*/*; do
+                platform_arch=$(basename $(dirname "$f"))
+                asset_name="${platform_arch}--$(basename "$f")"
+                cp "$f" "/tmp/$asset_name"
+
+                uploaded=0
+                for upload_attempt in 1 2 3 4 5; do
+                  if gh release upload "$CIRCLE_TAG" "/tmp/$asset_name" --clobber --repo "$repo"; then
+                    uploaded=1
+                    break
+                  fi
+                  sleep $((upload_attempt * 5))
+                done
+                rm "/tmp/$asset_name"
+
+                if [ "$uploaded" -ne 1 ]; then
+                  echo "Failed to upload $asset_name after retries."
+                  exit 1
+                fi
+              done
+            fi
+  build-macos-arm64-18:
+    macos:
+      xcode: "15.4.0"
+    resource_class: macos.m1.medium.gen1
+    steps:
+      - checkout
+      - node/install:
+          node-version: "18"
+          npm-version: "10.9.2"
+      - run:
+          name: install npm packages
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
+      - run:
+          name: build native addon
+          command: npm run install-release
+      - run:
+          name: run tests
+          command: npm test
+      - run:
+          name: upload prebuilds for tagged releases
+          command: |
+            if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
+              if ! command -v gh >/dev/null 2>&1; then
+                brew install gh
+              fi
+              node scripts/create-prebuilds.js --strip
+              platform_arch=$(node -p "process.platform + '-' + process.arch")
+              for f in prebuilds/${platform_arch}/*; do
+                asset_name="${platform_arch}--$(basename "$f")"
+                cp "$f" "/tmp/$asset_name"
+                gh release upload "$CIRCLE_TAG" "/tmp/$asset_name" --clobber --repo "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
+                rm "/tmp/$asset_name"
+              done
+            fi
+  build-macos-arm64-20:
+    macos:
+      xcode: "15.4.0"
+    resource_class: macos.m1.medium.gen1
+    steps:
+      - checkout
+      - node/install:
+          node-version: "20"
+          npm-version: "10.9.2"
+      - run:
+          name: install npm packages
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
+      - run:
+          name: build native addon
+          command: npm run install-release
+      - run:
+          name: run tests
+          command: npm test
+      - run:
+          name: upload prebuilds for tagged releases
+          command: |
+            if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
+              if ! command -v gh >/dev/null 2>&1; then
+                brew install gh
+              fi
+              node scripts/create-prebuilds.js --strip
+              platform_arch=$(node -p "process.platform + '-' + process.arch")
+              for f in prebuilds/${platform_arch}/*; do
+                asset_name="${platform_arch}--$(basename "$f")"
+                cp "$f" "/tmp/$asset_name"
+                gh release upload "$CIRCLE_TAG" "/tmp/$asset_name" --clobber --repo "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
+                rm "/tmp/$asset_name"
+              done
+            fi
+  build-macos-arm64-22:
+    macos:
+      xcode: "15.4.0"
+    resource_class: macos.m1.medium.gen1
+    steps:
+      - checkout
+      - node/install:
+          node-version: "22"
+          npm-version: "10.9.2"
+      - run:
+          name: install npm packages
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
+      - run:
+          name: build native addon
+          command: npm run install-release
+      - run:
+          name: run tests
+          command: npm test
+      - run:
+          name: upload prebuilds for tagged releases
+          command: |
+            if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
+              if ! command -v gh >/dev/null 2>&1; then
+                brew install gh
+              fi
+              node scripts/create-prebuilds.js --strip
+              platform_arch=$(node -p "process.platform + '-' + process.arch")
+              for f in prebuilds/${platform_arch}/*; do
+                asset_name="${platform_arch}--$(basename "$f")"
+                cp "$f" "/tmp/$asset_name"
+                gh release upload "$CIRCLE_TAG" "/tmp/$asset_name" --clobber --repo "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
+                rm "/tmp/$asset_name"
+              done
+            fi
+  build-macos-arm64-24:
+    macos:
+      xcode: "15.4.0"
+    resource_class: macos.m1.medium.gen1
+    steps:
+      - checkout
+      - node/install:
+          node-version: "24"
+          npm-version: "10.9.2"
+      - run:
+          name: install npm packages
+          command: NPM_CONFIG_CACHE=/tmp/npm-cache npm ci --ignore-scripts
+      - run:
+          name: build native addon
+          command: npm run install-release
+      - run:
+          name: run tests
+          command: npm test
+      - run:
+          name: upload prebuilds for tagged releases
+          command: |
+            if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
+              if ! command -v gh >/dev/null 2>&1; then
+                brew install gh
+              fi
+              node scripts/create-prebuilds.js --strip
+              platform_arch=$(node -p "process.platform + '-' + process.arch")
+              for f in prebuilds/${platform_arch}/*; do
+                asset_name="${platform_arch}--$(basename "$f")"
+                cp "$f" "/tmp/$asset_name"
+                gh release upload "$CIRCLE_TAG" "/tmp/$asset_name" --clobber --repo "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
+                rm "/tmp/$asset_name"
               done
             fi
 
@@ -166,6 +674,38 @@ workflows:
             tags:
               ignore: /.*/
       - build-24:
+          filters:
+            tags:
+              ignore: /.*/
+      - build-linux-arm64-18:
+          filters:
+            tags:
+              ignore: /.*/
+      - build-linux-arm64-20:
+          filters:
+            tags:
+              ignore: /.*/
+      - build-linux-arm64-22:
+          filters:
+            tags:
+              ignore: /.*/
+      - build-linux-arm64-24:
+          filters:
+            tags:
+              ignore: /.*/
+      - build-macos-arm64-18:
+          filters:
+            tags:
+              ignore: /.*/
+      - build-macos-arm64-20:
+          filters:
+            tags:
+              ignore: /.*/
+      - build-macos-arm64-22:
+          filters:
+            tags:
+              ignore: /.*/
+      - build-macos-arm64-24:
           filters:
             tags:
               ignore: /.*/
@@ -203,6 +743,70 @@ workflows:
             tags:
               only: /^v.*/
       - build-24:
+          requires:
+            - create-release
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
+      - build-linux-arm64-18:
+          requires:
+            - create-release
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
+      - build-linux-arm64-20:
+          requires:
+            - create-release
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
+      - build-linux-arm64-22:
+          requires:
+            - create-release
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
+      - build-linux-arm64-24:
+          requires:
+            - create-release
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
+      - build-macos-arm64-18:
+          requires:
+            - create-release
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
+      - build-macos-arm64-20:
+          requires:
+            - create-release
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
+      - build-macos-arm64-22:
+          requires:
+            - create-release
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
+      - build-macos-arm64-24:
           requires:
             - create-release
           filters:
