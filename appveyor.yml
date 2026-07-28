@@ -34,5 +34,5 @@ test_script:
   - node test\install-native.js
   - ps: |
       if ($env:APPVEYOR_REPO_TAG -eq "true" -and $env:GITHUB_TOKEN) {
-        npx prebuild --strip -u $env:GITHUB_TOKEN
+        & node .\node_modules\prebuild\bin.js --strip -u $env:GITHUB_TOKEN
       }
