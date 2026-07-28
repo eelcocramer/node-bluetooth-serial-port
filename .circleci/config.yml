@@ -9,46 +9,146 @@ orbs:
   node: circleci/node@4.7
 
 jobs:
+  create-release:
+    docker:
+      - image: node:22
+    steps:
+      - checkout
+      - run:
+          name: create GitHub release
+          command: |
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list
+            apt-get update && apt-get install -y gh
+            gh release create "$CIRCLE_TAG" --title "$CIRCLE_TAG" --notes "" --repo "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME" 2>/dev/null || true
   build-18:
     docker:
       - image: node:18
     steps:
-      - checkout:
-          method: full
+      - checkout
       - run:
           name: install build dependencies
-          command: apt-get update && apt-get install -y build-essential libbluetooth-dev
+          command: |
+            apt-get update && apt-get install -y build-essential libbluetooth-dev
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list
+            apt-get update && apt-get install -y gh
       - node/install-packages
+      - run:
+          name: build native addon
+          command: npm run install-release
+      - run:
+          name: run tests
+          command: npm test
+      - run:
+          name: upload prebuilds for tagged releases
+          command: |
+            if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
+              node scripts/create-prebuilds.js --strip
+              for f in prebuilds/*/*; do
+                platform_arch=$(basename $(dirname "$f"))
+                asset_name="${platform_arch}--$(basename "$f")"
+                cp "$f" "/tmp/$asset_name"
+              gh release upload "$CIRCLE_TAG" "/tmp/$asset_name" --clobber --repo "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
+              rm "/tmp/$asset_name"
+              done
+            fi
   build-20:
     docker:
       - image: node:20
     steps:
-      - checkout:
-          method: full
+      - checkout
       - run:
           name: install build dependencies
-          command: apt-get update && apt-get install -y build-essential libbluetooth-dev
+          command: |
+            apt-get update && apt-get install -y build-essential libbluetooth-dev
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list
+            apt-get update && apt-get install -y gh
       - node/install-packages
+      - run:
+          name: build native addon
+          command: npm run install-release
+      - run:
+          name: run tests
+          command: npm test
+      - run:
+          name: upload prebuilds for tagged releases
+          command: |
+            if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
+              node scripts/create-prebuilds.js --strip
+              for f in prebuilds/*/*; do
+                platform_arch=$(basename $(dirname "$f"))
+                asset_name="${platform_arch}--$(basename "$f")"
+                cp "$f" "/tmp/$asset_name"
+              gh release upload "$CIRCLE_TAG" "/tmp/$asset_name" --clobber --repo "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
+              rm "/tmp/$asset_name"
+              done
+            fi
   build-22:
     docker:
       - image: node:22
     steps:
-      - checkout:
-          method: full
+      - checkout
       - run:
           name: install build dependencies
-          command: apt-get update && apt-get install -y build-essential libbluetooth-dev
+          command: |
+            apt-get update && apt-get install -y build-essential libbluetooth-dev
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list
+            apt-get update && apt-get install -y gh
       - node/install-packages
+      - run:
+          name: build native addon
+          command: npm run install-release
+      - run:
+          name: run tests
+          command: npm test
+      - run:
+          name: upload prebuilds for tagged releases
+          command: |
+            if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
+              node scripts/create-prebuilds.js --strip
+              for f in prebuilds/*/*; do
+                platform_arch=$(basename $(dirname "$f"))
+                asset_name="${platform_arch}--$(basename "$f")"
+                cp "$f" "/tmp/$asset_name"
+              gh release upload "$CIRCLE_TAG" "/tmp/$asset_name" --clobber --repo "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
+              rm "/tmp/$asset_name"
+              done
+            fi
   build-24:
     docker:
       - image: node:24
     steps:
-      - checkout:
-          method: full
+      - checkout
       - run:
           name: install build dependencies
-          command: apt-get update && apt-get install -y build-essential libbluetooth-dev
+          command: |
+            apt-get update && apt-get install -y build-essential libbluetooth-dev
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list
+            apt-get update && apt-get install -y gh
       - node/install-packages
+      - run:
+          name: build native addon
+          command: npm run install-release
+      - run:
+          name: run tests
+          command: npm test
+      - run:
+          name: upload prebuilds for tagged releases
+          command: |
+            if [ -n "$CIRCLE_TAG" ] && [ -n "$GITHUB_TOKEN" ]; then
+              node scripts/create-prebuilds.js --strip
+              for f in prebuilds/*/*; do
+                platform_arch=$(basename $(dirname "$f"))
+                asset_name="${platform_arch}--$(basename "$f")"
+                cp "$f" "/tmp/$asset_name"
+              gh release upload "$CIRCLE_TAG" "/tmp/$asset_name" --clobber --repo "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
+              rm "/tmp/$asset_name"
+              done
+            fi
 
 workflows:
   build:
@@ -57,3 +157,44 @@ workflows:
       - build-20
       - build-22
       - build-24
+
+  release:
+    jobs:
+      - create-release:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
+      - build-18:
+          requires:
+            - create-release
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
+      - build-20:
+          requires:
+            - create-release
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
+      - build-22:
+          requires:
+            - create-release
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
+      - build-24:
+          requires:
+            - create-release
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/

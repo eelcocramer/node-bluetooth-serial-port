@@ -6,7 +6,7 @@ This piece of open source software is free (as in speech) to [use, modify and di
 
 > MacOS support has (temporarily) been dropped as of version v3.0.0 of the module. If you use the module on a Mac please stay on v2 of this module.
 
-> _DEPRECATED_ Currently I have no plans to add support for NodeJS version 1.13 and up. If you want to help out by adding support please contact me. It was a great experience maintaining this project for almost 8 years. It was great to see people step in to improve this project. Thank you all!
+> _DEPRECATED_ I am no longer actively maintaining this project. If you want to help out by adding support please contact me. It was a great experience maintaining this project for almost 8 years. It was great to see people step in to improve this project. Thank you all!
 
 [![Build status](https://dl.circleci.com/status-badge/img/gh/eelcocramer/node-bluetooth-serial-port/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/eelcocramer/node-bluetooth-serial-port/tree/master)
 [![Build status](https://ci.appveyor.com/api/projects/status/4p1r3ddoid98qc7k?svg=true)](https://ci.appveyor.com/project/eelcocramer/node-bluetooth-serial-port)
@@ -15,8 +15,10 @@ This node module lets you communicate over Bluetooth serial port with devices us
 
 If you have any problems make sure to [checkout the FAQ](https://github.com/eelcocramer/node-bluetooth-serial-port/issues?q=label%3AFAQ).
 
-## New in the last release
+## New in the last releases
 
+* Downloads precompiled native assets from github
+* Bumps dependencies
 * Fixes memory leaks.
 * Adds support for node 20, 22 and 24
 
@@ -24,7 +26,8 @@ Check the [release notes](RELEASE_NOTES.md) for an overview of the change histor
 
 ## Prerequisites on Linux
 
-* Needs Bluetooth development packages to build
+* Build prerequisites are only needed when no matching prebuilt binary is available.
+* Needs Bluetooth development packages for source builds.
 
 `apt-get install build-essential libbluetooth-dev`
 
@@ -53,12 +56,16 @@ sudo systemctl restart bluetooth
 
 ## Prerequisites on Windows
 
--   Needs Visual Studio (Visual C++) and its command line tools installed.
--   Needs Python 2.x installed and accessible from the command line path.
+-   Build prerequisites are only needed when no matching prebuilt binary is available.
+-   Needs Visual Studio (Visual C++) and its command line tools for source builds.
+-   Needs Python installed and accessible from the command line path.
 
 ## Install
 
 `npm install bluetooth-serial-port`
+
+For Linux x64 and Windows x64 on Node 18, 20, 22 and 24, installation first downloads a prebuilt native binary from GitHub Releases.
+If a matching prebuild is unavailable, install falls back to a local `node-gyp` build.
 
 ## Test build Linux using docker
 
