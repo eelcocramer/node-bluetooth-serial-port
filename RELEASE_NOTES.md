@@ -1,5 +1,9 @@
 ## RELEASE NOTES
 
+### 3.0.6
+
+* Updates dependencies
+
 ### 3.0.5
 
 * Adds Linux ARM binary artifacts
