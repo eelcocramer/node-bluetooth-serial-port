@@ -221,7 +221,7 @@ Check whether the connection is open or not.
 Writes a [Buffer](http://nodejs.org/api/buffer.html) to the serial port connection.
 
 -   buffer - the [Buffer](http://nodejs.org/api/buffer.html) to be written.
--   callback(err, bytesWritten) - is called when the write action has been completed. When the `err` parameter is set an error has occured, in that case `err` is an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object). When `err` is not set the write action was successful and `bytesWritten` contains the amount of bytes that is written to the connection.
+-   callback(err, bytesWritten) - is called when the write action has been completed. When the `err` parameter is set an error has occurred, in that case `err` is an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object). When `err` is not set the write action was successful and `bytesWritten` contains the amount of bytes that is written to the connection.
 
 #### BluetoothSerialPort.listPairedDevices(callback)
 
@@ -284,7 +284,7 @@ Emitted when the server is closed (i.e. from calling `close` or as the result of
 
 Emitted when reading from the serial port connection results in an error. The connection is closed.
 
--   err - an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object) describing the failure.
+* `err` - an [Error object](http://docs.nodejitsu.com/articles/errors/what-is-the-error-object) describing the failure.
 
 ## Typescript support
 
@@ -296,7 +296,7 @@ import * as btSerial from "bluetooth-serial-port";
 btSerial.findSerialPortChannel(address: string, (channel: number) => {
     btSerial.connect(address: string, channel: number, () => {
         btSerial.write(Buffer.from("yes"), (err) => {
-	    if (err) {
+            if (err) {
                 console.error(err);
             }
         });
