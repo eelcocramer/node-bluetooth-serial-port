@@ -1,5 +1,10 @@
 ## RELEASE NOTES
 
+### 3.0.7
+
+* Updates dependencies
+* Fixies issue in server (#513) where errors are not received on the right thread.
+
 ### 3.0.6
 
 * Updates dependencies
