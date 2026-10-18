@@ -652,7 +652,7 @@ BTSerialPortBindingServer::ClientWorker::~ClientWorker()
 
 void BTSerialPortBindingServer::ClientWorker::Execute(){
     if(mBaton == nullptr){
-        return Nan::ThrowError("listen_baton_t is null!");
+        return SetErrorMessage("listen_baton_t is null!");
     }
 
     struct sockaddr_rc clientAddress = {
@@ -677,7 +677,7 @@ void BTSerialPortBindingServer::ClientWorker::Execute(){
             break;
         }
         else if (select_status == -1) {
-            return Nan::ThrowError("error pselect'ing socket!");
+            return SetErrorMessage("error pselect'ing socket!");
         }
     }
 
